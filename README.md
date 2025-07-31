@@ -44,7 +44,8 @@
 <details>
 <summary>요구사항 명세서 링크</summary>
 <div markdown="1">
-[https://docs.google.com/spreadsheets/d/19jbtWr7S7CHyEFCZeZGslYqa2Hn9Dja3ce5zueu4oC8/edit?usp=sharing]
+  
+[요구사항 명세서](https://docs.google.com/spreadsheets/d/19jbtWr7S7CHyEFCZeZGslYqa2Hn9Dja3ce5zueu4oC8/edit?usp=sharing)
 </div>
 </details>
 
