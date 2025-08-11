@@ -103,7 +103,7 @@
 관리자/기업 → 결과 조회 및 보고서 확인
 
 ### 7.2 API 명세서
-
+[API 명세서](https://www.notion.so/API-2455605940ec80d0a6cecfb101029e19?source=copy_link)
 
 <br/>
 
