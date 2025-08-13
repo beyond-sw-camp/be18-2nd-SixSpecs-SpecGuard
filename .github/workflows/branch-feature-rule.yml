@@ -1,0 +1,19 @@
+# .github/workflows/validate-branch.yml
+name: Validate feature branch on PR
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          echo "Source branch: ${GITHUB_HEAD_REF}"
+          if [[ ! "${GITHUB_HEAD_REF}" =~ ^feature/ ]]; then
+            echo "❌ Branch name must start with feature/"
+            exit 1
+          fi
