@@ -1,0 +1,49 @@
+[project]
+name = "pythonbackend"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "viroovr",email = "tjgusdnjs789@gmail.com"}
+]
+readme = "README.md"
+requires-python = "3.13.6"
+dependencies = [
+    "fastapi (>=0.116.1,<0.117.0)",
+    "uvicorn (>=0.35.0,<0.36.0)"
+]
+
+[tool.poetry]
+
+[tool.poetry.group.dev.dependencies]
+fastapi = "^0.116.1"
+black = "^25.1.0"
+flake8 = "^7.3.0"
+pytest = "^8.4.1"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+# 아래 섹션은 black의 설정
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+# 아래 섹션은 flake8의 설정
+[tool.flake8]
+ignore = "E203, E501, W503"
+max-line-length = 88
+exclude = ".git,__pycache__,docs/,old/,build/,dist/"
