@@ -1,0 +1,23 @@
+name: Restrict develop-branch Merge
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        run: |
+          echo "Source branch: ${GITHUB_HEAD_REF}"
+          
+
+          if [[ "${GITHUB_HEAD_REF}" != "main" && \
+                  ! "${GITHUB_HEAD_REF}" =~ ^feature/ && \
+                  ! "${GITHUB_HEAD_REF}" =~ ^release/ && \
+                  ! "${GITHUB_HEAD_REF}" =~ ^hotfix/ ]]; then
+            echo "❌ develop에는 main, feature/*, release/*, hotfix/*만 병합 가능합니다."
+            exit 1
+          fi
