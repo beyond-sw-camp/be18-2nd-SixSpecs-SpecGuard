@@ -1,0 +1,21 @@
+# .github/workflows/restrict-main-merge.yml
+name: Restrict main merge
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check source branch
+        run: |
+          echo "Source branch: ${GITHUB_HEAD_REF}"
+          if [[ "${GITHUB_HEAD_REF}" != "develop" && \
+                ! "${GITHUB_HEAD_REF}" =~ ^hotfix/ && \
+                ! "${GITHUB_HEAD_REF}" =~ ^release/ ]]; then
+            echo "❌ main으로는 develop, hotfix/*, release/*만 병합 가능합니다."
+            exit 1
+          fi
