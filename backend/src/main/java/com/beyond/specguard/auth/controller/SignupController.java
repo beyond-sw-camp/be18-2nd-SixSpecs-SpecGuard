@@ -9,13 +9,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth/signup")
 @RequiredArgsConstructor
 public class SignupController {
 
     private final SignupService signupService;
 
-    @PostMapping("/signup")
+    @PostMapping("/user")
     /*
          회원가입 요청을 처리하는 메서드.
         1. 클라이언트가 보낸 HTTP 요청 Body(JSON)를 @RequestBody를 통해 SignupRequestDTO로 변환.
