@@ -1,11 +1,11 @@
-#크롤링 공통 설정(CONF), 코드블록 언어 정규화 테이블 등 상수만 선언
-# 공통 설정
+# 크롤링 공통 설정/상수
+
+UA = "SpecGuardBot/1.0 (+https://example.com)"
 CONF = {
-    "headers": {"User-Agent": "SpecGuardBot/1.0 (+https://example.com)"},
+    "headers": {"User-Agent": UA},
     "viewport": {"width": 1280, "height": 900},
     "list": {"max_scrolls": 150, "pause_sec": 1.0, "timeout_ms": 25000, "stagnant_rounds": 3},
     "post": {"timeout_ms": 20000, "hard_extra_sec": 4},
-    "dirs": {"snapshots": ".snapshots"},
 }
 
 # 코드 언어 정규화/화이트리스트/노이즈
