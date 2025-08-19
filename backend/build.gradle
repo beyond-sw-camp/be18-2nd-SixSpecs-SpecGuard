@@ -32,7 +32,15 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // --- JPA & MariaDB ---
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+
+    // --- Validation (회원가입 시 유효성 검사) ---
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
 }
+
 
 tasks.named('test') {
     useJUnitPlatform()
