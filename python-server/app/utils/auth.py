@@ -1,4 +1,3 @@
-# app/utils/auth.py
 import os
 from typing import Optional
 from fastapi import Header, HTTPException
