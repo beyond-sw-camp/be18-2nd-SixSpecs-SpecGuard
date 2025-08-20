@@ -37,6 +37,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword());
 
+            //
             return this.getAuthenticationManager().authenticate(authToken);
 
         } catch (IOException e) {

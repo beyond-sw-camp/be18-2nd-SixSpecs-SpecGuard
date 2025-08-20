@@ -48,7 +48,7 @@ public class SecurityConfig {
         this.customSuccessHandler = customSuccessHandler;
         this.customFailureHandler = customFailureHandler;
     }
-
+    //로그인 시도(LoginFilter)가 사용자 이름/비밀번호로 인증을 수행할 때 진짜 인증을 하는 핵심 컴포넌트
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
@@ -69,20 +69,23 @@ public class SecurityConfig {
 
         // 인가 규칙
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/signup/**", "/api/v1/auth/login").permitAll()
+                .requestMatchers(
+                        "/api/v1/auth/signup/**",
+                        "/api/v1/auth/login",
+                        "/api/v1/auth/token/refresh"
+                ).permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/**").hasAnyRole("APPLICANT", "ADMIN")  // 🔥 여기 수정
+                .requestMatchers("/api/**").hasAnyRole("APPLICANT", "ADMIN")
                 .anyRequest().authenticated()
         );
 
-
         // 인증/인가 실패 핸들러
         http.exceptionHandling(ex -> ex
-                .authenticationEntryPoint(new RestAuthenticationEntryPoint())
-                .accessDeniedHandler(new RestAccessDeniedHandler())
+                .authenticationEntryPoint(new RestAuthenticationEntryPoint())  // 401
+                .accessDeniedHandler(new RestAccessDeniedHandler())            // 403
         );
 
-        // JWT 인증 필터 등록 (UsernamePasswordAuthenticationFilter 전에 실행)
+        // JWT 인증 필터 (Access Token 검증)
         http.addFilterBefore(new JwtFilter(jwtUtil, userRepository), UsernamePasswordAuthenticationFilter.class);
 
         // 로그인 필터 등록 (폼 로그인 대신 동작)
@@ -93,6 +96,7 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 
     // 프론트엔드 연동을 위한 CORS 설정
     @Bean

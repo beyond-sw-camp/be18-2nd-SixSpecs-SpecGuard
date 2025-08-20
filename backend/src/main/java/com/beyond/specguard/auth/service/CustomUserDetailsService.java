@@ -22,6 +22,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
+        //자 이제 리턴을 했으니 이 객체는 스프링 시큐리티가 들고있는것
         return new CustomUserDetails(user);
     }
 }

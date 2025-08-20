@@ -2,10 +2,12 @@ package com.beyond.specguard.auth.filter;
 
 import com.beyond.specguard.auth.repository.UserRepository;
 import com.beyond.specguard.common.jwt.JwtUtil;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -33,7 +35,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String authorization = request.getHeader("Authorization");
 
-        // ✅ Authorization 헤더가 없거나 Bearer 로 시작하지 않으면 다음 필터로
+        // ✅ Authorization 헤더가 없거나 Bearer 로 시작하지 않으면 그냥 통과
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -42,17 +44,15 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = authorization.substring(7);
 
         try {
-            // ✅ 토큰 만료 확인
+            // ✅ 토큰 만료 여부
             if (jwtUtil.isExpired(token)) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
+                throw new ExpiredJwtException(null, null, "Access token expired");
             }
 
             // ✅ 카테고리 확인 (access 토큰만 허용)
             String category = jwtUtil.getCategory(token);
             if (!"access".equals(category)) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
+                throw new BadCredentialsException("Invalid token category");
             }
 
             // ✅ 사용자 정보 추출
@@ -61,8 +61,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
             // ✅ DB 사용자 존재 여부 확인
             if (!userRepository.existsByEmail(username)) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
+                throw new BadCredentialsException("User not found");
             }
 
             // ✅ 인증 객체 생성
@@ -76,8 +75,10 @@ public class JwtFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(auth);
 
         } catch (Exception e) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
+            // ❌ 여기서 응답 처리하지 않음
+            // Spring Security가 RestAuthenticationEntryPoint 를 통해 JSON 응답 반환하도록 위임
+            SecurityContextHolder.clearContext();
+            throw e; // 예외를 던져서 entryPoint 로 위임
         }
 
         // ✅ 다음 필터 실행
