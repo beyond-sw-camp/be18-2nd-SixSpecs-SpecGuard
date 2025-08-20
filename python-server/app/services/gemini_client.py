@@ -1,10 +1,10 @@
 # app/routes/resume.py
 from fastapi import APIRouter, HTTPException
 from app.schemas import TextSummaryRequest, SummaryResponse, ErrorResponse
-from app.services.gemini import GeminiClient   # ✅ gemini.py에서 불러오기
+from app.services.jaeminae_client import JaeminaeClient   # ✅ 네 클라이언트 불러오기
 
 router = APIRouter()
-client = GeminiClient()   # ✅ 인스턴스 생성
+client = JaeminaeClient()   # ✅ API 클라이언트 인스턴스 생성
 
 @router.post(
     "/resume-summary",
@@ -15,7 +15,7 @@ async def summarize_resume(request: TextSummaryRequest):
     if not request.text.strip():
         raise HTTPException(status_code=422, detail="빈 텍스트는 요약할 수 없습니다.")
 
-    # ✅ Gemini API 호출
+    # ✅ 요약 API 호출
     summary_text = await client.summarize(request.text)
 
     return SummaryResponse(summary=summary_text)
