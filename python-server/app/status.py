@@ -1,4 +1,4 @@
-# 서버 상태 확인하는 코드
+# 서버 상태 확인하는 코드 (서버야~ 살아있닝?)
 from fastapi import APIRouter
 
 router = APIRouter(tags=["status"])
