@@ -8,6 +8,7 @@ import com.beyond.specguard.auth.service.ReissueService;
 import com.beyond.specguard.auth.service.SignupService;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,10 +32,14 @@ public class AuthController {
 
     @PostMapping("/token/refresh")
     public ResponseEntity<ReissueResponseDTO> reissue(
-            @RequestBody RefreshRequestDTO request,
+            HttpServletRequest request,
             HttpServletResponse response
     ) {
-        ReissueResponseDTO dto = reissueService.reissue(request.getRefreshToken());
+        // ✅ 쿠키에서 refresh_token 꺼내기
+        String refreshToken = CookieUtil.getCookieValue(request, "refresh_token");
+
+        // ✅ Service 호출
+        ReissueResponseDTO dto = reissueService.reissue(refreshToken);
 
         // ✅ 새 Access Token → Authorization 헤더
         response.setHeader("Authorization", "Bearer " + dto.getAccessToken());
