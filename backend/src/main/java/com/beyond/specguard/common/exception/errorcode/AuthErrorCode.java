@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 public enum AuthErrorCode implements ErrorCode {
     // ✅ 회원가입 관련
     DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "DUPLICATE_EMAIL", "이미 등록된 이메일"),
-    DUPLICATE_COMPANY(HttpStatus.BAD_REQUEST, "DUPLICATE_COMPANY", "이미 등록된 사업자번호"), // ✅ 추가
+    DUPLICATE_COMPANY(HttpStatus.BAD_REQUEST, "DUPLICATE_COMPANY", "이미 등록된 사업자번호"),
     INVALID_EMAIL_FORMAT(HttpStatus.UNPROCESSABLE_ENTITY, "INVALID_EMAIL_FORMAT", "이메일 형식이 잘못됨"),
     WEAK_PASSWORD(HttpStatus.UNPROCESSABLE_ENTITY, "WEAK_PASSWORD", "비밀번호 보안 기준 미달"),
 
