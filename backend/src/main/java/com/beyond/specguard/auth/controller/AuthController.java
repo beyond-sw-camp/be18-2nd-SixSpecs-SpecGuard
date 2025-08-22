@@ -13,7 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+// api 명세서 수정이 필요합니다 지금 api경로 그대로 사용할껀지 하니면 수정 할껀지 고려해봐야 할 것 같습니다
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
