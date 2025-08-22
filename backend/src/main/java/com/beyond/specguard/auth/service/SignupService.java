@@ -11,6 +11,7 @@ import com.beyond.specguard.common.exception.errorcode.AuthErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +21,7 @@ public class SignupService {
     private final ClientUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Transactional
     public SignupResponseDTO signup(SignupRequestDTO request) {
 
         // 1. 사업자번호 중복 체크
