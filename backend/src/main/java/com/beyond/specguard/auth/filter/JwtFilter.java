@@ -1,6 +1,7 @@
 package com.beyond.specguard.auth.filter;
 
-import com.beyond.specguard.auth.repository.UserRepository;
+import com.beyond.specguard.auth.entity.ClientUser;
+import com.beyond.specguard.auth.repository.ClientUserRepository;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -20,11 +21,11 @@ import java.util.Collections;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final ClientUserRepository clientUserRepository;
 
-    public JwtFilter(JwtUtil jwtUtil, UserRepository userRepository) {
+    public JwtFilter(JwtUtil jwtUtil, ClientUserRepository clientUserRepository) {
         this.jwtUtil = jwtUtil;
-        this.userRepository = userRepository;
+        this.clientUserRepository = clientUserRepository;
     }
 
     @Override
@@ -44,7 +45,7 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = authorization.substring(7);
 
         try {
-            // ✅ 토큰 만료 여부
+            // ✅ 토큰 만료 여부 확인
             if (jwtUtil.isExpired(token)) {
                 throw new ExpiredJwtException(null, null, "Access token expired");
             }
@@ -56,19 +57,18 @@ public class JwtFilter extends OncePerRequestFilter {
             }
 
             // ✅ 사용자 정보 추출
-            String username = jwtUtil.getUsername(token);
+            String email = jwtUtil.getUsername(token);
             String role = jwtUtil.getRole(token);
 
             // ✅ DB 사용자 존재 여부 확인
-            if (!userRepository.existsByEmail(username)) {
-                throw new BadCredentialsException("User not found");
-            }
+            ClientUser user = clientUserRepository.findByEmail(email)
+                    .orElseThrow(() -> new BadCredentialsException("User not found"));
 
             // ✅ 인증 객체 생성
             Authentication auth = new UsernamePasswordAuthenticationToken(
-                    username,
+                    user.getEmail(),
                     null,
-                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
             );
 
             // ✅ SecurityContext 에 저장
@@ -76,7 +76,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
             // ❌ 여기서 응답 처리하지 않음
-            // Spring Security가 RestAuthenticationEntryPoint 를 통해 JSON 응답 반환하도록 위임
+            // Spring Security가 AuthenticationEntryPoint 를 통해 JSON 응답 반환하도록 위임
             SecurityContextHolder.clearContext();
             throw e; // 예외를 던져서 entryPoint 로 위임
         }

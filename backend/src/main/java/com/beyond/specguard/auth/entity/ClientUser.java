@@ -1,5 +1,6 @@
 package com.beyond.specguard.auth.entity;
 
+import com.beyond.specguard.auth.entity.ClientCompany;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -8,23 +9,21 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "applicant_user")
-@Getter
+@Table(name = "client_user")
+@Getter  // 꼭 추가!
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class UserEntity {
+public class ClientUser {
 
     @Id
-    @Column(columnDefinition = "CHAR(36)", nullable = false, updatable = false)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.UUID) // UUID → DB에 문자열(CHAR(36))로 저장됨
+    @Column(columnDefinition = "CHAR(36)")
+    private UUID id;
 
-    @PrePersist
-    public void generateId() {
-        if (this.id == null) {
-            this.id = UUID.randomUUID().toString();
-        }
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false)
+    private ClientCompany company;
 
     @Column(length = 100, nullable = false)
     private String name;
@@ -47,6 +46,6 @@ public class UserEntity {
     private LocalDateTime createdAt;
 
     public enum Role {
-        APPLICANT, ADMIN
+        OWNER, MANAGER, VIEWER
     }
 }

@@ -24,11 +24,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType("application/json;charset=UTF-8");
 
-        // ✅ 에러 응답 일관성 유지
-        ErrorResponse body = ErrorResponse.of(
-                AuthErrorCode.UNAUTHORIZED.getCode(),
-                AuthErrorCode.UNAUTHORIZED.getMessage()
-        );
+        ErrorResponse body = ErrorResponse.of(AuthErrorCode.ACCESS_DENIED);
 
         om.writeValue(response.getWriter(), body);
     }

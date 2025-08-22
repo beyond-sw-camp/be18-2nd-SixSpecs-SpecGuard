@@ -15,7 +15,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleCustomException(CustomException ex) {
         return ResponseEntity
                 .status(ex.getErrorCode().getStatus())
-                .body(ErrorResponse.of(ex.getErrorCode().getCode(), ex.getMessage()));
+                .body(ErrorResponse.of(ex.getErrorCode()));
     }
 
     // ✅ DTO 검증 실패 (ex: @Valid)
@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of(CommonErrorCode.INVALID_REQUEST.getCode(), message));
+                .body(ErrorResponse.of(CommonErrorCode.INVALID_REQUEST, message));
     }
 
     // ✅ 예상 못한 모든 예외
@@ -36,6 +36,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleException(Exception ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ErrorResponse.of(CommonErrorCode.UNEXPECTED_ERROR.getCode(), "예상치 못한 에러 발생"));
+                .body(ErrorResponse.of(CommonErrorCode.UNEXPECTED_ERROR));
     }
 }

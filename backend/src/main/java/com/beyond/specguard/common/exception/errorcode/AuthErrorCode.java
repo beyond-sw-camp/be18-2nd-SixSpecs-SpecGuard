@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 public enum AuthErrorCode implements ErrorCode {
     // ✅ 회원가입 관련
     DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "DUPLICATE_EMAIL", "이미 등록된 이메일"),
+    DUPLICATE_COMPANY(HttpStatus.BAD_REQUEST, "DUPLICATE_COMPANY", "이미 등록된 사업자번호"), // ✅ 추가
     INVALID_EMAIL_FORMAT(HttpStatus.UNPROCESSABLE_ENTITY, "INVALID_EMAIL_FORMAT", "이메일 형식이 잘못됨"),
     WEAK_PASSWORD(HttpStatus.UNPROCESSABLE_ENTITY, "WEAK_PASSWORD", "비밀번호 보안 기준 미달"),
 
@@ -17,7 +18,7 @@ public enum AuthErrorCode implements ErrorCode {
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN", "리프레시 토큰이 유효하지 않습니다"),
     REFRESH_TOKEN_EXPIRED(HttpStatus.FORBIDDEN, "REFRESH_TOKEN_EXPIRED", "리프레시 토큰이 만료되었습니다"),
 
-    // ✅ 인증/인가 전역 실패 (추가)
+    // ✅ 인증/인가 전역 실패
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "인증이 필요합니다"),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "접근 권한이 없습니다");
 

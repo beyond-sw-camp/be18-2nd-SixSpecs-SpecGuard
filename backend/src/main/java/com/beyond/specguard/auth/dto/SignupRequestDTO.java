@@ -13,6 +13,37 @@ import lombok.*;
 @Builder
 public class SignupRequestDTO {
 
+    // --- 회사 정보 ---
+    @NotBlank(message = "회사 이름은 필수 입력 값입니다.")
+    @Size(max = 50, message = "회사 이름은 최대 50자까지 가능합니다.")
+    private String companyName;
+
+    @NotBlank(message = "사업자번호는 필수 입력 값입니다.")
+    @Size(max = 12, message = "사업자번호는 최대 12자까지 가능합니다.")
+    private String businessNumber;
+
+    @NotBlank(message = "회사 URL 슬러그는 필수 입력 값입니다.")
+    @Size(max = 64, message = "슬러그는 최대 64자까지 가능합니다.")
+    @Pattern(
+            regexp = "^[a-z0-9-]+$",
+            message = "슬러그는 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다."
+    )
+    private String slug;
+
+    @Size(max = 64, message = "직책은 최대 64자까지 가능합니다.")
+    private String managerPosition;
+
+    @Size(max = 30, message = "담당자 이름은 최대 30자까지 가능합니다.")
+    private String managerName;
+
+    @Email(message = "이메일 형식이 올바르지 않습니다.")
+    @Size(max = 100, message = "담당자 이메일은 최대 100자까지 가능합니다.")
+    private String contactEmail;
+
+    @Size(max = 100, message = "연락처는 최대 100자까지 가능합니다.")
+    private String contactMobile;
+
+    // --- 최초 유저(마스터) 정보 ---
     @NotBlank(message = "이름은 필수 입력 값입니다.")
     @Size(max = 100, message = "이름은 최대 100자까지 가능합니다.")
     private String name;

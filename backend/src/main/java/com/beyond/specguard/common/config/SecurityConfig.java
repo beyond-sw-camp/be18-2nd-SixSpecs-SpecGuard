@@ -5,7 +5,7 @@ import com.beyond.specguard.auth.filter.LoginFilter;
 import com.beyond.specguard.auth.handler.CustomFailureHandler;
 import com.beyond.specguard.auth.handler.CustomSuccessHandler;
 import com.beyond.specguard.auth.repository.RefreshRepository;
-import com.beyond.specguard.auth.repository.UserRepository;
+import com.beyond.specguard.auth.repository.ClientUserRepository;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
@@ -31,24 +31,25 @@ public class SecurityConfig {
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JwtUtil jwtUtil;
     private final RefreshRepository refreshRepository;
-    private final UserRepository userRepository;
+    private final ClientUserRepository clientUserRepository;
     private final CustomSuccessHandler customSuccessHandler;
     private final CustomFailureHandler customFailureHandler;
 
     public SecurityConfig(AuthenticationConfiguration authenticationConfiguration,
                           JwtUtil jwtUtil,
                           RefreshRepository refreshRepository,
-                          UserRepository userRepository,
+                          ClientUserRepository clientUserRepository,
                           CustomSuccessHandler customSuccessHandler,
                           CustomFailureHandler customFailureHandler) {
         this.authenticationConfiguration = authenticationConfiguration;
         this.jwtUtil = jwtUtil;
         this.refreshRepository = refreshRepository;
-        this.userRepository = userRepository;
+        this.clientUserRepository = clientUserRepository;
         this.customSuccessHandler = customSuccessHandler;
         this.customFailureHandler = customFailureHandler;
     }
-    //로그인 시도(LoginFilter)가 사용자 이름/비밀번호로 인증을 수행할 때 진짜 인증을 하는 핵심 컴포넌트
+
+    // 로그인 시도 시 인증을 수행할 AuthenticationManager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
@@ -75,7 +76,7 @@ public class SecurityConfig {
                         "/api/v1/auth/token/refresh"
                 ).permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/**").hasAnyRole("APPLICANT", "ADMIN")
+                .requestMatchers("/api/**").hasAnyRole("OWNER", "MANAGER", "VIEWER") // 권한 반영
                 .anyRequest().authenticated()
         );
 
@@ -86,7 +87,7 @@ public class SecurityConfig {
         );
 
         // JWT 인증 필터 (Access Token 검증)
-        http.addFilterBefore(new JwtFilter(jwtUtil, userRepository), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new JwtFilter(jwtUtil, clientUserRepository), UsernamePasswordAuthenticationFilter.class);
 
         // 로그인 필터 등록 (폼 로그인 대신 동작)
         LoginFilter loginFilter = new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, refreshRepository);
@@ -96,7 +97,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
 
     // 프론트엔드 연동을 위한 CORS 설정
     @Bean

@@ -24,11 +24,8 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
         response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setContentType("application/json;charset=UTF-8");
 
-        // ✅ 에러 응답 일관성 유지
-        ErrorResponse body = ErrorResponse.of(
-                AuthErrorCode.ACCESS_DENIED.getCode(),
-                AuthErrorCode.ACCESS_DENIED.getMessage()
-        );
+        ErrorResponse body = ErrorResponse.of(AuthErrorCode.ACCESS_DENIED);
+
 
         om.writeValue(response.getWriter(), body);
     }
