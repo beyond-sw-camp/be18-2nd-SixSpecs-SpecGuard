@@ -29,7 +29,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final LogoutService logoutService;
 
-    @PostMapping("/signup/user")
+    @PostMapping("/signup/company")
     public ResponseEntity<SignupResponseDTO> signup(@Valid @RequestBody SignupRequestDTO request) {
         SignupResponseDTO response = signupService.signup(request);
         return ResponseEntity.ok(response);

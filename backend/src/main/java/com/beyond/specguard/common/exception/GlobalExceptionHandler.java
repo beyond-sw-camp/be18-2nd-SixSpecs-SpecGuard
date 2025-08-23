@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ✅ 커스텀 예외 처리
+    // ✅ 커스텀 예외 처리 (서비스 레벨에서 던진 CustomException)
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ErrorResponse> handleCustomException(CustomException ex) {
         return ResponseEntity
@@ -21,17 +21,23 @@ public class GlobalExceptionHandler {
     // ✅ DTO 검증 실패 (ex: @Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+        // 필드 단위 오류 메시지 추출
+        String errorMessage = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getDefaultMessage()) // 👉 "이메일 형식이 올바르지 않습니다."
                 .findFirst()
-                .orElse("잘못된 요청");
+                .orElse("잘못된 요청입니다.");
 
+        // CommonErrorCode.INVALID_REQUEST 사용
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of(CommonErrorCode.INVALID_REQUEST, message));
+                .body(new ErrorResponse(
+                        HttpStatus.BAD_REQUEST.value(),
+                        CommonErrorCode.INVALID_REQUEST.getCode(),  // "INVALID_REQUEST"
+                        errorMessage
+                ));
     }
 
-    // ✅ 예상 못한 모든 예외
+    // ✅ 예상 못한 모든 예외 (서버 내부 오류)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex) {
         return ResponseEntity

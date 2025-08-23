@@ -45,7 +45,8 @@ dependencies {
 
     //oauth2 의존성
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-
+    //sendgrid
+    implementation("com.sendgrid:sendgrid-java:4.10.3")
 
 }
 
