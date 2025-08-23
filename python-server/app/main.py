@@ -1,11 +1,15 @@
 # app/main.py
 import platform, sys
 from fastapi import FastAPI, Request
+from app.core.errors import install_error_handlers
 from app.routers.velog import router as velog_router
 
-app = FastAPI(title="SpecGuard Velog API", version="1.2.0")
+app = FastAPI(title="SpecGuard Velog API", version="1.3.0")
 
-# JSON UTF-8 강제 
+# 전역 에러 핸들러 설치
+install_error_handlers(app)
+
+# JSON UTF-8 강제
 @app.middleware("http")
 async def ensure_utf8_json(request: Request, call_next):
     resp = await call_next(request)
@@ -14,7 +18,7 @@ async def ensure_utf8_json(request: Request, call_next):
         resp.headers["content-type"] = "application/json; charset=utf-8"
     return resp
 
-# 라우터 등록 
+# 라우터 등록
 app.include_router(velog_router)
 
 @app.get("/")
@@ -22,5 +26,5 @@ async def root():
     return {
         "status": "ok",
         "env": {"python": sys.version.split()[0], "os": platform.platform()},
-        "security": "admin-token header required for protected endpoints",
+        "security": "JWT bearer required on protected endpoints",
     }

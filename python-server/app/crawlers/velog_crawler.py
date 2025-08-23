@@ -1,12 +1,16 @@
 # app/crawlers/velog_crawler.py
 from typing import List, Tuple, Optional, Set
 from urllib.parse import urljoin
-import re, hashlib, asyncio, time
+import re, asyncio, time, os, random
 
 from playwright.async_api import async_playwright, TimeoutError as PWTimeout
 
 from . import CONF, LANG_NORMALIZE, WHITELIST, NOISE, UA
+from app.utils.text import mask_pii, content_hash
 
+# 랜덤 딜레이(트래픽에 따라 env로 조정)
+DELAY_LOW = float(os.environ.get("CRAWL_DELAY_LOW_SEC", "0.8"))
+DELAY_HIGH = float(os.environ.get("CRAWL_DELAY_HIGH_SEC", "2.0"))
 
 async def _block_heavy_assets(ctx):
     async def _route(route):
@@ -17,6 +21,20 @@ async def _block_heavy_assets(ctx):
             await route.continue_()
     await ctx.route("**/*", _route)
 
+async def _safe_goto(page, url, retries=2, wait="domcontentloaded"):
+    last = None
+    for _ in range(retries + 1):
+        try:
+            await page.goto(url, wait_until=wait)
+            try:
+                await page.wait_for_load_state("networkidle", timeout=5000)
+            except PWTimeout:
+                pass
+            return
+        except Exception as e:
+            last = e
+            await asyncio.sleep(random.uniform(DELAY_LOW, DELAY_HIGH))
+    raise last
 
 # 유저 글 목록(링크들) 수집
 async def render_list_with_playwright(
@@ -38,11 +56,7 @@ async def render_list_with_playwright(
         page.set_default_timeout(timeout_ms)
         page.set_default_navigation_timeout(timeout_ms)
 
-        await page.goto(base, wait_until="domcontentloaded")
-        try:
-            await page.wait_for_load_state("networkidle", timeout=6000)
-        except PWTimeout:
-            pass
+        await _safe_goto(page, base)
 
         async def collect_links() -> Set[str]:
             anchors = await page.eval_on_selector_all(
@@ -72,17 +86,12 @@ async def render_list_with_playwright(
                 break
 
             await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await asyncio.sleep(pause_sec)
-            try:
-                await page.wait_for_load_state("networkidle", timeout=3000)
-            except PWTimeout:
-                pass
+            await asyncio.sleep(random.uniform(DELAY_LOW, DELAY_HIGH))
 
         await browser.close()
 
     hrefs = {h for h in hrefs if f"/@{handle}/" in h}
     return sorted(hrefs)
-
 
 # 게시글 상세 수집
 async def render_post_with_playwright(
@@ -102,11 +111,7 @@ async def render_post_with_playwright(
         page.set_default_timeout(timeout_ms)
         page.set_default_navigation_timeout(timeout_ms)
 
-        await page.goto(url, wait_until="domcontentloaded")
-        try:
-            await page.wait_for_load_state("networkidle", timeout=5000)
-        except PWTimeout:
-            pass
+        await _safe_goto(page, url)
 
         # 제목
         title = ""
@@ -209,8 +214,7 @@ async def render_post_with_playwright(
         await browser.close()
         return title or "", text or "", code_langs, tags, published
 
-
-# 전체 파이프라인(선택)
+# 전체 파이프라인
 async def crawl_all_posts(
     handle: str,
     max_scrolls: int = CONF["list"]["max_scrolls"],
@@ -227,6 +231,7 @@ async def crawl_all_posts(
             if text:
                 text = re.sub(r"(로그인|팔로우|목록 보기)\s*", " ", text)
                 text = re.sub(r"\s{2,}", " ", text).strip()
+                text = mask_pii(text)
 
             posts.append({
                 "url": url,
@@ -239,12 +244,12 @@ async def crawl_all_posts(
                 "likes": 0,
                 "comments": 0,
                 "series": None,
-                "content_hash": hashlib.md5(url.encode()).hexdigest(),
+                "content_hash": content_hash(text or "", fallback=url),
             })
 
             if i % 10 == 0:
                 print(f"[INFO] {i}/{len(links)} 수집 중...")
-            await asyncio.sleep(per_post_delay)
+            await asyncio.sleep(random.uniform(DELAY_LOW, DELAY_HIGH))
         except Exception as ex:
             print("skip:", url, ex)
 
