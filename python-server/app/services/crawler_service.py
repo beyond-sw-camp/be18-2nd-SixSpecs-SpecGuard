@@ -43,9 +43,21 @@ async def list_posts(username: str, page: int, limit: int):
 # 상세
 async def post_detail(url: str):
     title, text, langs, tags, published = await vc.render_post_with_playwright(url)
+
+    # 👉 크롤/파싱 실패로 판단(정책: 제목/본문 모두 없음)
+    if not title and not text:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "CRAWLING_FAILED",
+                "message": "Velog 구조 변경 또는 예외로 인해 게시글을 파싱할 수 없습니다"
+            },
+        )
+
     MAX_TEXT_LEN = _env_int("MAX_TEXT_LEN", "200000")
     if text and len(text) > MAX_TEXT_LEN:
         text = text[:MAX_TEXT_LEN]
+
     return {
         "title": title,
         "url": url,
@@ -58,58 +70,47 @@ async def post_detail(url: str):
 
 # NLP로 전체/일부 전송
 async def crawl_and_forward(username: str, nlp_url: str, body_max_posts: Optional[int]):
-    data = await vc.crawl_all_posts(username)
+    data = await vc.crawl_all_posts(username)  # (limit_posts 쓰는 버전이면 적용)
 
-    # 요청에 max_posts가 오면 그 수만큼만 전송
-    max_posts = body_max_posts or 0
-    if max_posts > 0:
-        data = {**data, "posts": data["posts"][:max_posts]}
+    if not data.get("posts"):
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "CRAWLING_FAILED",
+                "message": "전달할 게시글이 없습니다. 사용자 또는 Velog 구조를 확인하세요"
+            },
+        )
 
     nlp_resp = await send_to_nlp(nlp_url, data)
     return len(data["posts"]), nlp_resp
 
 
-# 저장 서버로 전송 (ERD: resume_link)
-async def crawl_and_store(
-    username: str, resume_id: str, storage_url: str, body_max_posts: Optional[int]
-) -> Dict[str, Any]:
-    # 1) 전체 크롤링
-    data = await vc.crawl_all_posts(username)
+async def crawl_and_store(username: str, resume_id: str, storage_url: str, body_max_posts: Optional[int]):
+    data = await vc.crawl_all_posts(username)  # (limit_posts 쓰는 버전이면 적용)
 
-    # 2) max_posts 적용 (양수일 때만)
-    max_posts = body_max_posts or 0
-    if max_posts > 0:
-        data = {**data, "posts": data["posts"][:max_posts]}
 
-    # 3) resume_link 형태로 변환
-    records: List[Dict[str, Any]] = []
-    for p in data["posts"]:
-        records.append(
-            {
-                "url": p["url"],
-                "link_type": "velog",
-                "contents": {
-                    "title": p["title"],
-                    "text": p["text"],
-                    "tags": p["tags"],
-                    "code_langs": p["code_langs"],
-                    "published_at": p["published_at"],
-                    "content_hash": p["content_hash"],
-                    "source": data["source"],
-                },
-                "resume_id": resume_id,
-            }
-        )
-    payload = {"resume_id": resume_id, "records": records}
-
-    # 4) 저장 서버 호출
-    try:
-        storage_resp = await send_to_storage(storage_url, payload)
-    except Exception as e:
-        # 저장 서버가 4xx/5xx 또는 네트워크 오류일 때: 502로 래핑
+    if not data.get("posts"):
         raise HTTPException(
-            status_code=502,
-            detail={"error": "STORAGE_SERVER_ERROR", "message": str(e)},
+            status_code=500,
+            detail={
+                "error": "CRAWLING_FAILED",
+                "message": "수집된 게시글이 없습니다. 핸들이 올바른지 또는 Velog 구조 변경 여부를 확인하세요"
+            },
         )
 
-    return {"count": len(records), "storage_response": storage_resp}
+    payload = [
+        {
+            "url": p["url"],
+            "link_type": "velog",
+            "contents": {
+                "title": p["title"], "text": p["text"], "tags": p["tags"],
+                "code_langs": p["code_langs"], "published_at": p["published_at"],
+                "content_hash": p["content_hash"], "source": "velog",
+            },
+            "resume_id": resume_id,
+        }
+        for p in data["posts"]
+    ]
+
+    storage_resp = await send_to_storage(storage_url, payload)
+    return {"count": len(payload), "storage_response": storage_resp}
