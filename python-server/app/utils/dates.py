@@ -67,7 +67,7 @@ def normalize_created_at(
         weeks = int(m.group(1))
         return (base.date() - timedelta(days=7 * weeks)).strftime("%Y-%m-%d")
 
-    # 4) 상대 시간/분 → 실제 시각에서 빼고 날짜 취득(자정 경계 보정)
+    # 4) 상대 시간/분 -> 실제 시각에서 빼고 날짜 취득(자정 경계 보정)
     m = _HOURS_AGO.search(s)
     if m:
         hours = int(m.group(1))

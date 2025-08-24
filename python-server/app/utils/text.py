@@ -1,4 +1,3 @@
-# app/utils/text.py
 import re
 import hashlib
 

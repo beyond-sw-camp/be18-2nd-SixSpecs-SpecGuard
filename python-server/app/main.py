@@ -1,4 +1,3 @@
-# app/main.py
 import platform, sys
 from fastapi import FastAPI, Request
 from app.core.errors import install_error_handlers
