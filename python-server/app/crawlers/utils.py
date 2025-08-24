@@ -1,4 +1,4 @@
-# 크롤링 유틸(선택 확장 지점). 지금은 최소 구현.
+# 크롤링 유틸(선택 확장 지점).
 from contextlib import contextmanager
 from typing import Any
 import time

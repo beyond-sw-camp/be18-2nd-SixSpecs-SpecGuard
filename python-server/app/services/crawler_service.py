@@ -44,7 +44,7 @@ async def list_posts(username: str, page: int, limit: int):
 async def post_detail(url: str):
     title, text, langs, tags, published = await vc.render_post_with_playwright(url)
 
-    # 👉 크롤/파싱 실패로 판단(정책: 제목/본문 모두 없음)
+    # 크롤/파싱 실패로 판단(정책: 제목/본문 모두 없음)
     if not title and not text:
         raise HTTPException(
             status_code=500,
@@ -70,7 +70,7 @@ async def post_detail(url: str):
 
 # NLP로 전체/일부 전송
 async def crawl_and_forward(username: str, nlp_url: str, body_max_posts: Optional[int]):
-    data = await vc.crawl_all_posts(username)  # (limit_posts 쓰는 버전이면 적용)
+    data = await vc.crawl_all_posts(username) 
 
     if not data.get("posts"):
         raise HTTPException(
