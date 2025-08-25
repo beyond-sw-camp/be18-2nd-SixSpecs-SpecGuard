@@ -1,7 +1,6 @@
 package com.beyond.specguard.auth.controller;
 
 import com.beyond.specguard.auth.dto.ReissueResponseDTO;
-import com.beyond.specguard.auth.dto.RefreshRequestDTO;
 import com.beyond.specguard.auth.dto.SignupRequestDTO;
 import com.beyond.specguard.auth.dto.SignupResponseDTO;
 import com.beyond.specguard.auth.service.LogoutService;
