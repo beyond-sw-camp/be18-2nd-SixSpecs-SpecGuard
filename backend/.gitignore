@@ -35,3 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# application.properties는 깃에 올리지 않음
+/src/main/resources/application.properties
+/src/main/resources/application-*.properties
