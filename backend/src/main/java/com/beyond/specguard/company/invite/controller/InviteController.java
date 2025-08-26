@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 //지금은 restcontroller로 두고 뷰 반환이 될때
 @RestController
-@RequestMapping("/api/v1/invite")
+@RequestMapping("/api/v1/company/{slug}/invite")
 @RequiredArgsConstructor
 public class InviteController {
 
@@ -22,10 +22,11 @@ public class InviteController {
     // ✅ 초대 생성 (OWNER만 자기 회사 직원 초대 가능)
     @PostMapping
     public ResponseEntity<InviteResponseDTO> sendInvite(
-            @AuthenticationPrincipal ClientUser currentUser,  // 현재 로그인 유저
+            @PathVariable String slug,
+            @AuthenticationPrincipal com.beyond.specguard.auth.service.CustomUserDetails currentUser,
             @RequestBody @Validated InviteRequestDTO request
-    ){
-        InviteResponseDTO response = inviteService.sendInvite(request, currentUser);
+    ) {
+        InviteResponseDTO response = inviteService.sendInvite(slug, request, currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

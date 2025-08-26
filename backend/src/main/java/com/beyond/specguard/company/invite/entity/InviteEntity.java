@@ -1,6 +1,7 @@
 package com.beyond.specguard.company.invite.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -26,8 +27,8 @@ public class InviteEntity {
     @Column(nullable = false, length = 100)
     private String email;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private InviteRole role; // OWNER / MANAGER / VIEWER
 
     @Column(name = "invite_token", nullable = false, length = 255, unique = true)

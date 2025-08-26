@@ -12,11 +12,8 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class InviteRequestDTO {
-    @NotBlank(message = "권한은 필수입니다.")
+    @NotNull(message = "역할(role)은 필수입니다.")
     private InviteEntity.InviteRole role;
-
-    @NotBlank(message = "회사 ID는 필수입니다.")
-    private String companyId;
 
     @Email
     @NotBlank(message = "이메일은 필수입니다.")
