@@ -2,7 +2,10 @@ package com.beyond.specguard.auth.repository;
 
 import com.beyond.specguard.auth.entity.ClientUser;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,4 +22,12 @@ public interface ClientUserRepository extends JpaRepository<ClientUser, UUID> {
 
     // 회사별 유저 조회
     Optional<ClientUser> findByEmailAndCompany_Id(String email, UUID companyId);
+
+    //slug 기반 조회 추가
+    Optional<ClientUser> findByEmailAndCompany_Slug(String email, String slug);
+    //전체 slug
+    List<ClientUser> findAllByCompany_Slug(String slug);
+    //join fetch로 company까지 로딩 (로그인 시 사용)
+    @Query("SELECT u FROM ClientUser u JOIN FETCH u.company WHERE u.email = :email")
+    Optional<ClientUser> findByEmailWithCompany(@Param("email") String email);
 }

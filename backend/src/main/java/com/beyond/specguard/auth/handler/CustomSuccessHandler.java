@@ -32,10 +32,11 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         String email = userDetails.getUsername();
         String role = userDetails.getUser().getRole().name();
+        String companySlug = userDetails.getUser().getCompany().getSlug();
 
         // ✅ 토큰 생성 (JwtUtil public 메서드 사용)
-        String access = jwtUtil.createAccessToken(email, role);
-        String refresh = jwtUtil.createRefreshToken(email, role);
+        String access = jwtUtil.createAccessToken(email, role, companySlug);
+        String refresh = jwtUtil.createRefreshToken(email, role, companySlug);
 
         // ✅ Refresh 저장 (DB) → JwtUtil에서 추출한 만료일 그대로 반영
         Date refreshExpiration = jwtUtil.getExpiration(refresh);

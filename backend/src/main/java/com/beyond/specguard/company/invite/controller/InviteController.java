@@ -1,30 +1,38 @@
 package com.beyond.specguard.company.invite.controller;
 
+import com.beyond.specguard.auth.entity.ClientUser;
 import com.beyond.specguard.company.invite.dto.InviteRequestDTO;
 import com.beyond.specguard.company.invite.dto.InviteResponseDTO;
 import com.beyond.specguard.company.invite.service.InviteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-//지금은 restcontroller로 두고 뷰 반환이 될때  controller로 바꾸자 까먹지말고
+//지금은 restcontroller로 두고 뷰 반환이 될때
 @RestController
 @RequestMapping("/api/v1/invite")
 @RequiredArgsConstructor
-
 public class InviteController {
+
     private final InviteService inviteService;
 
+    // ✅ 초대 생성 (OWNER만 자기 회사 직원 초대 가능)
     @PostMapping
-    public ResponseEntity<InviteResponseDTO> sendInvite(@RequestBody @Validated InviteRequestDTO request){
-        InviteResponseDTO response = inviteService.sendInvite(request);
+    public ResponseEntity<InviteResponseDTO> sendInvite(
+            @AuthenticationPrincipal ClientUser currentUser,  // 현재 로그인 유저
+            @RequestBody @Validated InviteRequestDTO request
+    ){
+        InviteResponseDTO response = inviteService.sendInvite(request, currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+//    // ✅ 초대 수락 (로그인 안 한 사용자도 접근 가능)
+//    @GetMapping("/accept")
+//    public ResponseEntity<String> acceptInvite(@RequestParam String token){
+//        inviteService.acceptInvite(token);
+//        return ResponseEntity.ok("초대가 수락되었습니다.");
+//    }
 }

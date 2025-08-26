@@ -1,7 +1,9 @@
 package com.beyond.specguard.auth.service;
 
 import com.beyond.specguard.auth.dto.ReissueResponseDTO;
+import com.beyond.specguard.auth.entity.ClientUser;
 import com.beyond.specguard.auth.entity.RefreshEntity;
+import com.beyond.specguard.auth.repository.ClientUserRepository;
 import com.beyond.specguard.auth.repository.RefreshRepository;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.AuthErrorCode;
@@ -21,6 +23,7 @@ public class ReissueService {
 
     private final JwtUtil jwtUtil;
     private final RefreshRepository refreshRepository;
+    private final ClientUserRepository userRepository; // ✅ 추가
 
     @Transactional
     public ReissueResponseDTO reissue(String refreshToken) {
@@ -44,12 +47,20 @@ public class ReissueService {
             throw new CustomException(AuthErrorCode.INVALID_REFRESH_TOKEN);
         }
 
+        // ✅ 토큰에서 username/role 꺼내기
         String username = jwtUtil.getUsername(refreshToken);
         String role = jwtUtil.getRole(refreshToken);
 
-        String newAccess = jwtUtil.createAccessToken(username, role);
-        String newRefresh = jwtUtil.createRefreshToken(username, role);
+        // ✅ DB에서 유저 다시 조회 → slug 추출
+        ClientUser user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
+        String companySlug = user.getCompany().getSlug();
 
+        // ✅ 새로운 토큰 생성 (slug 포함)
+        String newAccess = jwtUtil.createAccessToken(username, role, companySlug);
+        String newRefresh = jwtUtil.createRefreshToken(username, role, companySlug);
+
+        // ✅ 기존 refresh 제거 후 새 refresh 저장
         refreshRepository.deleteByRefresh(refreshToken);
         saveRefreshEntity(username, newRefresh);
 

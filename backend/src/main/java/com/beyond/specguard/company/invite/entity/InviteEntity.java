@@ -26,14 +26,19 @@ public class InviteEntity {
     @Column(nullable = false, length = 100)
     private String email;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String role; // OWNER / MANAGER / VIEWER
+    private InviteRole role; // OWNER / MANAGER / VIEWER
 
-    @Column(name = "invite_token", nullable = false, length = 255)
+    @Column(name = "invite_token", nullable = false, length = 255, unique = true)
     private String inviteToken;
 
-    @Column(name = "is_used", nullable = false)
-    private boolean isUsed = false;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private InviteStatus status;
+
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -47,5 +52,23 @@ public class InviteEntity {
         if (this.inviteToken == null) {
             this.inviteToken = UUID.randomUUID().toString();
         }
+        if (this.expiresAt == null) {
+            this.expiresAt = LocalDateTime.now().plusDays(7); // 기본 7일 유효
+        }
+        if (this.status == null) {
+            this.status = InviteStatus.PENDING;
+        }
+    }
+
+    public enum InviteRole {
+        OWNER,
+        MANAGER,
+        VIEWER
+    }
+
+    public enum InviteStatus {
+        PENDING,   // 초대 발송 후 아직 수락 안함
+        ACCEPTED,  // 수락 완료
+        EXPIRED    // 만료됨
     }
 }

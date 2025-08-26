@@ -37,11 +37,16 @@ public class SignupService {
             throw new CustomException(AuthErrorCode.DUPLICATE_EMAIL);
         }
 
+        // ✅ 슬러그 중복 체크
+        if (companyRepository.existsBySlug(companyReq.getSlug())) {
+            throw new CustomException(AuthErrorCode.DUPLICATE_SLUG);
+        }
+
         // ✅ 회사 생성
         ClientCompany company = ClientCompany.builder()
                 .name(companyReq.getName())
                 .businessNumber(companyReq.getBusinessNumber())
-                .slug(companyReq.getSlug())
+                .slug(companyReq.getSlug())   // 클라이언트 입력값 그대로 사용
                 .managerPosition(companyReq.getManagerPosition())
                 .managerName(companyReq.getManagerName())
                 .contactEmail(companyReq.getContactEmail())
@@ -71,11 +76,9 @@ public class SignupService {
                         .email(savedUser.getEmail())
                         .phone(savedUser.getPhone())
                         .role(savedUser.getRole().name())
-                        .createdAt(
-                                savedUser.getCreatedAt() != null
-                                        ? savedUser.getCreatedAt().toString()
-                                        : java.time.LocalDateTime.now().toString()
-                        )
+                        .createdAt(savedUser.getCreatedAt() != null
+                                ? savedUser.getCreatedAt().toString()
+                                : java.time.LocalDateTime.now().toString())
                         .build())
                 .company(SignupResponseDTO.CompanyDTO.builder()
                         .id(company.getId().toString())

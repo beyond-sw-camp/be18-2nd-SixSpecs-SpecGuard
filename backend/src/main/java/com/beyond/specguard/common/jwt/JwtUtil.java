@@ -26,19 +26,20 @@ public class JwtUtil {
     }
 
     // ================== 토큰 생성 ==================
-    public String createAccessToken(String username, String role) {
-        return createJwt("access", username, role, ACCESS_TTL);
+    public String createAccessToken(String username, String role, String companySlug) {
+        return createJwt("access", username, role, companySlug, ACCESS_TTL);
     }
 
-    public String createRefreshToken(String username, String role) {
-        return createJwt("refresh", username, role, REFRESH_TTL);
+    public String createRefreshToken(String username, String role, String companySlug) {
+        return createJwt("refresh", username, role, companySlug, REFRESH_TTL);
     }
 
-    public String createJwt(String category, String username, String role, long expiredMs) {
+    private String createJwt(String category, String username, String role, String companySlug, long expiredMs) {
         return Jwts.builder()
                 .claim("category", category)
                 .claim("username", username)
                 .claim("role", role)
+                .claim("companySlug", companySlug) // ✅ 슬러그 claim 추가
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiredMs))
                 .signWith(secretKey)
@@ -71,6 +72,15 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload()
                 .get("category", String.class);
+    }
+
+    public String getCompanySlug(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("companySlug", String.class);
     }
 
     public boolean isExpired(String token) {

@@ -48,7 +48,7 @@ public class SendGridService {
             request.setBody(mail.build());
             Response response = sg.api(request);
 
-            System.out.println("✅ SendGrid Response Status: " + response.getStatusCode());
+            System.out.println(" SendGrid Response Status: " + response.getStatusCode());
         } catch (IOException ex) {
             throw new RuntimeException("이메일 발송 중 오류 발생", ex);
         }

@@ -1,5 +1,6 @@
 package com.beyond.specguard.auth.service;
 
+import com.beyond.specguard.auth.entity.ClientCompany;
 import com.beyond.specguard.auth.entity.ClientUser;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -20,9 +21,18 @@ public class CustomUserDetails implements UserDetails {
         return user.getId().toString(); // UUID → String 변환
     }
 
+    // ✅ 유저 엔티티 접근
+    public ClientUser getUser() {
+        return user;
+    }
+
+    // ✅ 회사 엔티티 바로 접근 (헬퍼 메서드)
+    public ClientCompany getCompany() {
+        return user.getCompany();
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Spring Security 권한은 "ROLE_" prefix 필수
         return List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
     }
 
@@ -33,7 +43,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        // 로그인은 email 기반
         return user.getEmail();
     }
 
@@ -55,10 +64,5 @@ public class CustomUserDetails implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
-    }
-
-    // 👉 필요 시 서비스 계층에서 ClientUser 전체를 꺼낼 수 있도록 getter 추가
-    public ClientUser getUser() {
-        return user;
     }
 }

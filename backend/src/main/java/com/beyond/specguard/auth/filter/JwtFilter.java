@@ -2,6 +2,7 @@ package com.beyond.specguard.auth.filter;
 
 import com.beyond.specguard.auth.entity.ClientUser;
 import com.beyond.specguard.auth.repository.ClientUserRepository;
+import com.beyond.specguard.auth.service.CustomUserDetails;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -60,16 +61,21 @@ public class JwtFilter extends OncePerRequestFilter {
             String email = jwtUtil.getUsername(token);
             String role = jwtUtil.getRole(token);
 
-            // ✅ DB 사용자 존재 여부 확인
-            ClientUser user = clientUserRepository.findByEmail(email)
+            ClientUser user = clientUserRepository.findByEmailWithCompany(email)
                     .orElseThrow(() -> new BadCredentialsException("User not found"));
 
-            // ✅ 인증 객체 생성
+            // ✅ CustomUserDetails 생성
+            CustomUserDetails userDetails = new CustomUserDetails(user);
+
+            // ✅ 인증 객체 생성 (principal = CustomUserDetails)
             Authentication auth = new UsernamePasswordAuthenticationToken(
-                    user.getEmail(),
+                    userDetails, // ✅ 이제 principal 은 CustomUserDetails
                     null,
-                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                    userDetails.getAuthorities()
             );
+
+// ✅ SecurityContext 에 저장
+            SecurityContextHolder.getContext().setAuthentication(auth);
 
             // ✅ SecurityContext 에 저장
             SecurityContextHolder.getContext().setAuthentication(auth);

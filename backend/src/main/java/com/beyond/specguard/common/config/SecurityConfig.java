@@ -78,6 +78,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/**").hasAnyRole("OWNER", "MANAGER", "VIEWER") // 권한 반영
+                .requestMatchers("/api/v1/invite/**").hasRole("OWNER")
                 .anyRequest().authenticated()
         );
 
