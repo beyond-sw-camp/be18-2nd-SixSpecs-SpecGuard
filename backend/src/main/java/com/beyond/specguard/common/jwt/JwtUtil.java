@@ -14,9 +14,10 @@ public class JwtUtil {
 
     private final SecretKey secretKey;
 
-    // ✅ TTL 상수화 (15분 access / 14일 refresh)
+    // ✅ TTL (밀리초 단위)
     private static final long ACCESS_TTL = 15 * 60 * 1000L;            // 15분
     private static final long REFRESH_TTL = 14L * 24 * 60 * 60 * 1000; // 14일
+    private static final long INVITE_TTL = 7L * 24 * 60 * 60 * 1000;   // 7일
 
     public JwtUtil(@Value("${spring.jwt.secret}") String secret) {
         this.secretKey = new SecretKeySpec(
@@ -25,7 +26,7 @@ public class JwtUtil {
         );
     }
 
-    // ================== 토큰 생성 ==================
+    // ================== Access / Refresh 토큰 ==================
     public String createAccessToken(String username, String role, String companySlug) {
         return createJwt("access", username, role, companySlug, ACCESS_TTL);
     }
@@ -39,14 +40,27 @@ public class JwtUtil {
                 .claim("category", category)
                 .claim("username", username)
                 .claim("role", role)
-                .claim("companySlug", companySlug) // ✅ 슬러그 claim 추가
+                .claim("companySlug", companySlug)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiredMs))
                 .signWith(secretKey)
                 .compact();
     }
 
-    // ================== 토큰 검증 ==================
+    // ================== Invite 토큰 ==================
+    public String createInviteToken(String email, String slug, String role) {
+        return Jwts.builder()
+                .claim("category", "invite")
+                .claim("email", email)
+                .claim("slug", slug)
+                .claim("role", role)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + INVITE_TTL))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    // ================== Claim 추출 ==================
     public String getUsername(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
@@ -83,6 +97,26 @@ public class JwtUtil {
                 .get("companySlug", String.class);
     }
 
+    // Invite 전용 claim 추출
+    public String getInviteEmail(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("email", String.class);
+    }
+
+    public String getInviteSlug(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("slug", String.class);
+    }
+
+    // ================== Expiration ==================
     public boolean isExpired(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
