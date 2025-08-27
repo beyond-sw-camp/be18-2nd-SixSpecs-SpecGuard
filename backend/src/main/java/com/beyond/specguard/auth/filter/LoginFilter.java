@@ -20,7 +20,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     private RefreshRepository refreshRepository;
 
     public LoginFilter(AuthenticationManager authenticationManager, JwtUtil jwtUtil, RefreshRepository refreshRepository) {
-        super.setAuthenticationManager(authenticationManager); // ✅ 추가
+        super.setAuthenticationManager(authenticationManager);
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.refreshRepository = refreshRepository;

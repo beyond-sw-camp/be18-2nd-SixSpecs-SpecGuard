@@ -1,9 +1,6 @@
 package com.beyond.specguard.auth.controller;
 
-import com.beyond.specguard.auth.dto.InviteSignupRequestDto;
-import com.beyond.specguard.auth.dto.ReissueResponseDto;
-import com.beyond.specguard.auth.dto.SignupRequestDto;
-import com.beyond.specguard.auth.dto.SignupResponseDto;
+import com.beyond.specguard.auth.dto.*;
 import com.beyond.specguard.auth.entity.ClientUser;
 import com.beyond.specguard.auth.service.InviteSignupService;
 import com.beyond.specguard.auth.service.LogoutService;
@@ -75,12 +72,11 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "로그아웃이 정상적으로 처리되었습니다."));
     }
 
-    @PostMapping("/invite")
+    @PostMapping("/signup/invite")
     public ResponseEntity<SignupResponseDto> signupWithInvite(
-            @RequestParam("token") String token,
-            @RequestBody InviteSignupRequestDto request
+            @Valid @RequestBody InviteSignupRequestDto request
     ) {
-        ClientUser user = inviteSignupService.signupWithInvite(token, request);
+        ClientUser user = inviteSignupService.signupWithInvite(request.getToken(), request);
 
         SignupResponseDto response = SignupResponseDto.builder()
                 .user(SignupResponseDto.UserDTO.builder()
@@ -100,5 +96,13 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
+    @PostMapping("/signup/invite/check")
+    public ResponseEntity<InviteCheckResponseDto> checkInvite(
+            @RequestBody @Valid InviteCheckRequestDto request
+    ) {
+        InviteCheckResponseDto response = inviteSignupService.checkInvite(request.getToken());
+        return ResponseEntity.ok(response);
+    }
+
 
 }

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/")
 public class UserController {
 
-    @GetMapping("/companies/{slug}/users/me")
+    @GetMapping("/company/{slug}/users/me")
     public ResponseEntity<SignupResponseDto.UserDTO> getMyInfo(@PathVariable String slug, Authentication authentication) {
         // 인증된 유저 가져오기
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
