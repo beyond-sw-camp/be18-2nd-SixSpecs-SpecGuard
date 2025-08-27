@@ -1,8 +1,7 @@
 package com.beyond.specguard.company.invite.controller;
 
-import com.beyond.specguard.auth.entity.ClientUser;
-import com.beyond.specguard.company.invite.dto.InviteRequestDTO;
-import com.beyond.specguard.company.invite.dto.InviteResponseDTO;
+import com.beyond.specguard.company.invite.dto.InviteRequestDto;
+import com.beyond.specguard.company.invite.dto.InviteResponseDto;
 import com.beyond.specguard.company.invite.service.InviteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,12 +20,12 @@ public class InviteController {
 
     // ✅ 초대 생성 (OWNER만 자기 회사 직원 초대 가능)
     @PostMapping
-    public ResponseEntity<InviteResponseDTO> sendInvite(
+    public ResponseEntity<InviteResponseDto> sendInvite(
             @PathVariable String slug,
             @AuthenticationPrincipal com.beyond.specguard.auth.service.CustomUserDetails currentUser,
-            @RequestBody @Validated InviteRequestDTO request
+            @RequestBody @Validated InviteRequestDto request
     ) {
-        InviteResponseDTO response = inviteService.sendInvite(slug, request, currentUser);
+        InviteResponseDto response = inviteService.sendInvite(slug, request, currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

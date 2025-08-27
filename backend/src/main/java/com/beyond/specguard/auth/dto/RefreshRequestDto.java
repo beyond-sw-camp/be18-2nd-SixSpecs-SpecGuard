@@ -9,7 +9,7 @@ import lombok.AllArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class RefreshRequestDTO {
+public class RefreshRequestDto {
 
     @NotBlank(message = "refresh_token은 필수 입력값입니다.")
     @JsonProperty("refresh_token")   // ✅ snake_case ↔ camelCase 매핑

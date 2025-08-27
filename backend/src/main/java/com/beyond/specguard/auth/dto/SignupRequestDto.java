@@ -8,7 +8,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SignupRequestDTO {
+public class SignupRequestDto {
 
     @NotNull(message = "회사 정보는 필수입니다.")
     private CompanyDTO company;

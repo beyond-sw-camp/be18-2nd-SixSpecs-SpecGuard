@@ -7,7 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SignupResponseDTO {
+public class SignupResponseDto {
 
     private UserDTO user;
     private CompanyDTO company;

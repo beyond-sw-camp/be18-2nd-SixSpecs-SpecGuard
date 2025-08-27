@@ -1,6 +1,6 @@
 package com.beyond.specguard.auth.controller;
 
-import com.beyond.specguard.auth.dto.SignupResponseDTO;
+import com.beyond.specguard.auth.dto.SignupResponseDto;
 import com.beyond.specguard.auth.service.CustomUserDetails;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.AuthErrorCode;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     @GetMapping("/companies/{slug}/users/me")
-    public ResponseEntity<SignupResponseDTO.UserDTO> getMyInfo(@PathVariable String slug, Authentication authentication) {
+    public ResponseEntity<SignupResponseDto.UserDTO> getMyInfo(@PathVariable String slug, Authentication authentication) {
         // 인증된 유저 가져오기
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
@@ -25,6 +25,6 @@ public class UserController {
             throw new CustomException(AuthErrorCode.ACCESS_DENIED);
         }
 
-        return ResponseEntity.ok(SignupResponseDTO.UserDTO.from(userDetails.getUser()));
+        return ResponseEntity.ok(SignupResponseDto.UserDTO.from(userDetails.getUser()));
     }
 }

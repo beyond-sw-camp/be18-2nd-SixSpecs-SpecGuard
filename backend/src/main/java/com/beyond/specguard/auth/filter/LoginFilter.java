@@ -1,6 +1,6 @@
 package com.beyond.specguard.auth.filter;
 
-import com.beyond.specguard.auth.dto.LoginRequestDTO;
+import com.beyond.specguard.auth.dto.LoginRequestDto;
 import com.beyond.specguard.auth.repository.RefreshRepository;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +32,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
                                                 HttpServletResponse response) throws AuthenticationException {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
-            LoginRequestDTO loginDTO = objectMapper.readValue(request.getInputStream(), LoginRequestDTO.class);
+            LoginRequestDto loginDTO = objectMapper.readValue(request.getInputStream(), LoginRequestDto.class);
 
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword());

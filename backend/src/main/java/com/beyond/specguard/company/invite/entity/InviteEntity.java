@@ -50,9 +50,6 @@ public class InviteEntity {
         if (this.id == null) {
             this.id = UUID.randomUUID().toString();
         }
-        if (this.inviteToken == null) {
-            this.inviteToken = UUID.randomUUID().toString();
-        }
         if (this.expiresAt == null) {
             this.expiresAt = LocalDateTime.now().plusDays(7); // 기본 7일 유효
         }

@@ -1,6 +1,6 @@
 package com.beyond.specguard.auth.service;
 
-import com.beyond.specguard.auth.dto.ReissueResponseDTO;
+import com.beyond.specguard.auth.dto.ReissueResponseDto;
 import com.beyond.specguard.auth.entity.ClientUser;
 import com.beyond.specguard.auth.entity.RefreshEntity;
 import com.beyond.specguard.auth.repository.ClientUserRepository;
@@ -26,7 +26,7 @@ public class ReissueService {
     private final ClientUserRepository userRepository; // ✅ 추가
 
     @Transactional
-    public ReissueResponseDTO reissue(String refreshToken) {
+    public ReissueResponseDto reissue(String refreshToken) {
         log.info("🔁 [ReissueService] 리프레시 요청 처리");
 
         if (refreshToken == null || refreshToken.isBlank()) {
@@ -64,7 +64,7 @@ public class ReissueService {
         refreshRepository.deleteByRefresh(refreshToken);
         saveRefreshEntity(username, newRefresh);
 
-        return ReissueResponseDTO.builder()
+        return ReissueResponseDto.builder()
                 .accessToken(newAccess)
                 .refreshToken(newRefresh)
                 .message("access & refresh 토큰 재발급 성공")

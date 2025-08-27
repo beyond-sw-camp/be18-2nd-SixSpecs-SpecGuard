@@ -3,12 +3,12 @@ package com.beyond.specguard.auth.dto;
 import java.util.Map;
 
 @SuppressWarnings("unchecked")
-public class NaverResponseDTO implements OAuth2Response {
+public class NaverResponseDto implements OAuth2Response {
 
     private final Map<String, Object> attributes;
     private final Map<String, Object> response;
 
-    public NaverResponseDTO(Map<String, Object> attributes) {
+    public NaverResponseDto(Map<String, Object> attributes) {
         this.attributes = attributes;
         this.response = (Map<String, Object>) attributes.get("response");
     }

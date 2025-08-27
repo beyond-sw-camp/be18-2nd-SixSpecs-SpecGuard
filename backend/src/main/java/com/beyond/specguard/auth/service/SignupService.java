@@ -1,7 +1,7 @@
 package com.beyond.specguard.auth.service;
 
-import com.beyond.specguard.auth.dto.SignupRequestDTO;
-import com.beyond.specguard.auth.dto.SignupResponseDTO;
+import com.beyond.specguard.auth.dto.SignupRequestDto;
+import com.beyond.specguard.auth.dto.SignupResponseDto;
 import com.beyond.specguard.auth.entity.ClientCompany;
 import com.beyond.specguard.auth.entity.ClientUser;
 import com.beyond.specguard.auth.repository.ClientCompanyRepository;
@@ -22,10 +22,10 @@ public class SignupService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public SignupResponseDTO signup(SignupRequestDTO request) {
+    public SignupResponseDto signup(SignupRequestDto request) {
 
-        SignupRequestDTO.CompanyDTO companyReq = request.getCompany();
-        SignupRequestDTO.UserDTO userReq = request.getUser();
+        SignupRequestDto.CompanyDTO companyReq = request.getCompany();
+        SignupRequestDto.UserDTO userReq = request.getUser();
 
         // ✅ 사업자번호 중복 체크
         if (companyRepository.existsByBusinessNumber(companyReq.getBusinessNumber())) {
@@ -69,8 +69,8 @@ public class SignupService {
         ClientUser savedUser = userRepository.save(masterUser);
 
         // ✅ 응답 DTO 변환
-        return SignupResponseDTO.builder()
-                .user(SignupResponseDTO.UserDTO.builder()
+        return SignupResponseDto.builder()
+                .user(SignupResponseDto.UserDTO.builder()
                         .id(savedUser.getId().toString())
                         .name(savedUser.getName())
                         .email(savedUser.getEmail())
@@ -80,7 +80,7 @@ public class SignupService {
                                 ? savedUser.getCreatedAt().toString()
                                 : java.time.LocalDateTime.now().toString())
                         .build())
-                .company(SignupResponseDTO.CompanyDTO.builder()
+                .company(SignupResponseDto.CompanyDTO.builder()
                         .id(company.getId().toString())
                         .name(company.getName())
                         .slug(company.getSlug())

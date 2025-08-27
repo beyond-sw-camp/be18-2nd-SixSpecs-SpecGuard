@@ -1,8 +1,11 @@
 package com.beyond.specguard.auth.controller;
 
-import com.beyond.specguard.auth.dto.ReissueResponseDTO;
-import com.beyond.specguard.auth.dto.SignupRequestDTO;
-import com.beyond.specguard.auth.dto.SignupResponseDTO;
+import com.beyond.specguard.auth.dto.InviteSignupRequestDto;
+import com.beyond.specguard.auth.dto.ReissueResponseDto;
+import com.beyond.specguard.auth.dto.SignupRequestDto;
+import com.beyond.specguard.auth.dto.SignupResponseDto;
+import com.beyond.specguard.auth.entity.ClientUser;
+import com.beyond.specguard.auth.service.InviteSignupService;
 import com.beyond.specguard.auth.service.LogoutService;
 import com.beyond.specguard.auth.service.ReissueService;
 import com.beyond.specguard.auth.service.SignupService;
@@ -27,15 +30,17 @@ public class AuthController {
     private final ReissueService reissueService;
     private final JwtUtil jwtUtil;
     private final LogoutService logoutService;
+    private final InviteSignupService inviteSignupService;
+
 
     @PostMapping("/signup/company")
-    public ResponseEntity<SignupResponseDTO> signup(@Valid @RequestBody SignupRequestDTO request) {
-        SignupResponseDTO response = signupService.signup(request);
+    public ResponseEntity<SignupResponseDto> signup(@Valid @RequestBody SignupRequestDto request) {
+        SignupResponseDto response = signupService.signup(request);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/token/refresh")
-    public ResponseEntity<ReissueResponseDTO> reissue(
+    public ResponseEntity<ReissueResponseDto> reissue(
             HttpServletRequest request,
             HttpServletResponse response
     ) {
@@ -43,7 +48,7 @@ public class AuthController {
         String refreshToken = CookieUtil.getCookieValue(request, "refresh_token");
 
         // ✅ Service 호출
-        ReissueResponseDTO dto = reissueService.reissue(refreshToken);
+        ReissueResponseDto dto = reissueService.reissue(refreshToken);
 
         // ✅ 새 Access Token → Authorization 헤더
         response.setHeader("Authorization", "Bearer " + dto.getAccessToken());
@@ -68,6 +73,32 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> logout(HttpServletRequest request) {
         logoutService.logout(request);
         return ResponseEntity.ok(Map.of("message", "로그아웃이 정상적으로 처리되었습니다."));
+    }
+
+    @PostMapping("/invite")
+    public ResponseEntity<SignupResponseDto> signupWithInvite(
+            @RequestParam("token") String token,
+            @RequestBody InviteSignupRequestDto request
+    ) {
+        ClientUser user = inviteSignupService.signupWithInvite(token, request);
+
+        SignupResponseDto response = SignupResponseDto.builder()
+                .user(SignupResponseDto.UserDTO.builder()
+                        .id(user.getId().toString())
+                        .name(user.getName())
+                        .email(user.getEmail())
+                        .phone(user.getPhone())
+                        .role(user.getRole().name())
+                        .createdAt(user.getCreatedAt().toString())
+                        .build())
+                .company(SignupResponseDto.CompanyDTO.builder()
+                        .id(user.getCompany().getId().toString())
+                        .name(user.getCompany().getName())
+                        .slug(user.getCompany().getSlug())
+                        .build())
+                .build();
+
+        return ResponseEntity.ok(response);
     }
 
 }

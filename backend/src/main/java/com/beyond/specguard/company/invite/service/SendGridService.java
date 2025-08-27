@@ -31,6 +31,7 @@ public class SendGridService {
         String subject = "[SpecGuard] 초대 메일이 도착했습니다!";
         Email to = new Email(toEmail);
 
+        // ✅ 여기서 최종 URL 조립
         String inviteUrl = inviteBaseUrl + "?token=" + token;
 
         String contentValue = "<h3>SpecGuard 초대 메일</h3>"
@@ -48,7 +49,7 @@ public class SendGridService {
             request.setBody(mail.build());
             Response response = sg.api(request);
 
-            System.out.println(" SendGrid Response Status: " + response.getStatusCode());
+            System.out.println("✅ SendGrid Response Status: " + response.getStatusCode());
         } catch (IOException ex) {
             throw new RuntimeException("이메일 발송 중 오류 발생", ex);
         }

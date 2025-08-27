@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class InviteRequestDTO {
+public class InviteRequestDto {
     @NotNull(message = "역할(role)은 필수입니다.")
     private InviteEntity.InviteRole role;
 

@@ -7,7 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class InviteResponseDTO {
+public class InviteResponseDto {
     private String message;
     private String inviteUrl;
 }
