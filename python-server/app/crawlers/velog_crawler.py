@@ -2,6 +2,8 @@
 from typing import List, Tuple, Optional, Set
 from urllib.parse import urljoin
 import re, asyncio, time, os, random
+import logging
+log = logging.getLogger(__name__)
 
 from playwright.async_api import async_playwright, TimeoutError as PWTimeout
 
@@ -268,7 +270,7 @@ async def crawl_all_posts(
             })
 
             if i % 10 == 0:
-                print(f"[INFO] {i}/{len(links)} 수집 중...")
+                log.info("[%d/%d] 수집 중...", i, len(links))
 
             # per_post_delay가 명시되면 우선 사용, 아니면 지터 사용
             if per_post_delay and per_post_delay > 0:
@@ -276,7 +278,7 @@ async def crawl_all_posts(
             else:
                 await _sleep_with_jitter()
 
-        except Exception as ex:
-            print("skip:", url, ex)
+        except Exception:
+            log.exception("Velog crawl skip: %s", url)
 
     return {"source": "velog", "author": {"handle": handle}, "posts": posts, "schema_version": 1}

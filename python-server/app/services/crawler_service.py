@@ -9,9 +9,7 @@ from app.services.nlp_client import send_to_nlp
 from app.services.storage_client import send_to_storage
 
 
-# -----------------------
 # ENV helpers
-# -----------------------
 def _env_bool(key: str, default: str = "false") -> bool:
     return os.environ.get(key, default).lower() in {"1", "true", "yes"}
 
@@ -28,9 +26,7 @@ def _env_float(key: str, default: str) -> float:
         return float(default)
 
 
-# -----------------------
 # Chunk helpers
-# -----------------------
 def _chunked(seq: List[Any], size: int):
     """size 단위로 리스트를 잘라 제너레이터로 반환"""
     for i in range(0, len(seq), size):
@@ -41,9 +37,7 @@ async def _sleep_ms(ms: int | float):
         await asyncio.sleep(float(ms) / 1000.0)
 
 
-# -----------------------
 # 목록
-# -----------------------
 async def list_posts(username: str, page: int, limit: int):
     links: List[str] = await vc.render_list_with_playwright(username)
     if not links:
@@ -64,9 +58,7 @@ async def list_posts(username: str, page: int, limit: int):
     return out
 
 
-# -----------------------
 # 상세
-# -----------------------
 async def post_detail(url: str):
     title, text, langs, tags, published = await vc.render_post_with_playwright(url)
 
@@ -94,9 +86,7 @@ async def post_detail(url: str):
     }
 
 
-# -----------------------
 # NLP로 전체/일부 전송 (배치 전송)
-# -----------------------
 async def crawl_and_forward(username: str, nlp_url: str, body_max_posts: Optional[int]):
     data = await vc.crawl_all_posts(username)
     posts = data.get("posts") or []
@@ -156,9 +146,7 @@ async def crawl_and_forward(username: str, nlp_url: str, body_max_posts: Optiona
     return total, summary
 
 
-# -----------------------
 # 스토리지로 저장 요청 (배치 전송)
-# -----------------------
 async def crawl_and_store(username: str, resume_id: str, storage_url: str, body_max_posts: Optional[int]):
     data = await vc.crawl_all_posts(username)
     posts = data.get("posts") or []

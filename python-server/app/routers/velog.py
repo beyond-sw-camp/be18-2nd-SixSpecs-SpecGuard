@@ -66,14 +66,14 @@ class PostDetailReq(BaseModel):
 class CrawlForwardReq(BaseModel):
     username: str
     nlp_url: str
-    max_posts: Optional[int] = 10
+    max_posts: Optional[int] = None
 
 #요청/응답 모델
 class CrawlAndStoreReq(BaseModel):
     username: str
     resume_id: str = Field(..., pattern=UUID36_RE.pattern)
     storage_url: str
-    max_posts: Optional[int] = 10
+    max_posts: Optional[int] = None
 
 #엔드 포인트
 #게시글 목록 조회 
