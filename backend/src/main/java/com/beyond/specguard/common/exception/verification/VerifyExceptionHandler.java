@@ -1,10 +1,9 @@
-package com.beyond.specguard.verification.exception;
+package com.beyond.specguard.common.exception.verification;
 
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.Map;

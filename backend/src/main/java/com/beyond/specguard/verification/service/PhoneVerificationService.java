@@ -2,11 +2,11 @@ package com.beyond.specguard.verification.service;
 
 import com.beyond.specguard.verification.dto.VerifyDto;
 import com.beyond.specguard.verification.entity.PhoneVerification;
-import com.beyond.specguard.verification.exception.VerifyDeliveryPendingException;
-import com.beyond.specguard.verification.exception.VerifyExpiredException;
-import com.beyond.specguard.verification.exception.VerifyInvalidPhoneException;
-import com.beyond.specguard.verification.exception.VerifyInvalidTokenException;
-import com.beyond.specguard.verification.exception.VerifyNotFoundException;
+import com.beyond.specguard.common.exception.verification.VerifyDeliveryPendingException;
+import com.beyond.specguard.common.exception.verification.VerifyExpiredException;
+import com.beyond.specguard.common.exception.verification.VerifyInvalidPhoneException;
+import com.beyond.specguard.common.exception.verification.VerifyInvalidTokenException;
+import com.beyond.specguard.common.exception.verification.VerifyNotFoundException;
 import com.beyond.specguard.verification.repository.PhoneVerificationRepo;
 import com.beyond.specguard.verification.util.ImapReader;
 import lombok.RequiredArgsConstructor;

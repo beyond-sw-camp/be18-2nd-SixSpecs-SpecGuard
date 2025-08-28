@@ -1,4 +1,4 @@
-package com.beyond.specguard.verification.exception;
+package com.beyond.specguard.common.exception.verification;
 
 public class VerifyDeliveryPendingException extends VerifyException {
     public VerifyDeliveryPendingException(String msg) { super(msg); }
