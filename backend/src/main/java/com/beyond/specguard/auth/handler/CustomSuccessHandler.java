@@ -1,8 +1,7 @@
 package com.beyond.specguard.auth.handler;
 
-import com.beyond.specguard.auth.entity.RefreshEntity;
-import com.beyond.specguard.auth.repository.RefreshRepository;
 import com.beyond.specguard.auth.service.CustomUserDetails;
+import com.beyond.specguard.auth.service.RedisTokenService;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;
 import jakarta.servlet.ServletException;
@@ -22,7 +21,7 @@ import java.util.Date;
 public class CustomSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtUtil jwtUtil;
-    private final RefreshRepository refreshRepository;
+    private final RedisTokenService redisTokenService; // ✅ Redis 사용
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -34,30 +33,25 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         String role = userDetails.getUser().getRole().name();
         String companySlug = userDetails.getUser().getCompany().getSlug();
 
-        // ✅ 토큰 생성 (JwtUtil public 메서드 사용)
+        // ✅ 토큰 생성
         String access = jwtUtil.createAccessToken(email, role, companySlug);
-        String refresh = jwtUtil.createRefreshToken(email, role, companySlug);
+        String refresh = jwtUtil.createRefreshToken(email);
 
-        // ✅ Refresh 저장 (DB) → JwtUtil에서 추출한 만료일 그대로 반영
+        // ✅ Refresh 저장 (Redis)
         Date refreshExpiration = jwtUtil.getExpiration(refresh);
-        RefreshEntity refreshEntity = RefreshEntity.builder()
-                .username(email)
-                .refresh(refresh)
-                .expiration(refreshExpiration)
-                .build();
-        refreshRepository.save(refreshEntity);
+        long ttl = (refreshExpiration.getTime() - System.currentTimeMillis()) / 1000;
+        redisTokenService.saveRefreshToken(email, refresh, ttl);
 
-        // ✅ Access Token → Authorization 헤더 (Bearer 방식)
+        // ✅ Access Token → Authorization 헤더
         response.setHeader("Authorization", "Bearer " + access);
 
         // ✅ Refresh Token → HttpOnly, Secure, SameSite=None 쿠키
-        // maxAge는 "남은 시간"을 초 단위로 계산해서 설정
-        int maxAge = (int) ((refreshExpiration.getTime() - System.currentTimeMillis()) / 1000);
+        int maxAge = (int) ttl;
         response.addCookie(
                 CookieUtil.createHttpOnlyCookie("refresh_token", refresh, maxAge)
         );
 
-        // ✅ 응답 상태만 내려주기
+        // ✅ 상태 코드만 반환
         response.setStatus(HttpStatus.OK.value());
     }
 }

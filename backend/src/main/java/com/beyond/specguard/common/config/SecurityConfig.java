@@ -6,9 +6,11 @@ import com.beyond.specguard.auth.handler.CustomFailureHandler;
 import com.beyond.specguard.auth.handler.CustomSuccessHandler;
 import com.beyond.specguard.auth.repository.RefreshRepository;
 import com.beyond.specguard.auth.repository.ClientUserRepository;
+import com.beyond.specguard.auth.service.RedisTokenService;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,28 +28,17 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JwtUtil jwtUtil;
-    private final RefreshRepository refreshRepository;
     private final ClientUserRepository clientUserRepository;
     private final CustomSuccessHandler customSuccessHandler;
     private final CustomFailureHandler customFailureHandler;
+    private final RedisTokenService redisTokenService;
 
-    public SecurityConfig(AuthenticationConfiguration authenticationConfiguration,
-                          JwtUtil jwtUtil,
-                          RefreshRepository refreshRepository,
-                          ClientUserRepository clientUserRepository,
-                          CustomSuccessHandler customSuccessHandler,
-                          CustomFailureHandler customFailureHandler) {
-        this.authenticationConfiguration = authenticationConfiguration;
-        this.jwtUtil = jwtUtil;
-        this.refreshRepository = refreshRepository;
-        this.clientUserRepository = clientUserRepository;
-        this.customSuccessHandler = customSuccessHandler;
-        this.customFailureHandler = customFailureHandler;
-    }
+
 
     // 로그인 시도 시 인증을 수행할 AuthenticationManager
     @Bean
@@ -89,10 +80,10 @@ public class SecurityConfig {
         );
 
         // JWT 인증 필터 (Access Token 검증)
-        http.addFilterBefore(new JwtFilter(jwtUtil, clientUserRepository), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new JwtFilter(jwtUtil, clientUserRepository,redisTokenService), UsernamePasswordAuthenticationFilter.class);
 
         // 로그인 필터 등록 (폼 로그인 대신 동작)
-        LoginFilter loginFilter = new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil, refreshRepository);
+        LoginFilter loginFilter = new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil);
         loginFilter.setAuthenticationSuccessHandler(customSuccessHandler);
         loginFilter.setAuthenticationFailureHandler(customFailureHandler);
         http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
@@ -108,7 +99,7 @@ public class SecurityConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
-        config.setExposedHeaders(List.of("access", "Set-Cookie"));
+        config.setExposedHeaders(List.of("Authorization", "Set-Cookie"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

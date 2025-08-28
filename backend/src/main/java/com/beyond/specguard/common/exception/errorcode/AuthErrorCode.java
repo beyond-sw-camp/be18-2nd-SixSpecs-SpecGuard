@@ -16,15 +16,21 @@ public enum AuthErrorCode implements ErrorCode {
     // 로그인 관련
     INVALID_LOGIN(HttpStatus.UNAUTHORIZED, "INVALID_LOGIN", "이메일 또는 비밀번호가 올바르지 않습니다."),
 
-    //  토큰 관련
-    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN", "리프레시 토큰이 유효하지 않습니다."),
-    REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "REFRESH_TOKEN_EXPIRED", "리프레시 토큰이 만료되었습니다."),
+    // Refresh Token 관련
+    INVALID_REFRESH_TOKEN(HttpStatus.BAD_REQUEST, "INVALID_REFRESH_TOKEN", "리프레시 토큰이 유효하지 않습니다."),
+    REFRESH_TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "REFRESH_TOKEN_EXPIRED", "리프레시 토큰이 만료되었습니다."),
 
-    //  인증/인가 전역 실패
+    // Access Token 관련 (추가)
+    INVALID_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_ACCESS_TOKEN", "액세스 토큰이 유효하지 않습니다."),
+    ACCESS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "ACCESS_TOKEN_EXPIRED", "액세스 토큰이 만료되었습니다."),
+    BLACKLISTED_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "BLACKLISTED_ACCESS_TOKEN", "로그아웃된 액세스 토큰입니다."),
+    INVALID_TOKEN_CATEGORY(HttpStatus.UNAUTHORIZED, "INVALID_TOKEN_CATEGORY", "잘못된 토큰 유형입니다."),
+
+    // 인증/인가 전역 실패
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "인증이 필요합니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "접근 권한이 없습니다."),
 
-    //  기타
+    // 기타
     DUPLICATE_SLUG(HttpStatus.CONFLICT, "DUPLICATE_SLUG", "이미 사용 중인 슬러그입니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
 

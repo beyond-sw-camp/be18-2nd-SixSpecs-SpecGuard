@@ -3,6 +3,7 @@ package com.beyond.specguard.auth.filter;
 import com.beyond.specguard.auth.entity.ClientUser;
 import com.beyond.specguard.auth.repository.ClientUserRepository;
 import com.beyond.specguard.auth.service.CustomUserDetails;
+import com.beyond.specguard.auth.service.RedisTokenService;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -12,21 +13,23 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final ClientUserRepository clientUserRepository;
+    private final RedisTokenService redisTokenService; // ✅ 추가
 
-    public JwtFilter(JwtUtil jwtUtil, ClientUserRepository clientUserRepository) {
+    public JwtFilter(JwtUtil jwtUtil,
+                     ClientUserRepository clientUserRepository,
+                     RedisTokenService redisTokenService) {
         this.jwtUtil = jwtUtil;
         this.clientUserRepository = clientUserRepository;
+        this.redisTokenService = redisTokenService;
     }
 
     @Override
@@ -37,7 +40,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String authorization = request.getHeader("Authorization");
 
-        //  Authorization 헤더가 없거나 Bearer 로 시작하지 않으면 그냥 통과
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -46,48 +48,38 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = authorization.substring(7);
 
         try {
-            //  토큰 만료 여부 확인
             if (jwtUtil.isExpired(token)) {
-                throw new ExpiredJwtException(null, null, "Access token expired");
+                throw new BadCredentialsException("Invalid or expired token");
             }
 
-            //  카테고리 확인 (access 토큰만 허용)
+            String jti = jwtUtil.getJti(token);
+            if (redisTokenService.isBlacklisted(jti)) {
+                throw new BadCredentialsException("Invalid or expired token");
+            }
+
             String category = jwtUtil.getCategory(token);
             if (!"access".equals(category)) {
-                throw new BadCredentialsException("Invalid token category");
+                throw new BadCredentialsException("Invalid or expired token");
             }
 
-            //  사용자 정보 추출
             String email = jwtUtil.getUsername(token);
-            String role = jwtUtil.getRole(token);
 
             ClientUser user = clientUserRepository.findByEmailWithCompany(email)
-                    .orElseThrow(() -> new BadCredentialsException("User not found"));
+                    .orElseThrow(() -> new BadCredentialsException("Invalid or expired token"));
 
-            //  CustomUserDetails 생성
             CustomUserDetails userDetails = new CustomUserDetails(user);
-
-            //  인증 객체 생성 (principal = CustomUserDetails)
             Authentication auth = new UsernamePasswordAuthenticationToken(
-                    userDetails, // ✅ 이제 principal 은 CustomUserDetails
+                    userDetails,
                     null,
                     userDetails.getAuthorities()
             );
-
-            //  SecurityContext 에 저장
             SecurityContextHolder.getContext().setAuthentication(auth);
 
-            //  SecurityContext 에 저장
-            SecurityContextHolder.getContext().setAuthentication(auth);
+            filterChain.doFilter(request, response);
 
         } catch (Exception e) {
-            //  여기서 응답 처리하지 않음
-            // Spring Security가 AuthenticationEntryPoint 를 통해 JSON 응답 반환하도록 위임
             SecurityContextHolder.clearContext();
-            throw e; // 예외를 던져서 entryPoint 로 위임
+            throw new BadCredentialsException("Invalid or expired token");
         }
-
-        //  다음 필터 실행
-        filterChain.doFilter(request, response);
     }
 }

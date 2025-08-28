@@ -8,6 +8,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtUtil {
@@ -26,23 +27,28 @@ public class JwtUtil {
         );
     }
 
-    // ================== Access / Refresh 토큰 ==================
+    // ================== Access Token ==================
     public String createAccessToken(String username, String role, String companySlug) {
-        return createJwt("access", username, role, companySlug, ACCESS_TTL);
-    }
-
-    public String createRefreshToken(String username, String role, String companySlug) {
-        return createJwt("refresh", username, role, companySlug, REFRESH_TTL);
-    }
-
-    private String createJwt(String category, String username, String role, String companySlug, long expiredMs) {
         return Jwts.builder()
-                .claim("category", category)
+                .id(UUID.randomUUID().toString()) // ✅ jti
+                .claim("category", "access")
                 .claim("username", username)
                 .claim("role", role)
                 .claim("companySlug", companySlug)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + expiredMs))
+                .expiration(new Date(System.currentTimeMillis() + ACCESS_TTL))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    // ================== Refresh Token ==================
+    public String createRefreshToken(String username) {
+        return Jwts.builder()
+                .id(UUID.randomUUID().toString()) // ✅ jti
+                .claim("category", "refresh")
+                .claim("username", username)      // ✅ 최소한의 식별자만
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + REFRESH_TTL))
                 .signWith(secretKey)
                 .compact();
     }
@@ -62,77 +68,60 @@ public class JwtUtil {
 
     // ================== Claim 추출 ==================
     public String getUsername(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
+        return Jwts.parser().verifyWith(secretKey).build()
+                .parseSignedClaims(token).getPayload()
                 .get("username", String.class);
     }
 
     public String getRole(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
+        return Jwts.parser().verifyWith(secretKey).build()
+                .parseSignedClaims(token).getPayload()
                 .get("role", String.class);
     }
 
     public String getCategory(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
+        return Jwts.parser().verifyWith(secretKey).build()
+                .parseSignedClaims(token).getPayload()
                 .get("category", String.class);
     }
 
     public String getCompanySlug(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
+        return Jwts.parser().verifyWith(secretKey).build()
+                .parseSignedClaims(token).getPayload()
                 .get("companySlug", String.class);
     }
 
     // Invite 전용 claim 추출
     public String getInviteEmail(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
+        return Jwts.parser().verifyWith(secretKey).build()
+                .parseSignedClaims(token).getPayload()
                 .get("email", String.class);
     }
 
     public String getInviteSlug(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
+        return Jwts.parser().verifyWith(secretKey).build()
+                .parseSignedClaims(token).getPayload()
                 .get("slug", String.class);
+    }
+
+    // ================== jti 추출 ==================
+    public String getJti(String token) {
+        return Jwts.parser().verifyWith(secretKey).build()
+                .parseSignedClaims(token).getPayload()
+                .getId();
     }
 
     // ================== Expiration ==================
     public boolean isExpired(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
+        return Jwts.parser().verifyWith(secretKey).build()
+                .parseSignedClaims(token).getPayload()
                 .getExpiration()
                 .before(new Date());
     }
 
     public Date getExpiration(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
+        return Jwts.parser().verifyWith(secretKey).build()
+                .parseSignedClaims(token).getPayload()
                 .getExpiration();
     }
 }

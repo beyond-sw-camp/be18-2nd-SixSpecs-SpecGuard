@@ -1,7 +1,6 @@
 package com.beyond.specguard.auth.filter;
 
 import com.beyond.specguard.auth.dto.LoginRequestDto;
-import com.beyond.specguard.auth.repository.RefreshRepository;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,16 +14,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import java.io.IOException;
 
 public class LoginFilter extends UsernamePasswordAuthenticationFilter {
+
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
-    private RefreshRepository refreshRepository;
 
-    public LoginFilter(AuthenticationManager authenticationManager, JwtUtil jwtUtil, RefreshRepository refreshRepository) {
+    public LoginFilter(AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
         super.setAuthenticationManager(authenticationManager);
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
-        this.refreshRepository = refreshRepository;
-        setFilterProcessesUrl("/api/v1/auth/login");
+        setFilterProcessesUrl("/api/v1/auth/login"); // 로그인 엔드포인트
     }
 
     @Override
@@ -37,7 +35,6 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword());
 
-            //
             return this.getAuthenticationManager().authenticate(authToken);
 
         } catch (IOException e) {

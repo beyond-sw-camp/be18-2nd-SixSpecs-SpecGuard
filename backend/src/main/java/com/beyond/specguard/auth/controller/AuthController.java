@@ -37,7 +37,7 @@ public class AuthController {
     }
 
     @PostMapping("/token/refresh")
-    public ResponseEntity<ReissueResponseDto> reissue(
+    public ResponseEntity<Map<String, String>> reissue(
             HttpServletRequest request,
             HttpServletResponse response
     ) {
@@ -63,12 +63,16 @@ public class AuthController {
                 )
         );
 
-        return ResponseEntity.ok(dto);
+        // ✅ JSON 바디에는 accessToken만 담아주면 충분
+        return ResponseEntity.ok(Map.of(
+                "accessToken", dto.getAccessToken(),
+                "message", "access token 재발급 성공"
+        ));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, String>> logout(HttpServletRequest request) {
-        logoutService.logout(request);
+    public ResponseEntity<Map<String, String>> logout(HttpServletRequest request, HttpServletResponse response) {
+        logoutService.logout(request,response);
         return ResponseEntity.ok(Map.of("message", "로그아웃이 정상적으로 처리되었습니다."));
     }
 
