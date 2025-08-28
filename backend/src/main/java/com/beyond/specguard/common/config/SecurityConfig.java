@@ -4,7 +4,6 @@ import com.beyond.specguard.auth.filter.JwtFilter;
 import com.beyond.specguard.auth.filter.LoginFilter;
 import com.beyond.specguard.auth.handler.CustomFailureHandler;
 import com.beyond.specguard.auth.handler.CustomSuccessHandler;
-import com.beyond.specguard.auth.repository.RefreshRepository;
 import com.beyond.specguard.auth.repository.ClientUserRepository;
 import com.beyond.specguard.auth.service.RedisTokenService;
 import com.beyond.specguard.common.jwt.JwtUtil;
