@@ -159,8 +159,6 @@ public class PhoneVerificationService {
         }
 
         // 5) 수신 확인 강제
-        // 현재 인프라가 이메일(SMSTO 메일)로 들어오는 구조라면 channel 구분 없이 체크해도 OK
-        // 특정 채널만 강제하려면 조건을 걸어도 됨 (예: "EMAIL_SMSTO".equalsIgnoreCase(v.getChannel()))
         if (imap.findToken(v.getToken()).isEmpty()) {
             // 아직 메일/SMS 수신함에서 해당 토큰이 발견되지 않음
             throw new VerifyDeliveryPendingException("DELIVERY_PENDING");
@@ -169,7 +167,6 @@ public class PhoneVerificationService {
         // 6) 경합 안전 성공 전이 (조건부 UPDATE)
         int updated = repo.markIfPending(id, "SUCCESS", now, now);
         if (updated != 1) {
-            // 사이에 상태가 바뀜 → 최신 상태 확인 후 적절한 에러 반환
             var latest = repo.findById(id).orElseThrow(() -> new VerifyNotFoundException("NOT_FOUND"));
             if ("SUCCESS".equals(latest.getStatus())) return; // 이미 성공됨
             if (!latest.getExpiresAt().isAfter(now)) throw new VerifyExpiredException("EXPIRED");
