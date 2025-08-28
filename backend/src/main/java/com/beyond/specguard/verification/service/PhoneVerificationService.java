@@ -3,197 +3,137 @@ package com.beyond.specguard.verification.service;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.VerifyErrorCode;
 import com.beyond.specguard.verification.dto.VerifyDto;
-import com.beyond.specguard.verification.entity.PhoneVerification;
-import com.beyond.specguard.verification.repository.PhoneVerificationRepo;
-import com.beyond.specguard.verification.util.ImapReader;
+import com.beyond.specguard.verification.util.HashUtil;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.lang.Nullable;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
-
-import com.github.f4b6a3.uuid.UuidCreator;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class PhoneVerificationService {
 
-    private final PhoneVerificationRepo repo;
-    private final ImapReader imap;
+    private final StringRedisTemplate redis;
 
     @Value("${verify.ttl-seconds:300}")
-    private long ttl;
+    private long ttlSeconds;
 
-    @Value("${verify.receiver.email:specguard55@gmail.com}")
-    private String emailReceiver;
+    // ✅ 수신 번호 주입(수신처 문자/MMS용)
+//    @Value("${verify.receiver.sms:01034696728}")
+//    private String smsReceiver;
 
-    @Value("${verify.receiver.sms:01034696728}")
-    private String smsReceiver;
+    private static final long SUCCESS_GRACE_SECONDS = 60;
 
+    private String phoneKey(String phone) { return "pv:phone:" + HashUtil.sha256(phone); }
+    private String tokenKey(String token) { return "pv:token:" + token; }
+    private Duration ttl() { return Duration.ofSeconds(ttlSeconds); }
 
-    /**
-     * 충돌 방지를 위해 DB에 존재 여부를 확인하면서 토큰 생성.
-     * 충돌은 드물지만 방어적으로 최대 5회 재시도.
-     */
-    /// //////////////////////////////////////////////
-    private String generateUniqueToken() {
-        for (int i = 0; i < 5; i++) {
-            String t = "VERIFY" + RandomStringUtils.randomAlphanumeric(6).toUpperCase();
-            if (!repo.existsByToken(t)) return t;
-        }
-        throw new IllegalStateException("TOKEN_GENERATION_FAILED");
-    }
-
+    // ===== Start: 토큰 발급 =====
     @Transactional
-    public VerifyDto.VerifyStartResponse start(VerifyDto.VerifyStartRequest req, String userIdOpt) {
+    public VerifyDto.VerifyStartResponse start(VerifyDto.VerifyStartRequest req, @Nullable String userId) {
+        final String phone = normalizePhone(req.phone().replaceAll("[^0-9]", ""));
+        final String pKey = phoneKey(phone);
 
-        // 요청마다 UUIDv7 + 중복 없는 토큰 생성
-        String id = UuidCreator.getTimeOrdered().toString();
-        String token = generateUniqueToken();
-        String normalizedPhone = normalizePhone(req.phone());
+        Boolean created = redis.opsForValue().setIfAbsent(pKey, "LOCK", ttl());
+        if (Boolean.FALSE.equals(created)) {
+            throw new CustomException(VerifyErrorCode.DUPLICATE_REQUEST);
+        }
 
-        PhoneVerification v = new PhoneVerification();
-        v.setId(id);
-        v.setUserId(userIdOpt);
-        v.setPhone(normalizedPhone);            // ★ 정규화 저장
-        v.setToken(token);
-        v.setChannel(req.channel().name());
-        v.setStatus("PENDING");
-        v.setExpiresAt(Instant.now().plusSeconds(ttl));
-        repo.save(v);
+        final String token = generateToken();
+        final String tKey  = tokenKey(token);
+        final String now   = Instant.now().toString();
 
-        repo.expirePendingByPhoneExceptId(normalizedPhone, v.getId());
+        // token -> hash
+        redis.opsForHash().put(tKey, "phone", phone);
+        redis.opsForHash().put(tKey, "createdAt", now);
+        redis.opsForHash().put(tKey, "status", "PENDING");
+        if (userId != null) redis.opsForHash().put(tKey, "userId", userId);
+        redis.expire(tKey, ttl());
 
-        String to = (req.channel() == VerifyDto.VerifyChannel.EMAIL_SMSTO) ? emailReceiver : smsReceiver;
-        String body = URLEncoder.encode(token, StandardCharsets.UTF_8);
+        // phone -> token
+        redis.opsForValue().set(pKey, token, ttl());
 
+        String smsBody = "[SpecGuard] 인증번호: " + token + " (5분 유효)";
+
+        // UI/QR에 쓸 부가 문자열들 생성
+        final String manualTo   = phone;
+        final String manualBody = "인증번호: " + token + " (5분 유효)";
+        final String qrSmsto    = "SMSTO:" + manualTo + ":" + manualBody;
+        final String smsLink    = "sms:" + manualTo + "?body=" +
+                java.net.URLEncoder.encode(manualBody, java.nio.charset.StandardCharsets.UTF_8);
+
+        // DTO는 6개 필드만 (expiresAt 제거)
         return new VerifyDto.VerifyStartResponse(
-                id, token,
-                "SMSTO:" + to + ":" + token,
-                "sms:" + to + "?body=" + body,
-                to, token, ttl
+                token,
+                qrSmsto,
+                smsLink,
+                manualTo,
+                manualBody,
+                ttlSeconds
         );
     }
 
+    // ===== Verify: 토큰 검증 =====
     @Transactional
-    public VerifyDto.VerifyPollResponse poll(String tid) {
-        var vOpt = repo.findById(tid);
-        if (vOpt.isEmpty()) throw new IllegalArgumentException("not found");
-        var v = vOpt.get();
+    public void verify(String phone, String token) {
+        final String normPhone = normalizePhone(phone);
+        final String tKey = tokenKey(token);
 
-        if ("SUCCESS".equals(v.getStatus())) {
-            return new VerifyDto.VerifyPollResponse(tid, "SUCCESS");
-        }
+        Map<Object, Object> payload = redis.opsForHash().entries(tKey);
+        if (payload == null || payload.isEmpty()) throw new CustomException(VerifyErrorCode.OTP_EXPIRED);
 
-        Instant now = Instant.now();
+        String savedPhone = (String) payload.get("phone");
+        if (savedPhone == null || !savedPhone.equals(normPhone)) throw new CustomException(VerifyErrorCode.INVALID_PHONE);
 
-        // 만료 처리: PENDING이면서 만료된 경우만 EXPIRED로 전이
-        if (now.isAfter(v.getExpiresAt())) {
-            repo.markExpiredIfPending(tid, now);
-            return new VerifyDto.VerifyPollResponse(tid, "EXPIRED");
-        }
-
-        // IMAP에서 토큰 매칭 확인
-        var match = imap.findToken(v.getToken());
-        if (match.isPresent()) {
-            int updated = repo.markIfPending(tid, "SUCCESS", now, now);
-            if (updated == 1) {
-                return new VerifyDto.VerifyPollResponse(tid, "SUCCESS");
-            } else {
-                // 경합: 최신 상태 반환
-                var latest = repo.findById(tid).orElse(v);
-                String status = latest.getStatus();
-                if (!"SUCCESS".equals(status) && now.isAfter(latest.getExpiresAt())) {
-                    status = "EXPIRED";
-                }
-                return new VerifyDto.VerifyPollResponse(tid, status);
-            }
-        }
-
-        return new VerifyDto.VerifyPollResponse(tid, "PENDING");
+        // 상태 업데이트 & 재사용 방지
+        redis.opsForHash().put(tKey, "status", "VERIFIED");
+        redis.delete(phoneKey(normPhone)); // 진행중 락 해제
+        redis.expire(tKey, Duration.ofSeconds(SUCCESS_GRACE_SECONDS)); // 60초 동안 SUCCESS 상태 보존
     }
 
-    @Scheduled(fixedDelay = 60_000)
+    // ===== Resend: 기존 건 삭제 후 재발급 =====
     @Transactional
-    public void cleanup() {
-        repo.cleanup(Instant.now());
+    public VerifyDto.VerifyStartResponse resend(String phone, @Nullable String userId) {
+        final String normPhone = normalizePhone(phone);
+        final String pKey = phoneKey(normPhone);
+        String oldToken = redis.opsForValue().get(pKey);
+        if (oldToken != null) redis.delete(tokenKey(oldToken));
+        redis.delete(pKey);
+
+        VerifyDto.VerifyStartRequest req = new VerifyDto.VerifyStartRequest(normPhone, VerifyDto.VerifyChannel.NUMBER_SMSTO);
+        // 또는 필요에 따라 채널 값을 EMAIL_SMSTO 로
+        return start(req, userId);
     }
 
-    @Transactional
-    public void finish(String id, String token, @Nullable String phoneFromClient) {
-        var now = Instant.now();
-
-        if (id == null || id.isBlank())
-//            throw new VerifyNotFoundException("NOT_FOUND");
-            throw new CustomException(VerifyErrorCode.INVALID_OTP_CODE);
-        if (token == null || token.isBlank())
-//            throw new VerifyInvalidTokenException("INVALID_TOKEN");
-            throw new CustomException(VerifyErrorCode.INVALID_OTP_CODE);
-
-        // 1) id + PENDING 으로만 조회
-        PhoneVerification v = repo.findByIdAndStatus(id, "PENDING")
-                .orElseThrow(() -> new CustomException(VerifyErrorCode.VERIFY_NOT_FOUND));
-
-        // 2) 만료(now >= expiresAt)면 만료 전이 후 410
-        if (!v.getExpiresAt().isAfter(now)) { // now >= expiresAt
-            repo.markExpiredIfPending(id, now);
-            throw new CustomException(VerifyErrorCode.OTP_EXPIRED);
-        }
-
-        // 3) 토큰 상수시간 비교
-        String input = norm(token);
-        String saved = norm(v.getToken());
-        if (!constantTimeEquals(input, saved)) {
-            throw new CustomException(VerifyErrorCode.INVALID_OTP_CODE);
-        }
-
-        // 4) phone 일치
-        if (phoneFromClient != null && !normalizePhone(phoneFromClient).equals(v.getPhone())) {
-            throw new CustomException(VerifyErrorCode.INVALID_PHONE);
-        }
-
-        // 5) 수신 확인 강제
-        if (imap.findToken(v.getToken()).isEmpty()) {
-            // 아직 메일/SMS 수신함에서 해당 토큰이 발견되지 않음
-            throw new CustomException(VerifyErrorCode.DELIVERY_PENDING);
-        }
-
-        // 6) 경합 안전 성공 전이 (조건부 UPDATE)
-        int updated = repo.markIfPending(id, "SUCCESS", now, now);
-        if (updated != 1) {
-            var latest = repo.findById(id).orElseThrow(() -> new CustomException(VerifyErrorCode.VERIFY_NOT_FOUND));
-            if ("SUCCESS".equals(latest.getStatus())) return; // 이미 성공됨
-            if (!latest.getExpiresAt().isAfter(now)) throw new CustomException(VerifyErrorCode.OTP_EXPIRED);
-            throw new CustomException(VerifyErrorCode.INVALID_OTP_CODE);
-        }
-
-        // 7) 동일 번호의 다른 PENDING 정리
-        repo.expirePendingByPhoneExceptId(v.getPhone(), v.getId());
+    // ===== Poll =====
+    public VerifyDto.VerifyPollResponse poll(String token) {
+        final String tKey = tokenKey(token);
+        Map<Object, Object> payload = redis.opsForHash().entries(tKey);
+        if (payload == null || payload.isEmpty()) return new VerifyDto.VerifyPollResponse(token, "EXPIRED");
+        String status = (String) payload.getOrDefault("status", "PENDING");
+        return new VerifyDto.VerifyPollResponse(token, status);
     }
 
+    // 컨트롤러의 finish(...) 호출을 살리기 위한 어댑터 (tid는 무시)
+    @Transactional
+    public void finish(String tid, String token, @Nullable String phone) {
+        // Redis 전환 이후엔 tid가 의미 없으므로 token+phone 검증만 수행
+        verify(phone, token);
+    }
 
-    private String normalize(String p) {
-        if (p == null) return null;
-        String s = p.replaceAll("[^0-9+]", "");
-        // +82로 온 번호를 0으로 치환 (필요 시 규칙 조정)
+    // Helpers
+    private String generateToken() { return RandomStringUtils.randomNumeric(6); }
+    private static String normalizePhone(String raw) {
+        if (raw == null) return null;
+        String s = raw.replaceAll("[^0-9+]", "");
         if (s.startsWith("+82")) s = "0" + s.substring(3);
-        return s;
+        return s.replaceAll("\\D", "");
     }
-
-    private static String norm(String s) { return s == null ? "" : s.trim().toUpperCase(); }
-    private static String normalizePhone(String raw) { return raw.replaceAll("\\D", ""); }
-
-    private static boolean constantTimeEquals(String a, String b) {
-        if (a == null || b == null || a.length() != b.length()) return false;
-        int r = 0;
-        for (int i = 0; i < a.length(); i++) r |= a.charAt(i) ^ b.charAt(i);
-        return r == 0;
-    }
-
 }

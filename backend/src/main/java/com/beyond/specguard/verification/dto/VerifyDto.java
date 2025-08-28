@@ -15,7 +15,6 @@ public class VerifyDto {
     ) {}
 
     public record VerifyStartResponse(
-            String tid,           // verification id
             String token,         // 화면 안내용(본문에 들어감)
             String qrSmsto,       // QR 생성에 쓸 문자열 (SMSTO:...)
             String smsLink,       // 모바일에서 열 경우 'sms:...' 링크
@@ -25,28 +24,19 @@ public class VerifyDto {
     ) {}
 
     public record VerifyPollResponse(
-            String tid, String status // PENDING | SUCCESS | FAIL | EXPIRED
+            String token, String status // PENDING | SUCCESS | FAIL | EXPIRED
     ) {}
 
     public record VerifyFinishRequest(
-            @JsonAlias({"id","ID","TID"})                 // 호환 키 허용 (중요)
-            @NotBlank(message = "tid required")
-            @Pattern(regexp = "^[0-9a-fA-F\\-]{20,}$",    // UUID v7 대충 커버 (원하면 정확 regex로)
-                    message = "tid invalid")
             String tid,
 
             @NotBlank(message = "token required")
-            @Pattern(regexp = "^VERIFY[A-Z0-9]{6}$",      // 여러분 규칙에 맞게
-                    message = "token invalid")
+            @Pattern(regexp = "^[0-9]{6}$", message = "token must be 6 digits")
             String token,
 
+            @NotBlank(message = "phone required")
             String phone
     ) {}
 
     public enum VerifyChannel { EMAIL_SMSTO, NUMBER_SMSTO }
-
-
-
-
-
 }

@@ -17,7 +17,7 @@ public enum VerifyErrorCode implements ErrorCode {
     DELIVERY_PENDING(HttpStatus.NOT_FOUND, "DELIVERY_PENDING", "인증 코드를 찾을 수 없습니다."),
     VERIFY_ALREADY_USED(HttpStatus.BAD_REQUEST, "VERIFY_ALREADY_USED", "이미 사용된 인증입니다"),
 
-    // DB/중복/기타
+    // 중복/기타
     DUPLICATE_REQUEST(HttpStatus.CONFLICT, "DUPLICATE_REQUEST", "이미 처리 중인 요청이 존재합니다"),
     TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "TOO_MANY_REQUESTS", "요청 횟수를 초과했습니다");
 

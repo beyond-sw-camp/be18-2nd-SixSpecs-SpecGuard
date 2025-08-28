@@ -55,6 +55,9 @@ dependencies {
     implementation 'org.apache.commons:commons-lang3:3.14.0'
     // UUIDV7
     implementation 'com.github.f4b6a3:uuid-creator:5.3.5'
+    // REDIS
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
 }
 
 
