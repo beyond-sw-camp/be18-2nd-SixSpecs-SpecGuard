@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SpecGuard - 휴대폰 본인인증</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- QRCodeJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        body { background: #0b1220; }
+    </style>
+</head>
+<body class="text-slate-100">
+<div id="app" class="min-h-screen flex items-center justify-center p-6">
+    <div class="bg-slate-900/50 rounded-2xl p-8 w-full max-w-3xl shadow-xl ring-1 ring-slate-800">
+        <div class="flex flex-col md:flex-row gap-8">
+
+            <!-- 왼쪽: 설명 + 폼 -->
+            <div class="flex-1">
+                <h1 class="text-2xl font-extrabold mb-1">휴대폰 본인인증 (Vue)</h1>
+                <p class="text-slate-400 mb-6">번호 입력 → 메시지 자동작성 → 전송 → <span class="text-slate-200">인증하기</span></p>
+
+                <!-- 휴대폰 번호 -->
+                <div class="mb-4">
+                    <label class="block text-sm text-slate-400 mb-1">휴대폰 번호</label>
+                    <input v-model.trim="state.phone" class="w-full p-2 rounded bg-slate-800 ring-1 ring-slate-700"
+                           placeholder="01012345678" inputmode="numeric" />
+                </div>
+
+                <!-- 버튼들 -->
+                <div class="flex flex-wrap gap-3 mb-4">
+                    <button @click="start" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 font-semibold">
+                        인증 메시지 생성
+                    </button>
+                    <button @click="openSms" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 font-semibold">
+                        SMS 열기
+                    </button>
+                    <button @click="finish" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 font-semibold">
+                        인증하기
+                    </button>
+                </div>
+
+                <!-- 토큰/상태 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="rounded-xl bg-slate-800 p-3">
+                        <div class="text-xs text-slate-400 mb-1">TID</div>
+                        <div class="font-mono text-sm break-all">{{ state.tid || '-' }}</div>
+                    </div>
+                    <div class="rounded-xl bg-slate-800 p-3">
+                        <div class="text-xs text-slate-400 mb-1">TOKEN</div>
+                        <div class="font-mono text-sm break-all">{{ state.token || '-' }}</div>
+                    </div>
+                    <div class="rounded-xl bg-slate-800 p-3">
+                        <div class="text-xs text-slate-400 mb-1">STATUS</div>
+                        <div class="font-mono text-sm" :class="statusClass">{{ state.status }}</div>
+                    </div>
+                </div>
+
+                <!-- 결과 메시지 -->
+                <div v-if="state.message" class="mt-4 rounded-xl bg-slate-800 p-3 text-sm">
+                    {{ state.message }}
+                </div>
+
+                <p class="mt-4 text-xs text-slate-500">
+                    * 브라우저/OS 정책상 SMS 수신자 자동 지정이 제한될 수 있으며, 사용자가 직접 확인/전송해야 합니다.
+                </p>
+            </div>
+
+            <!-- 오른쪽: QR -->
+            <div class="w-full md:w-64">
+                <div class="rounded-2xl bg-slate-800 p-4 flex flex-col items-center">
+                    <div id="qrcode" class="bg-white p-2 rounded shadow"></div>
+                    <div class="mt-3 text-xs text-slate-400 text-center break-all">
+                        API: {{ state.apiBase }}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, reactive, computed, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            const state = reactive({
+                apiBase: 'http://192.168.0.44:8080', // 🔒 고정 (수정 가능)
+                phone: '',
+                channel: 'EMAIL_SMSTO',             // 🔒 고정
+                smsTo: 'specguard55@gmail.com',     // 🔒 고정
+                tid: '',
+                token: '',
+                status: 'PENDING',
+                message: ''
+            });
+
+            const statusClass = computed(() => {
+                if (state.status === 'SUCCESS' || state.status === 'VERIFIED') return 'text-emerald-400';
+                if (state.status === 'PENDING') return 'text-yellow-300';
+                return 'text-rose-400';
+            });
+
+            function normalizePhone(p) {
+                return (p || '').replace(/[^0-9+]/g, '');
+            }
+
+            // 1) 인증 메시지 생성
+            async function start() {
+                state.message = '';
+                const url = state.apiBase + '/api/verify/phone/start';
+                try {
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            phone: normalizePhone(state.phone),
+                            channel: state.channel
+                        })
+                    });
+                    if (!res.ok) throw new Error('start failed');
+                    const data = await res.json();
+                    state.tid   = data?.tid ?? data?.id ?? '';
+                    state.token = data?.token ?? '';
+                    state.status = data?.status ?? 'PENDING';
+                    state.message = '인증 메시지 템플릿 생성 완료. SMS로 전송해 주세요.';
+                } catch (e) {
+                    console.error(e);
+                    state.message = '인증 메시지 생성 실패';
+                }
+            }
+
+            // 2) SMS 열기
+            function openSms() {
+                const body = encodeURIComponent(
+                    `[SpecGuard] 본인인증 토큰: ${state.token}\n요청ID: ${state.tid}\n이 메시지를 그대로 보내 인증을 완료해 주세요.`
+                );
+
+                const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+                let href = '';
+                if (isiOS) {
+                    // iOS(iMessage)에서는 이메일 주소를 수신자에 넣는 것이 동작
+                    // 형식: sms:수신자&body=본문  (물음표 없이 &body)
+                    href = `sms:specguard55@gmail.com&body=${body}`;
+                } else {
+                    // 안드로이드/기타 → 이메일 주소 수신자 지정이 막혀 있으므로 본문만 채워서 열기
+                    href = `sms:&body=${body}`;
+                }
+
+                window.location.href = href;
+            }
+
+            // 3) 인증하기
+            async function finish() {
+                state.message = '';
+                const url = state.apiBase + '/api/verify/phone/finish';
+                try {
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            tid: state.tid,
+                            token: state.token,
+                            phone: normalizePhone(state.phone)
+                        })
+                    });
+                    const data = await res.json();
+                    state.status = data?.status ?? 'UNKNOWN';
+                    state.message = `서버 응답: ${JSON.stringify(data)}`;
+                } catch (e) {
+                    console.error(e);
+                    state.status = 'FAILED';
+                    state.message = '인증 요청 실패';
+                }
+            }
+
+            // QR 생성
+            function buildQr() {
+                const el = document.getElementById('qrcode');
+                el.innerHTML = '';
+                new QRCode(el, {
+                    text: window.location.href,
+                    width: 180,
+                    height: 180,
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
+
+            onMounted(buildQr);
+
+            return { state, statusClass, start, openSms, finish };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
