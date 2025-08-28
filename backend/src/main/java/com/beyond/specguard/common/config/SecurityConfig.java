@@ -28,7 +28,6 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/signup/user").permitAll() // 회원가입만 허용
                 .requestMatchers("/api/verify/**").permitAll() // 휴대폰 인증 허용 (테스트)
                 .anyRequest().permitAll() // 일단 전체 오픈 (추후 tighten)
-
 //                .anyRequest().authenticated()
         );
 //                .httpBasic(httpBasic -> httpBasic.disable()); // 기본 인증 팝업도 꺼버리기;
