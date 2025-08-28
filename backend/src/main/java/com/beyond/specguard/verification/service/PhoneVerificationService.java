@@ -1,12 +1,9 @@
 package com.beyond.specguard.verification.service;
 
+import com.beyond.specguard.common.exception.CustomException;
+import com.beyond.specguard.common.exception.errorcode.VerifyErrorCode;
 import com.beyond.specguard.verification.dto.VerifyDto;
 import com.beyond.specguard.verification.entity.PhoneVerification;
-import com.beyond.specguard.common.exception.verification.VerifyDeliveryPendingException;
-import com.beyond.specguard.common.exception.verification.VerifyExpiredException;
-import com.beyond.specguard.common.exception.verification.VerifyInvalidPhoneException;
-import com.beyond.specguard.common.exception.verification.VerifyInvalidTokenException;
-import com.beyond.specguard.common.exception.verification.VerifyNotFoundException;
 import com.beyond.specguard.verification.repository.PhoneVerificationRepo;
 import com.beyond.specguard.verification.util.ImapReader;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +41,7 @@ public class PhoneVerificationService {
      * 충돌 방지를 위해 DB에 존재 여부를 확인하면서 토큰 생성.
      * 충돌은 드물지만 방어적으로 최대 5회 재시도.
      */
+    /// //////////////////////////////////////////////
     private String generateUniqueToken() {
         for (int i = 0; i < 5; i++) {
             String t = "VERIFY" + RandomStringUtils.randomAlphanumeric(6).toUpperCase();
@@ -132,45 +130,47 @@ public class PhoneVerificationService {
         var now = Instant.now();
 
         if (id == null || id.isBlank())
-            throw new VerifyNotFoundException("NOT_FOUND");
+//            throw new VerifyNotFoundException("NOT_FOUND");
+            throw new CustomException(VerifyErrorCode.INVALID_OTP_CODE);
         if (token == null || token.isBlank())
-            throw new VerifyInvalidTokenException("INVALID_TOKEN");
+//            throw new VerifyInvalidTokenException("INVALID_TOKEN");
+            throw new CustomException(VerifyErrorCode.INVALID_OTP_CODE);
 
         // 1) id + PENDING 으로만 조회
         PhoneVerification v = repo.findByIdAndStatus(id, "PENDING")
-                .orElseThrow(() -> new VerifyNotFoundException("NOT_FOUND"));
+                .orElseThrow(() -> new CustomException(VerifyErrorCode.VERIFY_NOT_FOUND));
 
         // 2) 만료(now >= expiresAt)면 만료 전이 후 410
         if (!v.getExpiresAt().isAfter(now)) { // now >= expiresAt
             repo.markExpiredIfPending(id, now);
-            throw new VerifyExpiredException("EXPIRED");
+            throw new CustomException(VerifyErrorCode.OTP_EXPIRED);
         }
 
         // 3) 토큰 상수시간 비교
         String input = norm(token);
         String saved = norm(v.getToken());
         if (!constantTimeEquals(input, saved)) {
-            throw new VerifyInvalidTokenException("INVALID_TOKEN");
+            throw new CustomException(VerifyErrorCode.INVALID_OTP_CODE);
         }
 
-        // 4) (옵션) phone 일치
+        // 4) phone 일치
         if (phoneFromClient != null && !normalizePhone(phoneFromClient).equals(v.getPhone())) {
-            throw new VerifyInvalidPhoneException("INVALID_PHONE");
+            throw new CustomException(VerifyErrorCode.INVALID_PHONE);
         }
 
         // 5) 수신 확인 강제
         if (imap.findToken(v.getToken()).isEmpty()) {
             // 아직 메일/SMS 수신함에서 해당 토큰이 발견되지 않음
-            throw new VerifyDeliveryPendingException("DELIVERY_PENDING");
+            throw new CustomException(VerifyErrorCode.DELIVERY_PENDING);
         }
 
         // 6) 경합 안전 성공 전이 (조건부 UPDATE)
         int updated = repo.markIfPending(id, "SUCCESS", now, now);
         if (updated != 1) {
-            var latest = repo.findById(id).orElseThrow(() -> new VerifyNotFoundException("NOT_FOUND"));
+            var latest = repo.findById(id).orElseThrow(() -> new CustomException(VerifyErrorCode.VERIFY_NOT_FOUND));
             if ("SUCCESS".equals(latest.getStatus())) return; // 이미 성공됨
-            if (!latest.getExpiresAt().isAfter(now)) throw new VerifyExpiredException("EXPIRED");
-            throw new VerifyInvalidTokenException("INVALID_STATE");
+            if (!latest.getExpiresAt().isAfter(now)) throw new CustomException(VerifyErrorCode.OTP_EXPIRED);
+            throw new CustomException(VerifyErrorCode.INVALID_OTP_CODE);
         }
 
         // 7) 동일 번호의 다른 PENDING 정리
