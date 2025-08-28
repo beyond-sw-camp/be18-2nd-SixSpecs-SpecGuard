@@ -26,6 +26,10 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-json'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     annotationProcessor 'org.projectlombok:lombok'
@@ -39,6 +43,18 @@ dependencies {
 
     // --- Validation (회원가입 시 유효성 검사) ---
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // IMAP 메일 수신 (Gmail 등)
+    implementation 'com.sun.mail:jakarta.mail:2.0.1'   // Jakarta Mail
+
+    // QR 생성 (SMSTO 스킴)
+    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.google.zxing:javase:3.5.3'
+
+    // Random String Util
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    // UUIDV7
+    implementation 'com.github.f4b6a3:uuid-creator:5.3.5'
 }
 
 
