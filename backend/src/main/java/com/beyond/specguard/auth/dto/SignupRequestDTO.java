@@ -39,5 +39,4 @@ public class SignupRequestDTO {
             message = "올바른 전화번호 형식을 입력하세요. 예: 010-1234-5678"
     )
     private String phone;
-    // test commit
 }
