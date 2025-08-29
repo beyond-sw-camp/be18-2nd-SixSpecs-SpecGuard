@@ -15,16 +15,18 @@ public class VerifyDto {
     ) {}
 
     public record VerifyStartResponse(
-            String token,         // 화면 안내용(본문에 들어감)
-            String qrSmsto,       // QR 생성에 쓸 문자열 (SMSTO:...)
-            String smsLink,       // 모바일에서 열 경우 'sms:...' 링크
-            String manualTo,      // 수신처 텍스트(복사용)
-            String manualBody,    // 본문 텍스트(복사용)
-            long   expiresInSec
+            String token,        // 표시용 (보안상 서버에서만 쓰고 프론트 미표시도 가능)
+            String smsLink,      // sms:...&body=...
+            String qrSmsto,      // SMSTO:...:...
+            String manualTo,     // 수신자(예: 이메일)
+            String manualBody,   // 본문 (VID, PHONE 포함)
+            long   expiresInSec  // TTL 초
     ) {}
 
+//    public record VerifyStatusResponse(
     public record VerifyPollResponse(
-            String token, String status // PENDING | SUCCESS | FAIL | EXPIRED
+            String status, // PENDING | SUCCESS | FAIL | EXPIRED
+            String token
     ) {}
 
     public record VerifyFinishRequest(
@@ -36,8 +38,9 @@ public class VerifyDto {
             String phone
     ) {}
 
-    public record VerifyStatusResponse(String status) {}
+    public record FinishResponse(String status) {}
 
+    public record VerifyStatusResponse(String status) {}
 
     public enum VerifyChannel { EMAIL_SMSTO, NUMBER_SMSTO }
 }

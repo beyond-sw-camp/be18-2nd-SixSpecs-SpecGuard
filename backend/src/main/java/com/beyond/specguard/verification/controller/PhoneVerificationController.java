@@ -1,24 +1,17 @@
 package com.beyond.specguard.verification.controller;
 
-
+import static com.beyond.specguard.verification.util.PhoneUtil.normalizePhone;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.VerifyErrorCode;
 import com.beyond.specguard.verification.dto.VerifyDto;
 import com.beyond.specguard.verification.service.PhoneVerificationService;
+import com.beyond.specguard.verification.util.PhoneUtil;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,68 +19,92 @@ import java.util.regex.Pattern;
 @RequestMapping("/api/verify/phone")
 @RequiredArgsConstructor
 public class PhoneVerificationController {
+
+
     private final PhoneVerificationService service;
 
+    /** 1) 인증코드 생성 */
     @PostMapping("/start")
-    public VerifyDto.VerifyStartResponse start(@Valid @RequestBody VerifyDto.VerifyStartRequest req,
-                                                Authentication auth) {
-        String userId = null;
-        return service.start(req, userId);
+    public VerifyDto.VerifyStartResponse start(@Valid @RequestBody VerifyDto.VerifyStartRequest req) {
+        return service.start(req);
     }
 
-    // 폴링 (UI에서 2~3초 간격으로 호출)
+    /** 2) 폴링 (UI에서 2~3초 간격) — phone 기준 */
     @GetMapping("/poll")
-    public VerifyDto.VerifyPollResponse poll(@RequestParam ("token") String token) {
-        return service.poll(token);
+    public VerifyDto.VerifyPollResponse poll(@RequestParam("phone") String phone) {
+        return service.poll(phone);
     }
 
+    /** 3) 최종 인증 — phone + token */
     @PostMapping("/finish")
-    public Map<String, String> finish(@Valid @RequestBody VerifyDto.VerifyFinishRequest req) {
-
-
-        service.finish(req.token(), req.phone());
-        return Map.of("status", "SUCCESS");
+    public VerifyDto.FinishResponse finish(@Valid @RequestBody VerifyDto.VerifyFinishRequest req) {
+        return service.finish(req);
     }
 
-    // SMS 게이트웨이/메일 웹훅이 JSON으로 POST
-    @PostMapping(consumes = "application/json")
+    /** 4) 상태 조회 — phone 기준 */
+    @GetMapping("/status")
+    public VerifyDto.VerifyStatusResponse status(@RequestParam("phone") String phone) {
+        return service.status(phone);
+    }
+
+    /**
+     * 5) SMS/메일 웹훅 수신
+     *    - 경로 충돌 방지를 위해 /inbound 로 분리
+     *    - start 시 manualBody에 "PHONE:{phone}"를 포함하면 본문에서 추출 가능
+     */
+    @PostMapping(value = "/inbound", consumes = "application/json")
     public ResponseEntity<Void> inbound(
             @RequestBody @Valid InboundPayload p,
-            @RequestHeader(value = "X-Verify-Secret", required = false) String secret // 보안용(옵션)
+            @RequestHeader(value = "X-Verify-Secret", required = false) String secret
     ) {
-        // (권장) 웹훅 보안 검사: shared secret/HMAC 등
+        // (선택) 웹훅 보안
         // if (!"your-secret".equals(secret)) return ResponseEntity.status(403).build();
 
-        final String token = extractSixDigits(p.body());
-        final String from  = p.from(); // 전화번호 또는 이메일
+        final String body  = p.body();
+        final String token = extractSixDigits(body);
 
-        // 1) SMS 게이트웨이(전화번호가 from 에 옴) → phone+token으로 검증
-        if (from != null && from.matches(".*[0-9].*")) {
-            service.verify(from, token); // service.verify 내부에서 normalize 수행
-            return ResponseEntity.accepted().build();
-        }
+        final String from = p.from();
+        if (from == null) return ResponseEntity.badRequest().build();
 
-        // 2) 이메일(iMessage/메일) 웹훅처럼 'from'이 전화번호가 아닌 경우
-        //    → 토큰으로 Redis에서 phone 찾아서 검증 (※ 보안상 보낼 단말 번호 확인은 불가)
-        service.finish(token, null); // or service.verifyByTokenOnly(token) 별도 메서드로 분리해도 됨
+        final String phone = normalizePhone(from);
+        if (phone.isEmpty()) return ResponseEntity.badRequest().build();
+
+        service.finish(new VerifyDto.VerifyFinishRequest(token, phone));
         return ResponseEntity.accepted().build();
+
+//        // 1) 본문에 PHONE:010... 이 있으면 그 번호로 처리
+//        String phone = extractPhoneFromBody(body);
+
+        // 2) 없으면 from(게이트웨이의 발신 번호)에서 추출 시도
+//        if (phone == null && p.from() != null && p.from().matches(".*\\d.*")) {
+//            phone = p.from();
+//        }
+//
+//        if (phone == null) return ResponseEntity.badRequest().build();
+//
+//        service.finish(new VerifyDto.VerifyFinishRequest(token, phone));
+//        return ResponseEntity.accepted().build();
     }
 
-    private String extractSixDigits(String body) {
-        if (body == null) throw new CustomException(VerifyErrorCode.INVALID_OTP_CODE);
-        Matcher m = Pattern.compile("\\b([0-9]{6})\\b").matcher(body);
-        if (!m.find()) throw new CustomException(VerifyErrorCode.INVALID_PHONE);
+    private String extractSixDigits(String text) {
+        if (text == null) throw new CustomException(VerifyErrorCode.INVALID_OTP_CODE);
+        Matcher m = Pattern.compile("\\b([0-9]{6})\\b").matcher(text);
+        if (!m.find()) throw new CustomException(VerifyErrorCode.INVALID_OTP_CODE);
         return m.group(1);
     }
 
-    // 최소 JSON 페이로드 (필요시 필드 더 추가)
+    /** 본문에서 "PHONE:010..." 추출 */
+    private String extractPhoneFromBody(String text) {
+        if (text == null) return null;
+        Matcher m = Pattern.compile("PHONE:([0-9\\-]+)").matcher(text);
+        return m.find() ? m.group(1) : null;
+    }
+
+    /** 웹훅 최소 페이로드 */
     public record InboundPayload(
-            @NotBlank String body,   // 메시지 본문
-            String from,             // 발신자(전화번호 or 이메일)
-            String to,               // 수신자
-            String subject           // 제목(이메일일 때)
+            @NotBlank String body,
+            String from,
+            String to,
+            String subject
     ) {}
-
-
-
 }

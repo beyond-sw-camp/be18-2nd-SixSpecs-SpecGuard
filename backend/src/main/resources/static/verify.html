@@ -1,70 +1,54 @@
 <!doctype html>
 <html lang="ko">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SpecGuard - 휴대폰 본인인증</title>
-
-    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-    <!-- QRCodeJS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
-    <style>
-        body { background: #0b1220; }
-    </style>
+    <style>body { background: #0b1220; }</style>
 </head>
 <body class="text-slate-100">
 <div id="app" class="min-h-screen flex items-center justify-center p-6">
     <div class="bg-slate-900/50 rounded-2xl p-8 w-full max-w-3xl shadow-xl ring-1 ring-slate-800">
         <div class="flex flex-col md:flex-row gap-8">
 
-            <!-- 왼쪽: 설명 + 폼 -->
+            <!-- 왼쪽 -->
             <div class="flex-1">
-                <h1 class="text-2xl font-extrabold mb-1">휴대폰 본인인증 (Vue)</h1>
-                <p class="text-slate-400 mb-6">번호 입력 → 메시지 자동작성 → 전송 → <span class="text-slate-200">인증하기</span></p>
+                <h1 class="text-2xl font-extrabold mb-1">휴대폰 본인인증</h1>
+                <p class="text-slate-400 mb-6">번호 입력 → 메시지 전송 → 자동 인증</p>
 
                 <!-- 휴대폰 번호 -->
                 <div class="mb-4">
                     <label class="block text-sm text-slate-400 mb-1">휴대폰 번호</label>
-                    <input v-model.trim="state.phone" class="w-full p-2 rounded bg-slate-800 ring-1 ring-slate-700"
+                    <input v-model.trim="state.phone"
+                           class="w-full p-2 rounded bg-slate-800 ring-1 ring-slate-700"
                            placeholder="01012345678" inputmode="numeric" />
                 </div>
 
-                <!-- 버튼들 -->
-                <div class="flex flex-wrap gap-3 mb-4">
+                <!-- 버튼 -->
+                <div class="flex gap-3 mb-4">
                     <button @click="start" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 font-semibold">
-                        인증 번호 생성
+                        인증번호 생성
                     </button>
-                    <button @click="openSms" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 font-semibold">
+                    <button @click="openSms" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 font-semibold"
+                            :disabled="!state.manualBody">
                         SMS 열기
-                    </button>
-                    <button @click="verify" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 font-semibold">
-                        인증하기
                     </button>
                 </div>
 
-                <!-- 토큰/상태 -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div class="rounded-xl bg-slate-800 p-3">
-                        <div class="text-xs text-slate-400 mb-1">TOKEN</div>
-                        <div class="font-mono text-sm break-all">{{ state.displayToken || '-' }}</div>
-                    </div>
-                    <div class="rounded-xl bg-slate-800 p-3">
-                        <div class="text-xs text-slate-400 mb-1">STATUS</div>
-                        <div class="font-mono text-sm" :class="statusClass">{{ state.status }}</div>
-                    </div>
+                <!-- 상태/TTL -->
+                <div class="rounded-xl bg-slate-800 p-3 mb-3">
+                    <div class="text-xs text-slate-400 mb-1">STATUS</div>
+                    <div class="font-mono text-sm" :class="statusClass">{{ state.status }}</div>
                 </div>
 
                 <div class="rounded-xl bg-slate-800 p-3">
-                    <div class="text-xs text-slate-400 mb-1">TTL</div>
+                    <div class="text-xs text-slate-400 mb-1">인증만료까지 남은시간</div>
                     <div class="font-mono text-sm">
                         {{ formattedLeft }} <span class="text-slate-500" v-if="state.totalSec">/ {{ formattedTotal }}</span>
                     </div>
-                    <!-- 진행바 -->
                     <div class="mt-2 h-2 rounded bg-slate-700 overflow-hidden" v-if="state.totalSec">
                         <div class="h-2 bg-emerald-500 transition-all duration-300"
                              :style="{ width: ttlPercent + '%' }"></div>
@@ -77,7 +61,7 @@
                 </div>
 
                 <p class="mt-4 text-xs text-slate-500">
-                    * 브라우저/OS 정책상 SMS 수신자 자동 지정이 제한될 수 있으며, 사용자가 직접 확인/전송해야 합니다.
+                    * SMS 수신자는 기기/OS 환경에 따라 직접 지정해야 할 수도 있습니다.
                 </p>
             </div>
 
@@ -100,7 +84,34 @@
 
     createApp({
         setup() {
-            const formattedLeft = computed(() => formatSec(state.leftSec));
+            const RECIPIENT_EMAIL = 'specguard55@gmail.com';
+
+            const state = reactive({
+                apiBase: 'http://192.168.0.8:8080',
+                phone: '',
+                channel: 'EMAIL_SMSTO',
+                qrSmsto: '',
+                smsLink: '',
+                manualTo: '',
+                manualBody: '',
+                expiresAt: null,
+                leftSec: 0,
+                totalSec: 0,
+                pollTimer: null,
+                ttlTimer: null,
+                status: 'IDLE',   // IDLE | PENDING | SUCCESS | EXPIRED | FAILED
+                message: ''
+            });
+
+            const statusClass = computed(() =>
+                state.status === 'SUCCESS' ? 'text-emerald-400'
+                    : state.status === 'PENDING' ? 'text-yellow-300'
+                        : state.status === 'EXPIRED' ? 'text-orange-400'
+                            : state.status === 'FAILED'  ? 'text-rose-400'
+                                : 'text-slate-300'
+            );
+
+            const formattedLeft  = computed(() => formatSec(state.leftSec));
             const formattedTotal = computed(() => formatSec(state.totalSec || 0));
             const ttlPercent = computed(() => {
                 if (!state.totalSec) return 0;
@@ -108,47 +119,22 @@
                 return Math.max(0, Math.min(100, p));
             });
 
-            const RECIPIENT_EMAIL = 'specguard55@gmail.com';
-            const state = reactive({
-                apiBase: 'http://192.168.0.8:8080',
-                phone: '',
-                channel: 'EMAIL_SMSTO',
-                displayToken: '',
-                qrSmsto: '',
-                smsLink: '',
-                manualTo: '',
-                manualBody: '',
-                expiresAt: null,
-                leftSec: 0,             // 남은 유효시간 표시
-                totalSec: 0,
-                pollTimer: null,
-                ttlTimer: null,
-                status: 'IDLE',         // IDLE | PENDING | SUCCESS | EXPIRED | FAILED
-                message: '',
-                userInputToken: ''
-            });
-
-            const statusClass = computed(() =>
-                state.status === 'SUCCESS' ? 'text-emerald-400'
-                : state.status === 'PENDING' ? 'text-yellow-300'
-                : state.status === 'EXPIRED' ? 'text-orange-400'
-                : state.status === 'FAILED'  ? 'text-rose-400'
-                : 'text-slate-300'
-            );
-
-            function normalizePhone(p) {return (p || '').replace(/\D/g, '');}
+            function normalizePhone(p) { return (p || '').replace(/\D/g, ''); }
 
             function renderQr() {
                 const qrEl = document.getElementById("qrcode");
                 if (!qrEl) return;
                 qrEl.innerHTML = "";
 
-                const here = new URL(window.location.href);
-                here.searchParams.set("sms", "1");                    // sms 자동작성 트리거
-                here.searchParams.set("token", state.displayToken || "");  // 본문에 넣을 토큰
+                // manualBody는 서버에서 내려준 "인증번호: 123456 (5분 유효) PHONE:010..." 형식
+                const body = state.manualBody || `인증번호: ${state.displayToken || ''} (5분 유효)`;
+                const encoded = encodeURIComponent(body);
+
+                // iOS 호환 우선 → sms: + 이메일 주소 + &body=
+                const qrText = `sms:${RECIPIENT_EMAIL}&body=${encoded}`;
 
                 new QRCode(qrEl, {
-                    text: here.toString(),
+                    text: qrText,
                     width: 128,
                     height: 128,
                     colorDark: "#000000",
@@ -158,32 +144,24 @@
             }
 
             async function start() {
-                // 중복 스타트 방지: 기존 타이머 정리
                 stopTimers();
-
-                const body = {
-                    phone: normalizePhone(state.phone),
-                    channel: state.channel
-                };
+                const body = { phone: normalizePhone(state.phone), channel: state.channel };
 
                 try {
                     const res = await fetch(`${state.apiBase}/api/verify/phone/start`, {
-                        method: 'POST',
-                        headers: {'Content-Type':'application/json'},
+                        method: 'POST', headers: {'Content-Type':'application/json'},
                         body: JSON.stringify(body)
                     });
                     if (!res.ok) throw new Error(`start http ${res.status}`);
                     const data = await res.json();
 
-                    // ★★★ 서버 응답 키 이름에 맞춰서 아래 3개 반드시 저장 ★★★
-                    state.displayToken = data.token ?? '';
-                    state.qrSmsto = data.qrSmsto ?? '';
-                    state.smsLink = data.smsLink ?? '';
-                    state.manualTo = data.manualTo ?? '';
+                    state.qrSmsto    = data.qrSmsto ?? '';
+                    state.smsLink    = data.smsLink ?? '';
+                    state.manualTo   = data.manualTo ?? '';
                     state.manualBody = data.manualBody ?? '';
 
                     const sec = Number(data.expiresInSec ?? 0);
-                    state.totalSec = sec > 0 ? sec : 0;
+                    state.totalSec  = sec > 0 ? sec : 0;
                     state.expiresAt = sec > 0 ? new Date(Date.now() + sec * 1000) : null;
 
                     state.status = 'PENDING';
@@ -191,15 +169,12 @@
                     renderQr();
                     startPolling();
                     startTtlCountdown();
-                    console.log('[START OK]', data);
                 } catch (e) {
                     state.status = 'FAILED';
                     state.message = `Start 실패: ${e.message}`;
-                    console.error(e);
                 }
             }
 
-            // 헬퍼: 초 → mm:ss
             function formatSec(s) {
                 const n = Math.max(0, Number(s || 0));
                 const mm = String(Math.floor(n / 60)).padStart(2, '0');
@@ -208,45 +183,30 @@
             }
 
             function openSms() {
-                // 1) 값 준비
-                const RECIPIENT_EMAIL = 'specguard55@gmail.com';
+                if (!state.manualBody) return;
                 const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-                const body = `인증번호: ${state.displayToken || ''} (5분 유효)`;
-                const encoded = encodeURIComponent(body);
-                // const qrText = `sms:specguard55@gmail.com&body=${encoded}`;
-                // new QRCode(qrEl, { text: qrText, width:128, height:128 });
+                const encoded = encodeURIComponent(state.manualBody);
 
                 if (isiOS) {
-                    // ✅ iOS(iMessage): 이메일 수신자 + 본문 (&body=)
-                    // 이메일이 iMessage에 등록되어 있어야 정상 동작
                     window.location.href = `sms:${RECIPIENT_EMAIL}&body=${encoded}`;
                 } else {
-                    // ✅ Android 호환: SMS 앱이 이메일 수신자를 잘 못 받아서 mailto로 대체
-                    // (메일 앱에서 동일한 본문으로 바로 전송 가능)
                     window.location.href = `mailto:${RECIPIENT_EMAIL}?body=${encoded}`;
-                    // 만약 꼭 SMS 앱을 열고 싶다면(수신자 수동 입력):
-                    // window.location.href = `sms:?body=${encoded}`;
                 }
             }
 
-
             function startPolling() {
-                // 1. 바로 한 번 조회
                 fetchStatus();
-
-                // 2. 2초 주기 폴링 (상태 확정 시 자동 해제)
                 state.pollTimer = setInterval(fetchStatus, 2000);
             }
 
             function normalizeStatus(s) {
                 const v = String(s || '').toUpperCase();
                 if (['SUCCESS','VERIFIED','OK','DONE','PASS','PASSED','CONFIRMED'].includes(v)) return 'SUCCESS';
-                if (['EXPIRED','TIMEOUT'].includes(v)) return 'EXPIRED';
+                if (['EXPIRED','TIMEOUT','NONE'].includes(v)) return 'EXPIRED';
                 if (['FAILED','FAIL','ERROR','INVALID','MISMATCH'].includes(v)) return 'FAILED';
                 if (['PENDING','WAITING','PROCESSING'].includes(v)) return 'PENDING';
                 return 'PENDING';
             }
-            // if (s !== 'PENDING') stopTimers(); // NONE 포함해서 멈춤
 
             async function fetchStatus() {
                 const phone = normalizePhone(state.phone);
@@ -254,61 +214,20 @@
 
                 try {
                     const url = `${state.apiBase}/api/verify/phone/status?phone=${encodeURIComponent(phone)}`;
-                    const res = await fetch(url, { method: 'GET' });
+                    const res = await fetch(url);
                     if (!res.ok) throw new Error(`status http ${res.status}`);
                     const data = await res.json();
 
                     const s = normalizeStatus(data.status);
                     state.status = s;
 
-                    console.log('[STATUS]', s, data);
-
                     if (s !== 'PENDING') {
                         stopTimers();
                         if (s === 'SUCCESS') state.message = '인증 완료!';
-                        if (s === 'EXPIRED')  state.message = '인증번호가 만료되었습니다.';
-                        if (s === 'FAILED')   state.message = '인증에 실패했습니다.';
+                        if (s === 'EXPIRED') state.message = '인증번호가 만료되었습니다.';
+                        if (s === 'FAILED')  state.message = '인증에 실패했습니다.';
                     }
                 } catch (e) {
-                    console.error(e);
-                    // 네트워크 순간 오류는 폴링 유지
-                }
-            }
-
-            async function verify() {
-                const phone = normalizePhone(state.phone);
-                const token = (state.userInputToken || state.displayToken || '').trim();
-                if (!phone || !token) {
-                    state.message = '유효한 휴대폰 번호 또는 인증코드가 없습니다. 먼저 인증번호를 생성하세요.';
-                    return;
-                }
-
-                try {
-                    const res = await fetch(`${state.apiBase}/api/verify/phone/finish`, {
-                        method: 'POST',
-                        headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({phone, token}),
-                    });
-                    if (!res.ok) throw new Error(`verify http ${res.status}`);
-                    const data = await res.json();
-
-                    const s = normalizeStatus(data.status);
-                    state.status = s;
-                    console.log('[VERIFY]', data);
-
-                    if (s === 'SUCCESS') {
-                        state.message = '인증 완료!';
-                        stopTimers();
-                    } else if (s === 'EXPIRED') {
-                        state.message = '인증번호가 만료되었습니다.';
-                        stopTimers();
-                    } else {
-                        state.message = '인증 실패. 번호/토큰 확인 후 재시도';
-                        stopTimers();
-                    }
-                } catch (e) {
-                    state.status = 'FAILED';
-                    state.message = `Verify 실패: ${e.message}`;
                     console.error(e);
                 }
             }
@@ -338,36 +257,18 @@
             onUnmounted(stopTimers);
 
             onMounted(() => {
-                // QR로 들어오면 ?sms=1&token=XXXX 가 붙어있음
                 const url = new URL(window.location.href);
                 const shouldOpen = url.searchParams.get("sms") === "1";
-                const tokenFromUrl = url.searchParams.get("token");
-
                 if (shouldOpen) {
-                    if (tokenFromUrl) {
-                        // 토큰 표시용(화면에도 보이게)
-                        state.displayToken = tokenFromUrl;
-                    }
-                    // 기기별로 sms 스킴으로 이동
                     openSms();
-
-                    // 주소창 깔끔하게 정리(뒤로 가기 시 또 열리는 것 방지)
                     url.searchParams.delete("sms");
-                    url.searchParams.delete("token");
                     window.history.replaceState({}, "", url.toString());
                 }
             });
 
-
-            // 디버그용: 콘솔에서 접근 가능하게
-            window.sg = { state, start, verify, fetchStatus };
-
-            return { state, statusClass, start, verify, openSms,
-                formattedLeft, formattedTotal, ttlPercent};
-
+            return { state, statusClass, start, openSms, formattedLeft, formattedTotal, ttlPercent };
         }
     }).mount('#app');
 </script>
-
 </body>
 </html>
