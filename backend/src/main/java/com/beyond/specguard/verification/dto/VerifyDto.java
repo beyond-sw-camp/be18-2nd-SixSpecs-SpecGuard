@@ -28,8 +28,6 @@ public class VerifyDto {
     ) {}
 
     public record VerifyFinishRequest(
-            String tid,
-
             @NotBlank(message = "token required")
             @Pattern(regexp = "^[0-9]{6}$", message = "token must be 6 digits")
             String token,
@@ -37,6 +35,9 @@ public class VerifyDto {
             @NotBlank(message = "phone required")
             String phone
     ) {}
+
+    public record VerifyStatusResponse(String status) {}
+
 
     public enum VerifyChannel { EMAIL_SMSTO, NUMBER_SMSTO }
 }

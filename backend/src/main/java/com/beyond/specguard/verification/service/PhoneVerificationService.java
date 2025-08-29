@@ -35,6 +35,7 @@ public class PhoneVerificationService {
     private String tokenKey(String token) { return "pv:token:" + token; }
     private Duration ttl() { return Duration.ofSeconds(ttlSeconds); }
 
+
     // ===== Start: 토큰 발급 =====
     @Transactional
     public VerifyDto.VerifyStartResponse start(VerifyDto.VerifyStartRequest req, @Nullable String userId) {
@@ -123,8 +124,7 @@ public class PhoneVerificationService {
 
     // 컨트롤러의 finish(...) 호출을 살리기 위한 어댑터 (tid는 무시)
     @Transactional
-    public void finish(String tid, String token, @Nullable String phone) {
-        // Redis 전환 이후엔 tid가 의미 없으므로 token+phone 검증만 수행
+    public void finish(String token, @Nullable String phone) {
         verify(phone, token);
     }
 

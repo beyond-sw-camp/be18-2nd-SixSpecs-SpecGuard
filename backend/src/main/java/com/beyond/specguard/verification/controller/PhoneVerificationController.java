@@ -45,7 +45,7 @@ public class PhoneVerificationController {
     public Map<String, String> finish(@Valid @RequestBody VerifyDto.VerifyFinishRequest req) {
 
 
-        service.finish(req.tid(), req.token(), req.phone());
+        service.finish(req.token(), req.phone());
         return Map.of("status", "SUCCESS");
     }
 
@@ -69,7 +69,7 @@ public class PhoneVerificationController {
 
         // 2) 이메일(iMessage/메일) 웹훅처럼 'from'이 전화번호가 아닌 경우
         //    → 토큰으로 Redis에서 phone 찾아서 검증 (※ 보안상 보낼 단말 번호 확인은 불가)
-        service.finish(null, token, null); // or service.verifyByTokenOnly(token) 별도 메서드로 분리해도 됨
+        service.finish(token, null); // or service.verifyByTokenOnly(token) 별도 메서드로 분리해도 됨
         return ResponseEntity.accepted().build();
     }
 
@@ -87,5 +87,7 @@ public class PhoneVerificationController {
             String to,               // 수신자
             String subject           // 제목(이메일일 때)
     ) {}
+
+
 
 }

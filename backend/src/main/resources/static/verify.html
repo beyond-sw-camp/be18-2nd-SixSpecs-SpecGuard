@@ -37,12 +37,12 @@
                 <!-- 버튼들 -->
                 <div class="flex flex-wrap gap-3 mb-4">
                     <button @click="start" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 font-semibold">
-                        인증 메시지 생성
+                        인증 번호 생성
                     </button>
                     <button @click="openSms" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 font-semibold">
                         SMS 열기
                     </button>
-                    <button @click="finish" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 font-semibold">
+                    <button @click="verify" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 font-semibold">
                         인증하기
                     </button>
                 </div>
@@ -61,7 +61,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div class="rounded-xl bg-slate-800 p-3">
                         <div class="text-xs text-slate-400 mb-1">TOKEN</div>
-                        <div class="font-mono text-sm break-all">{{ state.token || '-' }}</div>
+                        <div class="font-mono text-sm break-all">{{ state.displayToken || '-' }}</div>
                     </div>
                     <div class="rounded-xl bg-slate-800 p-3">
                         <div class="text-xs text-slate-400 mb-1">STATUS</div>
@@ -98,123 +98,255 @@
 
     createApp({
         setup() {
+            const RECIPIENT_EMAIL = 'specguard55@gmail.com';
             const state = reactive({
-                apiBase: 'http://192.168.0.21:8080',
+                apiBase: 'http://192.168.0.8:8080',
                 phone: '',
-                channel: 'EMAIL_SMSTO',   // 이메일(iMessage/메일)로 보내려면 유지
-                displayToken: '',         // 서버 생성 6자리 (표시만)
+                channel: 'EMAIL_SMSTO',
+                displayToken: '',
+                qrSmsto: '',
                 smsLink: '',
-                smsBody: '',
-                status: 'IDLE',           // IDLE | PENDING | VERIFIED | EXPIRED | FAILED
+                manualTo: '',
+                manualBody: '',
+                expiresAt: null,
+                leftSec: 0,             // 남은 유효시간 표시
+                pollTimer: null,
+                ttlTimer: null,
+                status: 'IDLE',         // IDLE | PENDING | SUCCESS | EXPIRED | FAILED
                 message: '',
-                pollTimer: null
+                userInputToken: ''
             });
 
             const statusClass = computed(() =>
-                state.status === 'VERIFIED' ? 'text-emerald-400'
-                    : state.status === 'PENDING' ? 'text-yellow-300'
-                        : state.status === 'EXPIRED' ? 'text-orange-400'
-                            : state.status === 'FAILED'  ? 'text-rose-400'
-                                : 'text-slate-300'
+                state.status === 'SUCCESS' ? 'text-emerald-400'
+                : state.status === 'PENDING' ? 'text-yellow-300'
+                : state.status === 'EXPIRED' ? 'text-orange-400'
+                : state.status === 'FAILED'  ? 'text-rose-400'
+                : 'text-slate-300'
             );
 
-            function normalizePhone(p) {
-                return (p || '').replace(/[^0-9+]/g, '');
+            function normalizePhone(p) {return (p || '').replace(/\D/g, '');}
+
+            function renderQr() {
+                const qrEl = document.getElementById("qrcode");
+                if (!qrEl) return;
+                qrEl.innerHTML = "";
+
+                const here = new URL(window.location.href);
+                here.searchParams.set("sms", "1");                    // sms 자동작성 트리거
+                here.searchParams.set("token", state.displayToken || "");  // 본문에 넣을 토큰
+
+                new QRCode(qrEl, {
+                    text: here.toString(),
+                    width: 128,
+                    height: 128,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
             }
 
-            // 1) 인증 요청
             async function start() {
-                state.message = '';
+                // 중복 스타트 방지: 기존 타이머 정리
+                stopTimers();
+
+                const body = {
+                    phone: normalizePhone(state.phone),
+                    channel: state.channel
+                };
+
                 try {
                     const res = await fetch(`${state.apiBase}/api/verify/phone/start`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            phone: normalizePhone(state.phone),
-                            channel: state.channel
-                        })
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify(body)
                     });
-                    if (!res.ok) throw res;
+                    if (!res.ok) throw new Error(`start http ${res.status}`);
                     const data = await res.json();
 
-                    state.displayToken = data?.token ?? '';   // 표시만
-                    state.smsLink      = data?.smsLink ?? '';
-                    state.smsBody      = data?.manualBody ?? '';
-                    state.status       = 'PENDING';
-                    state.message      = '인증번호가 생성되었습니다. SMS로 전송 후 자동 확인합니다.';
+                    // ★★★ 서버 응답 키 이름에 맞춰서 아래 3개 반드시 저장 ★★★
+                    state.displayToken = data.token ?? '';
+                    state.qrSmsto = data.qrSmsto ?? '';
+                    state.smsLink = data.smsLink ?? '';
+                    state.manualTo = data.manualTo ?? '';
+                    state.manualBody = data.manualBody ?? '';
 
-                    // 👉 토큰으로 상태 폴링 시작
-                    if (state.displayToken) startPolling(state.displayToken);
+                    const sec = Number(data.expiresInSec ?? 0);
+                    state.expiresAt = sec > 0 ? new Date(Date.now() + sec * 1000) : null;
+
+                    state.status = 'PENDING';
+                    state.message = '인증번호가 생성되었습니다.';
+                    renderQr();
+                    startPolling();
+                    startTtlCountdown();
+                    console.log('[START OK]', data);
                 } catch (e) {
                     state.status = 'FAILED';
-                    state.message = '인증번호 생성 실패';
+                    state.message = `Start 실패: ${e.message}`;
+                    console.error(e);
                 }
             }
 
-            // 2) SMS 열기 (수신처 고정: specguard55@gmail.com)
             function openSms() {
-                const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-                const to    = 'specguard55@gmail.com'; // 고정 수신처
-                const bodyText = state.smsBody || `[SpecGuard] 인증번호: ${state.displayToken} (5분 유효)`;
-                const body = encodeURIComponent(bodyText);
+                // 1) 값 준비
+                const RECIPIENT_EMAIL = 'specguard55@gmail.com';
+                const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                const body = `인증번호: ${state.displayToken || ''} (5분 유효)`;
+                const encoded = encodeURIComponent(body);
+                // const qrText = `sms:specguard55@gmail.com&body=${encoded}`;
+                // new QRCode(qrEl, { text: qrText, width:128, height:128 });
 
-                // iOS는 iMessage로 이메일 수신자 허용, Android는 mailto로 폴백
-                const href = isiOS ? `sms:${to}&body=${body}`
-                    : `mailto:${to}?subject=${encodeURIComponent('[SpecGuard] 인증번호')}&body=${body}`;
-                window.location.href = href;
-            }
-
-            // 3) 상태 폴링
-            function startPolling(token) {
-                stopPolling();
-                state.pollTimer = setInterval(async () => {
-                    try {
-                        const url = `${state.apiBase}/api/verify/phone/poll?token=${encodeURIComponent(token)}`;
-                        const res = await fetch(url);
-                        if (!res.ok) throw res;
-                        const data = await res.json();
-                        const s = (data?.status || '').toUpperCase();
-
-                        if (s === 'VERIFIED') {
-                            state.status = 'VERIFIED';
-                            state.message = '인증이 완료되었습니다.';
-                            stopPolling();
-                        } else if (s === 'EXPIRED') {
-                            state.status = 'EXPIRED';
-                            state.message = '인증번호가 만료되었습니다. 다시 시도해 주세요.';
-                            stopPolling();
-                        } else {
-                            state.status = 'PENDING';
-                        }
-                    } catch (e) {
-                        // 네트워크 오류 등은 일시 무시하고 계속 폴링
-                    }
-                }, 2000);
-            }
-
-            function stopPolling() {
-                if (state.pollTimer) {
-                    clearInterval(state.pollTimer);
-                    state.pollTimer = null;
+                if (isiOS) {
+                    // ✅ iOS(iMessage): 이메일 수신자 + 본문 (&body=)
+                    // 이메일이 iMessage에 등록되어 있어야 정상 동작
+                    window.location.href = `sms:${RECIPIENT_EMAIL}&body=${encoded}`;
+                } else {
+                    // ✅ Android 호환: SMS 앱이 이메일 수신자를 잘 못 받아서 mailto로 대체
+                    // (메일 앱에서 동일한 본문으로 바로 전송 가능)
+                    window.location.href = `mailto:${RECIPIENT_EMAIL}?body=${encoded}`;
+                    // 만약 꼭 SMS 앱을 열고 싶다면(수신자 수동 입력):
+                    // window.location.href = `sms:?body=${encoded}`;
                 }
             }
+
+
+            function startPolling() {
+                // 1. 바로 한 번 조회
+                fetchStatus();
+
+                // 2. 2초 주기 폴링 (상태 확정 시 자동 해제)
+                state.pollTimer = setInterval(fetchStatus, 2000);
+            }
+
+            function normalizeStatus(s) {
+                const v = String(s || '').toUpperCase();
+                if (['SUCCESS','VERIFIED','OK','DONE','PASS','PASSED','CONFIRMED'].includes(v)) return 'SUCCESS';
+                if (['EXPIRED','TIMEOUT'].includes(v)) return 'EXPIRED';
+                if (['FAILED','FAIL','ERROR','INVALID','MISMATCH'].includes(v)) return 'FAILED';
+                if (['PENDING','WAITING','PROCESSING'].includes(v)) return 'PENDING';
+                return 'PENDING';
+            }
+            // if (s !== 'PENDING') stopTimers(); // NONE 포함해서 멈춤
+
+            async function fetchStatus() {
+                const phone = normalizePhone(state.phone);
+                if (!phone) return;
+
+                try {
+                    const url = `${state.apiBase}/api/verify/phone/status?phone=${encodeURIComponent(phone)}`;
+                    const res = await fetch(url, { method: 'GET' });
+                    if (!res.ok) throw new Error(`status http ${res.status}`);
+                    const data = await res.json();
+
+                    const s = normalizeStatus(data.status);
+                    state.status = s;
+
+                    console.log('[STATUS]', s, data);
+
+                    if (s !== 'PENDING') {
+                        stopTimers();
+                        if (s === 'SUCCESS') state.message = '인증 완료!';
+                        if (s === 'EXPIRED')  state.message = '인증번호가 만료되었습니다.';
+                        if (s === 'FAILED')   state.message = '인증에 실패했습니다.';
+                    }
+                } catch (e) {
+                    console.error(e);
+                    // 네트워크 순간 오류는 폴링 유지
+                }
+            }
+
+            async function verify() {
+                const phone = normalizePhone(state.phone);
+                const token = (state.userInputToken || state.displayToken || '').trim();
+                if (!phone || !token) {
+                    state.message = '유효한 휴대폰 번호 또는 인증코드가 없습니다. 먼저 인증번호를 생성하세요.';
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`${state.apiBase}/api/verify/phone/finish`, {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({phone, token}),
+                    });
+                    if (!res.ok) throw new Error(`verify http ${res.status}`);
+                    const data = await res.json();
+
+                    const s = normalizeStatus(data.status);
+                    state.status = s;
+                    console.log('[VERIFY]', data);
+
+                    if (s === 'SUCCESS') {
+                        state.message = '인증 완료!';
+                        stopTimers();
+                    } else if (s === 'EXPIRED') {
+                        state.message = '인증번호가 만료되었습니다.';
+                        stopTimers();
+                    } else {
+                        state.message = '인증 실패. 번호/토큰 확인 후 재시도';
+                        stopTimers();
+                    }
+                } catch (e) {
+                    state.status = 'FAILED';
+                    state.message = `Verify 실패: ${e.message}`;
+                    console.error(e);
+                }
+            }
+
+            function startTtlCountdown() {
+                updateLeftSec();
+                state.ttlTimer = setInterval(updateLeftSec, 1000);
+            }
+
+            function updateLeftSec() {
+                if (!state.expiresAt) { state.leftSec = 0; return; }
+                const until = new Date(state.expiresAt).getTime();
+                const now = Date.now();
+                state.leftSec = Math.max(0, Math.floor((until - now) / 1000));
+                if (state.leftSec === 0 && state.status === 'PENDING') {
+                    state.status = 'EXPIRED';
+                    state.message = '인증번호가 만료되었습니다.';
+                    stopTimers();
+                }
+            }
+
+            function stopTimers() {
+                if (state.pollTimer) { clearInterval(state.pollTimer); state.pollTimer = null; }
+                if (state.ttlTimer)  { clearInterval(state.ttlTimer);  state.ttlTimer  = null; }
+            }
+
+            onUnmounted(stopTimers);
 
             onMounted(() => {
-                // QR은 그대로 유지
-                const el = document.getElementById('qrcode');
-                el.innerHTML = '';
-                new QRCode(el, {
-                    text: "http://" + window.location.host + window.location.pathname,
-                    width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M
-                });
+                // QR로 들어오면 ?sms=1&token=XXXX 가 붙어있음
+                const url = new URL(window.location.href);
+                const shouldOpen = url.searchParams.get("sms") === "1";
+                const tokenFromUrl = url.searchParams.get("token");
+
+                if (shouldOpen) {
+                    if (tokenFromUrl) {
+                        // 토큰 표시용(화면에도 보이게)
+                        state.displayToken = tokenFromUrl;
+                    }
+                    // 기기별로 sms 스킴으로 이동
+                    openSms();
+
+                    // 주소창 깔끔하게 정리(뒤로 가기 시 또 열리는 것 방지)
+                    url.searchParams.delete("sms");
+                    url.searchParams.delete("token");
+                    window.history.replaceState({}, "", url.toString());
+                }
             });
 
-            onUnmounted(stopPolling);
 
-            return { state, statusClass, start, openSms };
+            // 디버그용: 콘솔에서 접근 가능하게
+            window.sg = { state, start, verify, fetchStatus };
+
+            return { state, statusClass, start, verify, openSms };
+
         }
     }).mount('#app');
-
 </script>
+
 </body>
 </html>
