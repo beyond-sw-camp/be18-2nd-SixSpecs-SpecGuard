@@ -19,14 +19,9 @@ import java.util.HashMap;
 public class CodefClient {
 
     private final EasyCodefClientInfo easyCodefClientInfo;
-    // private final WebClient webClient = WebClient.builder()
-    //         .baseUrl("https://development.codef.io") // 실제 endpoint로 교체 필요
-    //         .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-    //         .build();
 
     public CodefVerificationResponse verifyCertificate(CodefVerificationRequest request) throws IOException, InterruptedException {
         // (Connected ID 미사용)
-
         /** #1.쉬운 코드에프 객체 생성 및 클라이언트 정보 설정 */
         EasyCodef codef = new EasyCodef();
         codef.setClientInfoForDemo(easyCodefClientInfo.DEMO_CLIENT_ID, easyCodefClientInfo.DEMO_CLIENT_SECRET);
@@ -37,10 +32,9 @@ public class CodefClient {
 
         /** #5.요청 파라미터 설정 - 각 상품별 파라미터를 설정(https://developer.codef.io/products) */
         HashMap<String, Object> parameterMap = new HashMap<String, Object>();
-        parameterMap.put("organization", "0001"); // 기관코드 설정
-        // parameterMap.put("username", request.getUserName());
-        parameterMap.put("userName", "서현원");
-        parameterMap.put("docNo", "12345678901A");
+        parameterMap.put("organization", request.getOrganization()); // 기관코드 설정
+        parameterMap.put("userName", request.getUserName());
+        parameterMap.put("docNo", request.getDocNo());
 
 
         log.debug(request.toString());
@@ -56,7 +50,5 @@ public class CodefClient {
         CodefVerificationResponse responseMap = new ObjectMapper().readValue(result, CodefVerificationResponse.class);
 
         return responseMap ;
-
-        // assertEquals("코드에프 상품 요청 결과 실패(반환된 코드와 메시지 확인 필요)", "CF-00000", (String)resultMap.get("code"));
     }
 }

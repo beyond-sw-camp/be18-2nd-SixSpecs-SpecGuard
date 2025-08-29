@@ -25,6 +25,7 @@ public class CertificateVerificationService {
     @Transactional
     public void verifyCertificateAsync(ResumeCertificate certificate) {
         CertificateVerification verification = CertificateVerification.builder()
+                        .verificationSource("CODEF")
                         .resumeCertificate(certificate)
                         .build();
 
@@ -34,8 +35,7 @@ public class CertificateVerificationService {
             // 요청 DTO 구성
             CodefVerificationRequest request = CodefVerificationRequest.builder()
                     .organization("0001")
-                    // .userName(certificate.getUserName())
-                    .userName("서현원")
+                    .userName("***")
                     .docNo(certificate.getCertificateNumber())
                     .build();
 
@@ -47,12 +47,12 @@ public class CertificateVerificationService {
             verification.setVerifiedAt(LocalDateTime.now());
 
             // 성공 여부 판별
-            String resIssueYN = (String) response.getLists().get(0).get("resIssueYN");
+            String resIssueYN = response.getData().getResIssueYN();
             if ("1".equals(resIssueYN)) {
                 verification.setStatus(CertificateVerification.Status.SUCCESS);
             } else {
                 verification.setStatus(CertificateVerification.Status.FAILED);
-                verification.setErrorMessage((String) response.getLists().get(0).get("resResultDesc"));
+                verification.setErrorMessage(response.getData().getResResultDesc());
             }
 
         } catch (Exception e) {
