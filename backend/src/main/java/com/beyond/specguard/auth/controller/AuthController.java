@@ -1,11 +1,11 @@
 package com.beyond.specguard.auth.controller;
 
-import com.beyond.specguard.auth.dto.*;
-import com.beyond.specguard.auth.entity.ClientUser;
-import com.beyond.specguard.auth.service.InviteSignupService;
-import com.beyond.specguard.auth.service.LogoutService;
-import com.beyond.specguard.auth.service.ReissueService;
-import com.beyond.specguard.auth.service.SignupService;
+import com.beyond.specguard.auth.model.dto.*;
+import com.beyond.specguard.auth.model.entity.ClientUser;
+import com.beyond.specguard.auth.model.service.InviteSignupService;
+import com.beyond.specguard.auth.model.service.LogoutService;
+import com.beyond.specguard.auth.model.service.ReissueService;
+import com.beyond.specguard.auth.model.service.SignupService;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;
 import jakarta.servlet.http.HttpServletRequest;

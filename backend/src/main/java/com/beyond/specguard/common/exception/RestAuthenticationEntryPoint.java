@@ -2,13 +2,12 @@ package com.beyond.specguard.common.exception;
 
 import com.beyond.specguard.common.exception.errorcode.AuthErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.http.HttpStatus;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Component
@@ -20,11 +19,20 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
     public void commence(HttpServletRequest request,
                          HttpServletResponse response,
                          AuthenticationException ex) throws IOException {
+        System.out.println(">>> EntryPoint ex=" + ex.getClass() + ", msg=" + ex.getMessage());
 
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        // 기본값
+        AuthErrorCode errorCode = AuthErrorCode.UNAUTHORIZED;
+
+        // AuthException이면 세부 errorCode 사용
+        if (ex instanceof AuthException authEx) {
+            errorCode = authEx.getErrorCode();
+        }
+
+        response.setStatus(errorCode.getStatus().value());
         response.setContentType("application/json;charset=UTF-8");
 
-        ErrorResponse body = ErrorResponse.of(AuthErrorCode.UNAUTHORIZED);
+        ErrorResponse body = ErrorResponse.of(errorCode);
         om.writeValue(response.getWriter(), body);
     }
 }

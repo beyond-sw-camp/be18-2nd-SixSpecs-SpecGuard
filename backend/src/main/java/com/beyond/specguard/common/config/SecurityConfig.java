@@ -1,11 +1,11 @@
 package com.beyond.specguard.common.config;
 
-import com.beyond.specguard.auth.filter.JwtFilter;
-import com.beyond.specguard.auth.filter.LoginFilter;
-import com.beyond.specguard.auth.handler.CustomFailureHandler;
-import com.beyond.specguard.auth.handler.CustomSuccessHandler;
-import com.beyond.specguard.auth.repository.ClientUserRepository;
-import com.beyond.specguard.auth.service.RedisTokenService;
+import com.beyond.specguard.auth.model.filter.JwtFilter;
+import com.beyond.specguard.auth.model.filter.LoginFilter;
+import com.beyond.specguard.auth.model.handler.CustomFailureHandler;
+import com.beyond.specguard.auth.model.handler.CustomSuccessHandler;
+import com.beyond.specguard.auth.model.repository.ClientUserRepository;
+import com.beyond.specguard.auth.model.service.RedisTokenService;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
@@ -20,11 +20,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
@@ -36,10 +31,9 @@ public class SecurityConfig {
     private final CustomSuccessHandler customSuccessHandler;
     private final CustomFailureHandler customFailureHandler;
     private final RedisTokenService redisTokenService;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint; //  주입
+    private final RestAccessDeniedHandler restAccessDeniedHandler;           //  주입
 
-
-
-    // 로그인 시도 시 인증을 수행할 AuthenticationManager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
@@ -58,7 +52,6 @@ public class SecurityConfig {
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // 인가 규칙
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                         "/api/v1/auth/signup/**",
@@ -67,41 +60,25 @@ public class SecurityConfig {
                         "/api/v1/invite/accept/**"
                 ).permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/**").hasAnyRole("OWNER", "MANAGER", "VIEWER") // 권한 반영
+                .requestMatchers("/api/**").hasAnyRole("OWNER", "MANAGER", "VIEWER")
                 .requestMatchers("/api/v1/invite/**").hasRole("OWNER")
                 .anyRequest().authenticated()
         );
 
-        // 인증/인가 실패 핸들러
+        // 🔹 인증/인가 실패 핸들러 - 스프링 빈 주입된 걸 사용
         http.exceptionHandling(ex -> ex
-                .authenticationEntryPoint(new RestAuthenticationEntryPoint())  // 401
-                .accessDeniedHandler(new RestAccessDeniedHandler())            // 403
+                .authenticationEntryPoint(restAuthenticationEntryPoint)   // 401
+                .accessDeniedHandler(restAccessDeniedHandler)            // 403
         );
 
-        // JWT 인증 필터 (Access Token 검증)
-        http.addFilterBefore(new JwtFilter(jwtUtil, clientUserRepository,redisTokenService), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new JwtFilter(jwtUtil, clientUserRepository, redisTokenService),
+                UsernamePasswordAuthenticationFilter.class);
 
-        // 로그인 필터 등록 (폼 로그인 대신 동작)
         LoginFilter loginFilter = new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil);
         loginFilter.setAuthenticationSuccessHandler(customSuccessHandler);
         loginFilter.setAuthenticationFailureHandler(customFailureHandler);
         http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
-    }
-
-    // 프론트엔드 연동을 위한 CORS 설정
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("http://localhost:5173")); // TODO: 환경변수로 분리 권장
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-        config.setExposedHeaders(List.of("Authorization", "Set-Cookie"));
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
     }
 }
