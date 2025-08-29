@@ -33,7 +33,7 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    // WebClient
+    // --- codef (자격증) ---
     implementation 'io.codef.api:easycodef-java:1.0.6'
 
     // --- JPA & MariaDB ---
