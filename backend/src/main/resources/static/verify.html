@@ -47,16 +47,6 @@
                     </button>
                 </div>
 
-                <!-- 인증번호 입력 칸 -->
-<!--                <div class="mb-4">-->
-<!--                    <label class="block text-sm text-slate-400 mb-1">인증번호</label>-->
-<!--                    <input v-model.trim="state.token"-->
-<!--                           class="w-full p-2 rounded bg-slate-800 ring-1 ring-slate-700"-->
-<!--                           placeholder="6자리 숫자"-->
-<!--                           inputmode="numeric" />-->
-<!--                </div>-->
-
-
                 <!-- 토큰/상태 -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div class="rounded-xl bg-slate-800 p-3">
@@ -66,6 +56,18 @@
                     <div class="rounded-xl bg-slate-800 p-3">
                         <div class="text-xs text-slate-400 mb-1">STATUS</div>
                         <div class="font-mono text-sm" :class="statusClass">{{ state.status }}</div>
+                    </div>
+                </div>
+
+                <div class="rounded-xl bg-slate-800 p-3">
+                    <div class="text-xs text-slate-400 mb-1">TTL</div>
+                    <div class="font-mono text-sm">
+                        {{ formattedLeft }} <span class="text-slate-500" v-if="state.totalSec">/ {{ formattedTotal }}</span>
+                    </div>
+                    <!-- 진행바 -->
+                    <div class="mt-2 h-2 rounded bg-slate-700 overflow-hidden" v-if="state.totalSec">
+                        <div class="h-2 bg-emerald-500 transition-all duration-300"
+                             :style="{ width: ttlPercent + '%' }"></div>
                     </div>
                 </div>
 
@@ -98,6 +100,14 @@
 
     createApp({
         setup() {
+            const formattedLeft = computed(() => formatSec(state.leftSec));
+            const formattedTotal = computed(() => formatSec(state.totalSec || 0));
+            const ttlPercent = computed(() => {
+                if (!state.totalSec) return 0;
+                const p = (state.leftSec / state.totalSec) * 100;
+                return Math.max(0, Math.min(100, p));
+            });
+
             const RECIPIENT_EMAIL = 'specguard55@gmail.com';
             const state = reactive({
                 apiBase: 'http://192.168.0.8:8080',
@@ -110,6 +120,7 @@
                 manualBody: '',
                 expiresAt: null,
                 leftSec: 0,             // 남은 유효시간 표시
+                totalSec: 0,
                 pollTimer: null,
                 ttlTimer: null,
                 status: 'IDLE',         // IDLE | PENDING | SUCCESS | EXPIRED | FAILED
@@ -172,6 +183,7 @@
                     state.manualBody = data.manualBody ?? '';
 
                     const sec = Number(data.expiresInSec ?? 0);
+                    state.totalSec = sec > 0 ? sec : 0;
                     state.expiresAt = sec > 0 ? new Date(Date.now() + sec * 1000) : null;
 
                     state.status = 'PENDING';
@@ -185,6 +197,14 @@
                     state.message = `Start 실패: ${e.message}`;
                     console.error(e);
                 }
+            }
+
+            // 헬퍼: 초 → mm:ss
+            function formatSec(s) {
+                const n = Math.max(0, Number(s || 0));
+                const mm = String(Math.floor(n / 60)).padStart(2, '0');
+                const ss = String(n % 60).padStart(2, '0');
+                return `${mm}:${ss}`;
             }
 
             function openSms() {
@@ -342,7 +362,8 @@
             // 디버그용: 콘솔에서 접근 가능하게
             window.sg = { state, start, verify, fetchStatus };
 
-            return { state, statusClass, start, verify, openSms };
+            return { state, statusClass, start, verify, openSms,
+                formattedLeft, formattedTotal, ttlPercent};
 
         }
     }).mount('#app');
