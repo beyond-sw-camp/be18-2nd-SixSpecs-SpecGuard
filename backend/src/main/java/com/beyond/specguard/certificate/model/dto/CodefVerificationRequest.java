@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 @Builder
 public class CodefVerificationRequest {
-    private String organization = "0001"; //
+    private String organization;
     private String userName;
     private String docNo;
 }

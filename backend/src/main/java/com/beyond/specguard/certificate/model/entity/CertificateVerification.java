@@ -40,7 +40,7 @@ public class CertificateVerification {
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    private String verificationSource; // "CODEF"
+    private String verificationSource;
     private String errorMessage;
 
     private LocalDateTime verifiedAt;

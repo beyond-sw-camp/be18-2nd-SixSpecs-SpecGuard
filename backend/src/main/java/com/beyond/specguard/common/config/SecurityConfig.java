@@ -25,8 +25,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/signup/user").permitAll() // 회원가입만 허용
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
         );
 
         return http.build();
