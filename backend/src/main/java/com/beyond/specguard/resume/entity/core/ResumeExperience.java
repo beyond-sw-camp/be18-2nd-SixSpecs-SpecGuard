@@ -1,0 +1,76 @@
+package com.beyond.specguard.resume.entity.core;
+
+import com.beyond.specguard.resume.entity.common.enums.EmploymentStatus;
+import jakarta.persistence.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+
+@Getter
+@Entity
+@Table(
+        name = "resume_experience",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_resume_experience_resume",
+                columnNames = "resume_id"
+        )
+)
+@NoArgsConstructor
+public class ResumeExperience extends ResumeBasic {
+    //PK
+    @Id
+    @Column(name = "id", length = 36, nullable = false)
+    private String id;
+
+    //다대일
+    //resume_id는 FK
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "resume_id", nullable = false)
+    private Resume resume;
+
+    //회사명
+    @Column(name = "company_name", nullable = false, length = 255)
+    private String companyName;
+
+    //부서명
+    @Column(name="department", nullable = false, length = 255)
+    private String department;
+
+    //직급명
+    @Column(name="position", nullable = false, length = 255)
+    private String position;
+
+    //담당 업무
+    @Column(name="responsibilities", nullable = true, length = 255)
+    private String responsibilities;
+
+    //입사 시기
+    @Column(name = "start_date", nullable = false, length = 10)
+    private LocalDate startDate;
+
+    //퇴사 시기
+    @Column(name = "end_date", length = 10)
+    private LocalDate endDate;
+
+    //고용 형태
+    @Enumerated(EnumType.STRING)
+    @Column(name = "employment_status", nullable = false, length = 20)
+    private EmploymentStatus employmentStatus;
+
+    @Builder
+
+    public ResumeExperience(String id, Resume resume, String companyName, String department, String position, String responsibilities, LocalDate startDate, LocalDate endDate, EmploymentStatus employmentStatus) {
+        this.id = id;
+        this.resume = resume;
+        this.companyName = companyName;
+        this.department = department;
+        this.position = position;
+        this.responsibilities = responsibilities;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.employmentStatus = employmentStatus;
+    }
+
+}
