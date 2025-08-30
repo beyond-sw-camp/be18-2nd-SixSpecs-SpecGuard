@@ -16,7 +16,8 @@ import java.util.UUID;
 @Table(
         name = "resume_basic",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_resume_basic_resume", columnNames = "resume_id"
+                name = "uk_resume_basic_resume",
+                columnNames = "resume_id"
         )
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

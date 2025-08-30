@@ -1,7 +1,9 @@
 package com.beyond.specguard.resume.entity.core;
 
+import com.beyond.specguard.resume.entity.common.BaseEntity;
 import com.beyond.specguard.resume.entity.common.enums.EmploymentStatus;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,13 +14,11 @@ import java.time.LocalDate;
 @Entity
 @Table(
         name = "resume_experience",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_resume_experience_resume",
-                columnNames = "resume_id"
-        )
+        indexes = @Index(name = "idx_exp_resume",
+                columnList = "resume_id")
 )
-@NoArgsConstructor
-public class ResumeExperience extends ResumeBasic {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class ResumeExperience extends BaseEntity {
     //PK
     @Id
     @Column(name = "id", length = 36, nullable = false)
@@ -47,11 +47,11 @@ public class ResumeExperience extends ResumeBasic {
     private String responsibilities;
 
     //입사 시기
-    @Column(name = "start_date", nullable = false, length = 10)
+    @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
     //퇴사 시기
-    @Column(name = "end_date", length = 10)
+    @Column(name = "end_date")
     private LocalDate endDate;
 
     //고용 형태
@@ -60,7 +60,6 @@ public class ResumeExperience extends ResumeBasic {
     private EmploymentStatus employmentStatus;
 
     @Builder
-
     public ResumeExperience(String id, Resume resume, String companyName, String department, String position, String responsibilities, LocalDate startDate, LocalDate endDate, EmploymentStatus employmentStatus) {
         this.id = id;
         this.resume = resume;

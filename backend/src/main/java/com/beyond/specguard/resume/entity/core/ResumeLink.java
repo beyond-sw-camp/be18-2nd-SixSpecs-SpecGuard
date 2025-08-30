@@ -3,6 +3,7 @@ package com.beyond.specguard.resume.entity.core;
 import com.beyond.specguard.resume.entity.common.BaseEntity;
 import com.beyond.specguard.resume.entity.common.enums.LinkType;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,12 +12,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(
         name = "resume_link",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_resume_link_resume",
-                columnNames = "resume_id"
-        )
+        indexes = @Index(name = "idx_link_resume",
+                columnList = "resume_id")
 )
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ResumeLink extends BaseEntity {
     //PK
     @Id
@@ -34,17 +33,19 @@ public class ResumeLink extends BaseEntity {
     private String url;
 
     //url 종류
+    @Enumerated(EnumType.STRING)
     @Column(name = "link_type", nullable = false)
     private LinkType linkType;
 
-    //원문?
-    @Column(name = "contents")
+    //원문
+    @Lob
+    @Column(name = "contents", columnDefinition = "TEXT")
     private String contents;
 
     @Builder
 
     public ResumeLink(String id, Resume resume, String url, LinkType linkType, String contents) {
-        this.id = id;
+        this.id = id != null ? id : java.util.UUID.randomUUID().toString();
         this.resume = resume;
         this.url = url;
         this.linkType = linkType;

@@ -15,7 +15,8 @@ import java.util.UUID;
 @Entity
 @Table(
         name = "resume_education",
-        indexes = @Index(name="idx_edu_resume", columnList="resume_id")
+        indexes = @Index(name="idx_edu_resume",
+                columnList="resume_id")
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ResumeEducation extends BaseEntity {
@@ -61,11 +62,11 @@ public class ResumeEducation extends BaseEntity {
     private Double maxGpa;
 
     //입학일
-    @Column(name = "start_date", nullable = false, length = 10)
+    @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
     //졸업일
-    @Column(name = "end_date", length = 10)
+    @Column(name = "end_date")
     private LocalDate endDate;
 
 
