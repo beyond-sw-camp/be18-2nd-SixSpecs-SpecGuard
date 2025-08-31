@@ -21,6 +21,10 @@ public class Resume extends BaseEntity {
     @Column(name = "id", length = 36, nullable = false)
     private String id;
 
+    //template_id
+    @Column(name = "template_id", length = 36, nullable = false)
+    private String templateId;
+
     //성명
     @Column(name = "name", nullable = false, length = 50)
     private String name;
@@ -44,8 +48,9 @@ public class Resume extends BaseEntity {
 
     @Builder
 
-    public Resume(String id, String name, String phone, String email, ResumeStatus status, String passwordHash) {
+    public Resume(String id, String templateId, String name, String phone, String email, ResumeStatus status, String passwordHash) {
         this.id = (id != null) ? id : UUID.randomUUID().toString();
+        this.templateId = templateId;
         this.name = name;
         this.phone = phone;
         this.email = email;
