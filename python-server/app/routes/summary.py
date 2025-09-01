@@ -1,7 +1,10 @@
 from fastapi import APIRouter
 from app.schemas import TextSummaryRequest, SummaryResponse
+from app.services.gemini_client import client
 
 router = APIRouter()
+
+# client = JaeminaeClient()   # ✅ API 클라이언트 인스턴스 생성
 
 @router.post("/summary", response_model=SummaryResponse)
 async def summarize_text(request: TextSummaryRequest):
@@ -10,11 +13,11 @@ async def summarize_text(request: TextSummaryRequest):
     """
     text = request.text.strip()
 
-    # 아주 단순한 요약 로직 (예시)
-    # 실제론 Gemini 같은 모델 붙이면 됨
-    if len(text) > 100:
-        summary = text[:97] + "..."
-    else:
-        summary = text
+    prompt = f"다음 텍스트를 간단하게 요약해줘:\n\n{text}"
 
+    response = client.models.generate_content(
+        model='gemini-2.0-flash-001', contents=prompt
+    )
+    
+    summary=response.text
     return SummaryResponse(summary=summary)
