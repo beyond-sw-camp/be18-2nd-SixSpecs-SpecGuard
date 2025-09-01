@@ -8,6 +8,7 @@ import com.beyond.specguard.auth.model.service.ReissueService;
 import com.beyond.specguard.auth.model.service.SignupService;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;
+import com.beyond.specguard.common.util.TokenResponseWriter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -28,6 +29,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final LogoutService logoutService;
     private final InviteSignupService inviteSignupService;
+    private final TokenResponseWriter tokenResponseWriter;
 
 
     @PostMapping("/signup/company")
@@ -37,37 +39,42 @@ public class AuthController {
     }
 
     @PostMapping("/token/refresh")
-    public ResponseEntity<Map<String, String>> reissue(
+    public ResponseEntity<Void> reissue(
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-        // ✅ 쿠키에서 refresh_token 꺼내기
         String refreshToken = CookieUtil.getCookieValue(request, "refresh_token");
+        ReissueResponseDto dto= reissueService.reissue(refreshToken);
+        tokenResponseWriter.writeTokens(response, dto);
+        return ResponseEntity.ok().build();
 
-        // ✅ Service 호출
-        ReissueResponseDto dto = reissueService.reissue(refreshToken);
-
-        // ✅ 새 Access Token → Authorization 헤더
-        response.setHeader("Authorization", "Bearer " + dto.getAccessToken());
-
-        // ✅ 새 Refresh Token → HttpOnly 쿠키
-        int maxAge = (int) (
-                (jwtUtil.getExpiration(dto.getRefreshToken()).getTime() - System.currentTimeMillis()) / 1000
-        );
-
-        response.addCookie(
-                CookieUtil.createHttpOnlyCookie(
-                        "refresh_token",
-                        dto.getRefreshToken(),
-                        maxAge
-                )
-        );
-
-        // ✅ JSON 바디에는 accessToken만 담아주면 충분
-        return ResponseEntity.ok(Map.of(
-                "accessToken", dto.getAccessToken(),
-                "message", "access token 재발급 성공"
-        ));
+//        // ✅ 쿠키에서 refresh_token 꺼내기
+//        String refreshToken = CookieUtil.getCookieValue(request, "refresh_token");
+//
+//        // ✅ Service 호출
+//        ReissueResponseDto dto = reissueService.reissue(refreshToken);
+//
+//        // ✅ 새 Access Token → Authorization 헤더
+//        response.setHeader("Authorization", "Bearer " + dto.getAccessToken());
+//
+//        // ✅ 새 Refresh Token → HttpOnly 쿠키
+//        int maxAge = (int) (
+//                (jwtUtil.getExpiration(dto.getRefreshToken()).getTime() - System.currentTimeMillis()) / 1000
+//        );
+//
+//        response.addCookie(
+//                CookieUtil.createHttpOnlyCookie(
+//                        "refresh_token",
+//                        dto.getRefreshToken(),
+//                        maxAge
+//                )
+//        );
+//
+//        // ✅ JSON 바디에는 accessToken만 담아주면 충분
+//        return ResponseEntity.ok(Map.of(
+//                "accessToken", dto.getAccessToken(),
+//                "message", "access token 재발급 성공"
+//        ));
     }
 
     @PostMapping("/logout")
