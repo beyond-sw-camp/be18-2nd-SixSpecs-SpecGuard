@@ -7,4 +7,8 @@ import java.util.Optional;
 
 public interface ResumeBasicRepository extends JpaRepository<ResumeBasic, String> {
     Optional<ResumeBasic> findByResumeId(String resumeId);
+
+
+    //일대일
+    boolean existsByResumeId(String resumeId);
 }

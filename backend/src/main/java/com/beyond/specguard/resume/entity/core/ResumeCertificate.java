@@ -1,5 +1,6 @@
 package com.beyond.specguard.resume.entity.core;
 
+import com.beyond.specguard.resume.entity.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,13 +12,12 @@ import java.time.LocalDate;
 @Entity
 @Table(
         name = "resume_certificate",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_resume_certificate_resume",
-                columnNames = "resume_id"
-        )
+        indexes = @Index(
+                name = "idx_cert_resume",
+                columnList = "resume_id")
 )
 @NoArgsConstructor
-public class ResumeCertificate extends ResumeBasic {
+public class ResumeCertificate extends BaseEntity {
     //PK
     @Id
     @Column(name = "id", length = 36, nullable = false)

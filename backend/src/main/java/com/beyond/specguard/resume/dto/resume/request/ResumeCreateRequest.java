@@ -1,11 +1,16 @@
-package com.beyond.specguard.resume.dto.request;
+package com.beyond.specguard.resume.dto.resume.request;
 
 import com.beyond.specguard.resume.entity.common.enums.ResumeStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 public record ResumeCreateRequest(
+
+        @NotBlank
+        String templateId,
+
+        @NotBlank
+        ResumeStatus status,
 
         @NotBlank
         String name,
@@ -15,6 +20,9 @@ public record ResumeCreateRequest(
 
         @Email
         @NotBlank
-        String email
+        String email,
+
+        @NotBlank
+        String passwordHash
 ) {
 }

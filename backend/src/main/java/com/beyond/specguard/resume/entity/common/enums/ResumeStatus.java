@@ -2,8 +2,12 @@ package com.beyond.specguard.resume.entity.common.enums;
 
 public enum ResumeStatus {
     DRAFT,
-    SUBMITTED,
+    PENDING,
+    PROCESSING,
+    COMPLETED,
     REVIEWED,
+    REJECTED,
     ACCEPTED,
-    REJECTED
+    WITHDRAWN,
+    FAILED
 }

@@ -54,11 +54,11 @@ public class ResumeEducation extends BaseEntity {
     private String graduationStatus;
 
     //학점
-    @Column(name = "gpa", nullable = false, precision = 4, scale = 2)
+    @Column(name = "gpa", nullable = false)
     private Double gpa;
 
     //최대 학점
-    @Column(name = "max_gpa", nullable = false, precision = 4, scale = 2)
+    @Column(name = "max_gpa", nullable = false)
     private Double maxGpa;
 
     //입학일
