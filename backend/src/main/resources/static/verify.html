@@ -127,7 +127,7 @@
                 qrEl.innerHTML = "";
 
                 // manualBody는 서버에서 내려준 "인증번호: 123456 (5분 유효) PHONE:010..." 형식
-                const body = state.manualBody || `인증번호: ${state.displayToken || ''} (5분 유효)`;
+                const body = state.manualBody || `인증번호: ${state.displayToken || ''} (N분 유효)`;
                 const encoded = encodeURIComponent(body);
 
                 // iOS 호환 우선 → sms: + 이메일 주소 + &body=

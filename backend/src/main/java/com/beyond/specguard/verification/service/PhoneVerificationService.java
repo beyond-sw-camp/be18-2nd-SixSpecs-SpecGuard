@@ -99,7 +99,8 @@ public class PhoneVerificationService {
         redis.execute(startScript, List.of(pKey(phone), aKey(phone)), token, String.valueOf(ttlSeconds));
 
         // 사용자에게 보낼 본문(이메일/SMS)
-        String manualBody = "인증번호: " + token + " (" + (ttlSeconds / 60) + "분 유효)";
+        String manualBody = "[SpecGuard] 본인인증번호: " + token + " (" + (ttlSeconds / 60) +
+                "분 유효)\n" + "이 메시지를 그대로 보내 인증을 완료해 주세요.";
 
         String smsLink = "sms:" + emailReceiver + "?body=" +
                 URLEncoder.encode(manualBody, StandardCharsets.UTF_8);
