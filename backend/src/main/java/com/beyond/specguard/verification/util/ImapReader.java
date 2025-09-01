@@ -14,6 +14,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 @Slf4j
@@ -30,6 +32,52 @@ public class ImapReader {
     private Session session;
     private Store store;
     private Folder inbox; // Gmail이면 com.sun.mail.imap.IMAPFolder로 캐스팅 가능(UID 지원)
+
+    private static final Pattern PHONE_BLOCK =
+            Pattern.compile("(\\+82\\d{9,10}|0\\d{9,10}|\\b\\d{10,11}\\b)");
+
+    private static String normalizeKrPhone(String raw) {
+        if (raw == null) return "";
+        String s = raw.replaceAll("[^0-9+]", "");
+        if (s.startsWith("+82")) s = "0" + s.substring(3);   // +8210xxxx -> 010xxxx
+        s = s.replaceAll("\\D", "");
+        if (s.length() < 10 || s.length() > 11) return "";
+        if (!s.startsWith("0")) s = "0" + s; // 안전망
+        return s;
+    }
+
+    public String extractPhone(Message m) throws Exception {
+        Address[] arr = m.getFrom();
+        if (arr == null || arr.length == 0) return "";
+        Address a = arr[0];
+        if (a instanceof InternetAddress ia) {
+            // 1) 표시명(personal)에서 먼저 시도
+            String personal = ia.getPersonal();
+            if (personal != null) {
+                Matcher pm = PHONE_BLOCK.matcher(personal);
+                if (pm.find()) {
+                    String n = normalizeKrPhone(pm.group(1));
+                    if (!n.isEmpty()) return n;
+                }
+            }
+            // 2) 이메일 주소의 로컬파트( @ 앞 )에서 시도
+            String email = ia.getAddress(); // ex) 01034696728@ktfmms.magicn.com
+            if (email != null) {
+                int at = email.indexOf('@');
+                String local = (at > 0) ? email.substring(0, at) : email;
+                Matcher em = PHONE_BLOCK.matcher(local);
+                if (em.find()) {
+                    String n = normalizeKrPhone(em.group(1));
+                    if (!n.isEmpty()) return n;
+                }
+            }
+        }
+        // 3) 실패 시 전체 문자열에서라도 마지막 시도 (방어적)
+        String fromStr = fromString(m);
+        Matcher any = PHONE_BLOCK.matcher(fromStr);
+        if (any.find()) return normalizeKrPhone(any.group(1));
+        return "";
+    }
 
     @PostConstruct
     void open() throws Exception {
