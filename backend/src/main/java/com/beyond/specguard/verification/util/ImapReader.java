@@ -1,18 +1,16 @@
 package com.beyond.specguard.verification.util;
 
-import jakarta.mail.Address;
-import jakarta.mail.Folder;
 import jakarta.annotation.PostConstruct;
-import jakarta.mail.Message;
-import jakarta.mail.Multipart;
-import jakarta.mail.Part;
-import jakarta.mail.Session;
-import jakarta.mail.Store;
+import jakarta.annotation.PreDestroy;
+import jakarta.mail.*;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.search.FlagTerm;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Properties;
@@ -21,81 +19,210 @@ import java.util.Properties;
 @Slf4j
 public class ImapReader {
 
-    @Value("${imap.host}") private String host;
-    @Value("${imap.port}") private int port;
+    @Value("${imap.host}")     private String host;
+    @Value("${imap.port:993}") private int port;
     @Value("${imap.username}") private String username;
     @Value("${imap.password}") private String password;
     @Value("${imap.folder:INBOX}") private String folder;
+    @Value("${imap.recent-window:120}") private int recentWindow; // 최근 N개만 스캔
 
     private Properties props;
+    private Session session;
+    private Store store;
+    private Folder inbox; // Gmail이면 com.sun.mail.imap.IMAPFolder로 캐스팅 가능(UID 지원)
 
     @PostConstruct
-    void init() {
+    void open() throws Exception {
         props = new Properties();
         props.put("mail.store.protocol", "imaps");
-        // 타임아웃
         props.put("mail.imaps.connectiontimeout", "10000");
         props.put("mail.imaps.timeout", "10000");
-        props.put("mail.imaps.ssl.enable", "true"); // imaps면 보통 기본이나 명시해도 무방
+        props.put("mail.imaps.ssl.enable", "true");
+
+        session = Session.getInstance(props, null);
+        // session.setDebug(true);
+        store = session.getStore("imaps");
+        store.connect(host, port, username, password);
+
+        inbox = store.getFolder(folder);
+        inbox.open(Folder.READ_WRITE); // 처리 후 SEEN 플래그 세팅을 위해 READ_WRITE
+        log.info("IMAP connected. folder={}, recentWindow={}", folder, recentWindow);
     }
 
-    public Optional<ImapMatch> findToken(String token) {
-        Store store = null;
-        Folder inbox = null;
-        try {
-            Session session = Session.getInstance(props, null);
-            // session.setDebug(true); // 필요시 디버그
-            store = session.getStore("imaps");
-            store.connect(host, port, username, password);
+    @PreDestroy
+    public void close() {
+        try { if (inbox != null && inbox.isOpen()) inbox.close(false); } catch (Exception ignore) {}
+        try { if (store != null && store.isConnected()) store.close(); } catch (Exception ignore) {}
+    }
 
-            inbox = store.getFolder(folder);
-            inbox.open(Folder.READ_ONLY);
-
-            int count = inbox.getMessageCount();
-            if (count == 0) return Optional.empty();
-
-            Message[] messages = inbox.getMessages(Math.max(1, count - 50), count);
-            for (int i = messages.length - 1; i >= 0; i--) {
-                String body = getText(messages[i]);
-                if (body != null && body.contains(token)) {
-                    Address[] fromArr = messages[i].getFrom();
-                    String from = (fromArr != null && fromArr.length > 0) ? fromArr[0].toString() : "";
-
-                    String[] ids = messages[i].getHeader("Message-ID");
-                    String messageId = (ids != null && ids.length > 0) ? ids[0] : null;
-
-                    return Optional.of(new ImapMatch(from, messageId));
-                }
+    private void ensureOpen() throws MessagingException {
+        if (inbox == null || !inbox.isOpen()) {
+            if (store == null || !store.isConnected()) {
+                throw new MessagingException("IMAP store not connected");
             }
-            return Optional.empty();
-        } catch (Exception e) {
-            log.warn("IMAP read failed: {}", e.toString(), e);
-            return Optional.empty();
-        } finally {
-            try { if (inbox != null && inbox.isOpen()) inbox.close(false); } catch (Exception ignore) {}
-            try { if (store != null && store.isConnected()) store.close(); } catch (Exception ignore) {}
+            inbox = store.getFolder(folder);
+            inbox.open(Folder.READ_WRITE);
         }
     }
 
-    private String getText(Part p) throws Exception {
-        if (p.isMimeType("text/*")) {
+    /** ① 마지막 UID 이후 + 미열람만(최근 N개 범위) */
+    public Message[] fetchUnreadSinceUid(long lastUid) throws Exception {
+        ensureOpen();
+
+        // 전체에서 최근 N개 메시지만 대상으로 하여 속도 확보
+        int total = inbox.getMessageCount();
+        if (total <= 0) return new Message[0];
+        int fromMsg = Math.max(1, total - recentWindow + 1);
+        Message[] allRecent = inbox.getMessages(fromMsg, total);
+
+        // 메타데이터 프리패치
+        FetchProfile fp = new FetchProfile();
+        fp.add(FetchProfile.Item.ENVELOPE);
+        fp.add(FetchProfile.Item.CONTENT_INFO);
+        inbox.fetch(allRecent, fp);
+
+        // 미열람 + UID>lastUid 만 반환
+        return Arrays.stream(allRecent)
+                .filter(m -> {
+                    try {
+                        return !m.isSet(Flags.Flag.SEEN) && uidOf(m) > lastUid;
+                    } catch (Exception e) { return false; }
+                })
+                .toArray(Message[]::new);
+    }
+
+    /** ② 미열람 전체(최근 N개로 슬라이스) — 필요시 사용 */
+    public Message[] fetchUnread() throws Exception {
+        ensureOpen();
+        // UNSEEN만 먼저 찾고, 그중 최근 N개만 슬라이스
+        Message[] unread = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
+        if (unread.length == 0) return unread;
+        int from = Math.max(0, unread.length - recentWindow);
+        Message[] slice = Arrays.copyOfRange(unread, from, unread.length);
+
+        FetchProfile fp = new FetchProfile();
+        fp.add(FetchProfile.Item.ENVELOPE);
+        fp.add(FetchProfile.Item.CONTENT_INFO);
+        inbox.fetch(slice, fp);
+        return slice;
+    }
+
+    /** ③ 개별 메시지 UID (IMAPFolder 필요) */
+    public long uidOf(Message m) throws MessagingException {
+        ensureOpen();
+        if (inbox instanceof com.sun.mail.imap.IMAPFolder imapFolder) {
+            return imapFolder.getUID(m);
+        }
+        // UID 미지원 서버 대비: fallback (비권장, 항상 0)
+        return 0L;
+    }
+
+    /** ④ 처리 후 읽음 표시 */
+    public void markSeen(Message m) throws MessagingException {
+        m.setFlag(Flags.Flag.SEEN, true);
+    }
+
+    /** ⑤ 제목/본문/첨부(txt)에서 토큰 포함 여부 — 빠른 검사용 */
+    public boolean containsToken(Message m, String token) throws Exception {
+        // 제목 먼저(속도↑, 인코딩 이슈↓)
+        String subj = Optional.ofNullable(m.getSubject()).orElse("");
+        if (subj.contains(token)) return true;
+
+        String text = extractAllText(m);
+        return text != null && text.contains(token);
+    }
+
+    /** ⑥ From을 문자열로 풀기(번호 추출 전 단계) */
+    public String fromString(Message m) throws Exception {
+        Address[] arr = m.getFrom();
+        if (arr == null || arr.length == 0) return "";
+        Address a = arr[0];
+        if (a instanceof InternetAddress ia) {
+            String personal = ia.getPersonal();
+            String email = ia.getAddress();
+            return (personal != null ? personal + " " : "") + (email != null ? email : "");
+        }
+        return a.toString();
+    }
+
+    /** ⑦ 제목 + 모든 텍스트 파트(본문/첨부)를 합쳐 문자열로 */
+    public String extractAllText(Part p) throws Exception {
+        if (p.isMimeType("text/plain")) {
             Object c = p.getContent();
-            return (c instanceof String) ? (String) c : null;
+            return c instanceof String ? (String) c : null;
+        }
+        if (p.isMimeType("text/html")) {
+            String html = (String) p.getContent();
+            // 태그 제거 (아주 러프하게)
+            return html.replaceAll("<[^>]+>", " ");
         }
         if (p.isMimeType("multipart/*")) {
             Multipart mp = (Multipart) p.getContent();
-            // text/plain 우선 탐색 후 없으면 첫 파트 반환(개선)
-            String candidate = null;
+
+            // 1) text/plain 우선 수집
+            StringBuilder sb = new StringBuilder();
             for (int i = 0; i < mp.getCount(); i++) {
-                Part bp = mp.getBodyPart(i);
-                String s = getText(bp);
-                if (s == null) continue;
-                if (bp.isMimeType("text/plain")) return s; // 최우선
-                if (candidate == null) candidate = s;      // fallback (html 등)
+                BodyPart bp = mp.getBodyPart(i);
+                if (bp.isMimeType("text/plain")) {
+                    String s = extractAllText(bp);
+                    if (s != null) sb.append(s).append('\n');
+                }
             }
-            return candidate;
+            // 2) text/html 수집
+            for (int i = 0; i < mp.getCount(); i++) {
+                BodyPart bp = mp.getBodyPart(i);
+                if (bp.isMimeType("text/html")) {
+                    String s = extractAllText(bp);
+                    if (s != null) sb.append(s).append('\n');
+                }
+            }
+            // 3) 첨부 txt 수집 (Gmail이 text_0.txt로 붙이는 케이스)
+            for (int i = 0; i < mp.getCount(); i++) {
+                BodyPart bp = mp.getBodyPart(i);
+                if (Part.ATTACHMENT.equalsIgnoreCase(bp.getDisposition())
+                        && bp.getFileName() != null
+                        && bp.getFileName().toLowerCase().endsWith(".txt")) {
+                    try (InputStream is = bp.getInputStream()) {
+                        sb.append(new String(is.readAllBytes(), StandardCharsets.UTF_8)).append('\n');
+                    }
+                }
+            }
+            return sb.toString();
+        }
+        if (p.isMimeType("message/rfc822")) {
+            return extractAllText((Part) p.getContent());
         }
         return null;
+    }
+
+    /** ⑧ 기존 findToken 보완: 최근 N개에서 토큰 포함 메일 1건 찾아 From/Message-ID 반환 */
+    public Optional<ImapMatch> findToken(String token) {
+        try {
+            ensureOpen();
+            int total = inbox.getMessageCount();
+            if (total <= 0) return Optional.empty();
+            int fromMsg = Math.max(1, total - recentWindow + 1);
+            Message[] msgs = inbox.getMessages(fromMsg, total);
+
+            FetchProfile fp = new FetchProfile();
+            fp.add(FetchProfile.Item.ENVELOPE);
+            fp.add(FetchProfile.Item.CONTENT_INFO);
+            inbox.fetch(msgs, fp);
+
+            for (int i = msgs.length - 1; i >= 0; i--) {
+                Message m = msgs[i];
+                if (!containsToken(m, token)) continue;
+
+                String from = fromString(m);
+                String[] ids = m.getHeader("Message-ID");
+                String messageId = (ids != null && ids.length > 0) ? ids[0] : null;
+                return Optional.of(new ImapMatch(from, messageId));
+            }
+            return Optional.empty();
+        } catch (Exception e) {
+            log.warn("IMAP findToken failed: {}", e.toString(), e);
+            return Optional.empty();
+        }
     }
 
     public record ImapMatch(String from, String messageId) {}
