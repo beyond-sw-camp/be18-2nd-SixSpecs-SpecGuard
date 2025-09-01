@@ -6,12 +6,15 @@ authors = [
     {name = "viroovr",email = "tjgusdnjs789@gmail.com"}
 ]
 readme = "README.md"
-requires-python = "3.13.6"
+requires-python = ">=3.13"
 dependencies = [
     "fastapi (>=0.116.1,<0.117.0)",
     "uvicorn (>=0.35.0,<0.36.0)",
     "python-dotenv (>=1.1.1,<2.0.0)",
-    "requests (>=2.32.5,<3.0.0)"
+    "requests (>=2.32.5,<3.0.0)",
+    "google-genai (>=1.32)",
+    "pydantic (>=2.11)",
+    "pydantic-settings (>=2.10)"
 ]
 
 [tool.poetry]
