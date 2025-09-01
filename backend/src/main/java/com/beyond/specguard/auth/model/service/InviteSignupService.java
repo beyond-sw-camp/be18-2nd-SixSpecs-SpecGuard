@@ -2,6 +2,7 @@ package com.beyond.specguard.auth.model.service;
 
 import com.beyond.specguard.auth.model.dto.InviteCheckResponseDto;
 import com.beyond.specguard.auth.model.dto.InviteSignupRequestDto;
+import com.beyond.specguard.auth.model.dto.SignupResponseDto;
 import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientCompanyRepository;
@@ -26,7 +27,7 @@ public class InviteSignupService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public ClientUser signupWithInvite(String inviteToken, InviteSignupRequestDto dto) {
+    public SignupResponseDto signupWithInvite(String inviteToken, InviteSignupRequestDto dto) {
         // 1. 초대 토큰 조회
         InviteEntity invite = inviteRepository.findByInviteTokenAndStatus(
                 inviteToken,
@@ -63,7 +64,21 @@ public class InviteSignupService {
         invite.setStatus(InviteEntity.InviteStatus.ACCEPTED);
         inviteRepository.save(invite);
 
-        return newUser;
+        return SignupResponseDto.builder()
+                .user(SignupResponseDto.UserDTO.builder()
+                        .id(newUser.getId().toString())
+                        .name(newUser.getName())
+                        .email(newUser.getEmail())
+                        .phone(newUser.getPhone())
+                        .role(newUser.getRole().name())
+                        .createdAt(newUser.getCreatedAt().toString())
+                        .build())
+                .company(SignupResponseDto.CompanyDTO.builder()
+                        .id(company.getId().toString())
+                        .name(company.getName())
+                        .slug(company.getSlug())
+                        .build())
+                .build();
     }
     @Transactional(readOnly = true)
     public InviteCheckResponseDto checkInvite(String inviteToken) {

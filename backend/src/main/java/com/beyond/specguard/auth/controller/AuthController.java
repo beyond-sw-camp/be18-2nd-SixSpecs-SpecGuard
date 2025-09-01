@@ -87,26 +87,28 @@ public class AuthController {
     public ResponseEntity<SignupResponseDto> signupWithInvite(
             @Valid @RequestBody InviteSignupRequestDto request
     ) {
-        ClientUser user = inviteSignupService.signupWithInvite(request.getToken(), request);
-
-        SignupResponseDto response = SignupResponseDto.builder()
-                .user(SignupResponseDto.UserDTO.builder()
-                        .id(user.getId().toString())
-                        .name(user.getName())
-                        .email(user.getEmail())
-                        .phone(user.getPhone())
-                        .role(user.getRole().name())
-                        .createdAt(user.getCreatedAt().toString())
-                        .build())
-                .company(SignupResponseDto.CompanyDTO.builder()
-                        .id(user.getCompany().getId().toString())
-                        .name(user.getCompany().getName())
-                        .slug(user.getCompany().getSlug())
-                        .build())
-                .build();
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(inviteSignupService.signupWithInvite(request.getToken(), request));
     }
+//        ClientUser user = inviteSignupService.signupWithInvite(request.getToken(), request);
+
+//        SignupResponseDto response = SignupResponseDto.builder()
+//                .user(SignupResponseDto.UserDTO.builder()
+//                        .id(user.getId().toString())
+//                        .name(user.getName())
+//                        .email(user.getEmail())
+//                        .phone(user.getPhone())
+//                        .role(user.getRole().name())
+//                        .createdAt(user.getCreatedAt().toString())
+//                        .build())
+//                .company(SignupResponseDto.CompanyDTO.builder()
+//                        .id(user.getCompany().getId().toString())
+//                        .name(user.getCompany().getName())
+//                        .slug(user.getCompany().getSlug())
+//                        .build())
+//                .build();
+//
+//        return ResponseEntity.ok(response);
+//    }
     @PostMapping("/signup/invite/check")
     public ResponseEntity<InviteCheckResponseDto> checkInvite(
             @RequestBody @Valid InviteCheckRequestDto request
