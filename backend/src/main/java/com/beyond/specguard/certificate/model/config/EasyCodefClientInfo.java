@@ -8,11 +8,11 @@ import org.springframework.context.annotation.Configuration;
 @Getter
 public class EasyCodefClientInfo {
     @Value("${codef.public_key}")
-    public String PUBLIC_KEY;
+    private String publicKey;
 
     @Value("${codef.demo_client_id}")
-    public String DEMO_CLIENT_ID;
+    private String demoClientId;
 
     @Value("${codef.demo_client_secret}")
-    public String DEMO_CLIENT_SECRET;
+    private String demoClientSecret;
 }

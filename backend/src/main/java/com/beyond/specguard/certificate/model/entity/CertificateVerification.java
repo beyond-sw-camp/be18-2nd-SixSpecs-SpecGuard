@@ -24,7 +24,6 @@ import java.util.UUID;
 @Entity
 @Table(name = "certificate_verification")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -37,12 +36,15 @@ public class CertificateVerification {
     @JoinColumn(name = "certificate_id", nullable = false)
     private ResumeCertificate resumeCertificate;
 
+    @Setter
     @Enumerated(EnumType.STRING)
     private Status status;
 
     private String verificationSource;
+    @Setter
     private String errorMessage;
 
+    @Setter
     private LocalDateTime verifiedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
