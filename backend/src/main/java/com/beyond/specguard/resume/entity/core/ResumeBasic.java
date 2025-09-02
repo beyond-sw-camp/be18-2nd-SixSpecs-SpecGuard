@@ -74,7 +74,6 @@ public class ResumeBasic extends BaseEntity {
 
 
     @Builder
-
     public ResumeBasic(String id, Resume resume, String englishName, Gender gender, LocalDate birthDate, String nationality, String applyField, String profileImageUrl, String address, String specialty, String hobbies) {
         this.id = (id != null) ? id : UUID.randomUUID().toString();
         this.resume = resume;

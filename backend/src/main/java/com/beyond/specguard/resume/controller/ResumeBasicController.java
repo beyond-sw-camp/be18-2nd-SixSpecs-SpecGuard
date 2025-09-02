@@ -7,7 +7,6 @@ import com.beyond.specguard.resume.service.ResumeBasicService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,13 +17,23 @@ public class ResumeBasicController {
 
     // POST /api/v1/resumes/{resumeId}/basic
     @PostMapping
-    public ResponseEntity<ResumeBasicResponse> create(@PathVariable String resumeId,
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResumeBasicResponse create(@PathVariable String resumeId,
                                                       @RequestBody @Valid ResumeBasicCreateRequest req) {
-        if (!resumeId.equals(req.resumeId())) {
-            throw new IllegalArgumentException("경로의 resumeId와 본문 resumeId가 일치하지 않습니다.");
-        }
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(resumeBasicService.create(req));
+
+        var fixed = new ResumeBasicCreateRequest(
+                resumeId,
+                req.englishName(),
+                req.gender(),
+                req.birthDate(),
+                req.nationality(),
+                req.applyField(),
+                req.profileImageUrl(),
+                req.address(),
+                req.specialty(),
+                req.hobbies()
+        );
+        return resumeBasicService.create(fixed);
     }
 
     // GET /api/v1/resumes/{resumeId}/basic

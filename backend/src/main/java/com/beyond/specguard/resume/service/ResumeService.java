@@ -1,19 +1,14 @@
 package com.beyond.specguard.resume.service;
 
 import com.beyond.specguard.resume.dto.resume.request.ResumeCreateRequest;
+import com.beyond.specguard.resume.dto.resume.request.ResumeStatusUpdateRequest;
 import com.beyond.specguard.resume.dto.resume.request.ResumeUpdateRequest;
-import com.beyond.specguard.resume.dto.resume.response.ResumeListItem;
 import com.beyond.specguard.resume.dto.resume.response.ResumeResponse;
-import com.beyond.specguard.resume.entity.common.enums.ResumeStatus;
 import com.beyond.specguard.resume.entity.core.Resume;
-import com.beyond.specguard.resume.repository.ResumeBasicRepository;
 import com.beyond.specguard.resume.repository.ResumeRepository;
-import com.beyond.specguard.resume.util.TemplateResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -66,6 +61,34 @@ public class ResumeService {
         return toResponse(saved);
     }
 
+
+
+
+
+    @Transactional
+    public ResumeResponse updateStatus(String id, ResumeStatusUpdateRequest req) {
+        if (req.status() == null) throw new IllegalArgumentException("status가 없습니다.");
+        Resume found = resumeRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("이력서를 찾을 수 없습니다: " + id));
+        Resume updated = Resume.builder()
+                .id(found.getId())
+                .templateId(found.getTemplateId())
+                .status(req.status())
+                .name(found.getName())
+                .phone(found.getPhone())
+                .email(found.getEmail())
+                .passwordHash(found.getPasswordHash())
+                .build();
+        return toResponse(resumeRepository.save(updated));
+    }
+
+
+
+
+
+
+
+
     @Transactional
     public void delete(String id) {
         if (!resumeRepository.existsById(id)) {
@@ -73,6 +96,7 @@ public class ResumeService {
         }
         resumeRepository.deleteById(id);
     }
+
 
     private ResumeResponse toResponse(Resume r) {
         return new ResumeResponse(

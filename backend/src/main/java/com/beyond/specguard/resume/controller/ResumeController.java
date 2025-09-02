@@ -1,8 +1,8 @@
 package com.beyond.specguard.resume.controller;
 
 import com.beyond.specguard.resume.dto.resume.request.ResumeCreateRequest;
+import com.beyond.specguard.resume.dto.resume.request.ResumeStatusUpdateRequest;
 import com.beyond.specguard.resume.dto.resume.request.ResumeUpdateRequest;
-import com.beyond.specguard.resume.dto.resume.response.ResumeListItem;
 import com.beyond.specguard.resume.dto.resume.response.ResumeResponse;
 import com.beyond.specguard.resume.service.ResumeService;
 import jakarta.validation.Valid;
@@ -21,11 +21,9 @@ public class ResumeController {
     private final ResumeService resumeService;
 
     @PostMapping
-    public ResponseEntity<ResumeResponse> create(
-            @Valid @RequestBody ResumeCreateRequest req) {
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(resumeService.create(req));
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResumeResponse create(@Valid @RequestBody ResumeCreateRequest req) {
+        return resumeService.create(req);
     }
 
     @GetMapping("/{id}")
@@ -40,6 +38,14 @@ public class ResumeController {
             @PathVariable String id,
             @Valid @RequestBody ResumeUpdateRequest req) {
         return resumeService.update(id, req);
+    }
+
+    @PatchMapping("{id}/status")
+    public ResumeResponse updateStatus(
+            @PathVariable String id,
+            @Valid @RequestBody ResumeStatusUpdateRequest req){
+        return resumeService.updateStatus(id, req);
+
     }
 
 

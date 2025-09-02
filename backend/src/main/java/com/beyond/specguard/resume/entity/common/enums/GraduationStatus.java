@@ -6,5 +6,4 @@ public enum GraduationStatus {
     EXPECTED,
     WITHDRAWN,
     LEAVE_OF_ABSENCE
-
 }

@@ -8,6 +8,7 @@ public record ResumeUpdateRequest(
         String name,
         String phone,
         String email,
+        String templateId,
         String passwordHash
 ) {
 }

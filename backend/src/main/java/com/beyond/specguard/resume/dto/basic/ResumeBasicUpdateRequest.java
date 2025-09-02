@@ -4,7 +4,6 @@ import com.beyond.specguard.resume.entity.common.enums.Gender;
 
 import java.time.LocalDate;
 
-//수정 요청, Null ok
 public record ResumeBasicUpdateRequest(
         String englishName,
         Gender gender,

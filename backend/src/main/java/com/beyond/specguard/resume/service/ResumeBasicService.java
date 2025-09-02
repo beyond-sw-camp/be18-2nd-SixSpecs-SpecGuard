@@ -18,7 +18,7 @@ public class ResumeBasicService {
     private final ResumeRepository resumeRepository;
     private final ResumeBasicRepository resumeBasicRepository;
 
-    // 생성
+    //생성
     @Transactional
     public ResumeBasicResponse create(ResumeBasicCreateRequest req) {
         Resume resume = resumeRepository.findById(req.resumeId())
@@ -47,15 +47,14 @@ public class ResumeBasicService {
         return toResponse(saved);
     }
 
-    // 단건 조회(Resume ID로)
+    @Transactional(readOnly = true)
     public ResumeBasicResponse getByResumeId(String resumeId) {
         ResumeBasic basic = resumeBasicRepository.findByResumeId(resumeId)
                 .orElseThrow(() -> new IllegalArgumentException("기본정보가 없습니다."));
         return toResponse(basic);
     }
 
-    // 수정(부분 업데이트)
-    @Transactional // ➓ 쓰기 작업
+    @Transactional
     public ResumeBasicResponse update(String resumeId, ResumeBasicUpdateRequest req) {
 
         ResumeBasic basic = resumeBasicRepository.findByResumeId(resumeId)

@@ -1,6 +1,9 @@
 package com.beyond.specguard.resume.entity.core;
 
 import com.beyond.specguard.resume.entity.common.BaseEntity;
+import com.beyond.specguard.resume.entity.common.enums.AdmissionType;
+import com.beyond.specguard.resume.entity.common.enums.Degree;
+import com.beyond.specguard.resume.entity.common.enums.GraduationStatus;
 import com.beyond.specguard.resume.entity.common.enums.SchoolType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -46,12 +49,20 @@ public class ResumeEducation extends BaseEntity {
     private String major;
 
     //학위 구분
+    @Enumerated(EnumType.STRING)
     @Column(name = "degree", nullable = false, length = 30)
-    private String degree;
+    private Degree degree;
 
     //졸업 구분
+    @Enumerated(EnumType.STRING)
     @Column(name = "graduation_status", nullable = false, length = 20)
-    private String graduationStatus;
+    private GraduationStatus graduationStatus;
+
+    //입학, 편입
+    @Enumerated(EnumType.STRING)
+    @Column(name="admission_type", nullable = false)
+    private AdmissionType admissionType;
+
 
     //학점
     @Column(name = "gpa", nullable = false)
@@ -71,14 +82,16 @@ public class ResumeEducation extends BaseEntity {
 
 
     @Builder
-    public ResumeEducation(String id, Resume resume, SchoolType schoolType, String schoolName, String major, String degree, String graduationStatus, Double gpa, Double maxGpa, LocalDate startDate, LocalDate endDate) {
-        this.id = (id != null) ? id : UUID.randomUUID().toString();  // UUID
+
+    public ResumeEducation(String id, Resume resume, SchoolType schoolType, String schoolName, String major, Degree degree, GraduationStatus graduationStatus, AdmissionType admissionType, Double gpa, Double maxGpa, LocalDate startDate, LocalDate endDate) {
+        this.id = (id != null) ? id : UUID.randomUUID().toString();
         this.resume = resume;
         this.schoolType = schoolType;
         this.schoolName = schoolName;
         this.major = major;
         this.degree = degree;
         this.graduationStatus = graduationStatus;
+        this.admissionType = admissionType;
         this.gpa = gpa;
         this.maxGpa = maxGpa;
         this.startDate = startDate;

@@ -6,35 +6,19 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 //생성
 public record ResumeBasicCreateRequest(
-        @NotBlank
         String resumeId,
-
-        @NotBlank
         String englishName,
-
-        @NotBlank
         Gender gender,
-
-        @NotBlank
         LocalDate birthDate,
-
-        @NotBlank
         String nationality,
-
-        @NotBlank
-        String applyField,
-
-        @NotBlank
-        String profileImageUrl,
-
-        @NotBlank
         String address,
-
         String specialty,
-
-        String hobbies
+        String hobbies,
+        String applyField,
+        String profileImageUrl
 ) {
 }
