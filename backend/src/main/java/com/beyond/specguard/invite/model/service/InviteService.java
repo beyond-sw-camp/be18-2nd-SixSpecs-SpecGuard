@@ -31,7 +31,6 @@ public class InviteService {
     @Value("${invite.base-url}")
     private String inviteBaseUrl;
 
-
     @Transactional
     public InviteResponseDto sendInvite(String slug, InviteRequestDto request, CustomUserDetails currentUser) {
         // 1. 권한 검증 (OWNER만 초대 가능)
@@ -48,11 +47,12 @@ public class InviteService {
             throw new CustomException(InviteErrorCode.FORBIDDEN_INVITE);
         }
 
-        // 4. 중복 초대 확인
-        if (inviteRepository.existsByEmailAndCompanyIdAndStatus(
-                request.getEmail(), company.getId().toString(), InviteStatus.PENDING)) {
-            throw new CustomException(InviteErrorCode.ALREADY_INVITED);
-        }
+        // 4. 기존 PENDING 초대가 있으면 EXPIRED 처리
+        inviteRepository.findByEmailAndCompanyAndStatus(request.getEmail(), company, InviteStatus.PENDING)
+                .ifPresent(existingInvite -> {
+                    existingInvite.setStatus(InviteStatus.EXPIRED);
+                    existingInvite.setExpiresAt(LocalDateTime.now()); // 즉시 만료
+                });
 
         // 5. 초대 토큰 생성 (JWT)
         String inviteToken = jwtUtil.createInviteToken(
@@ -61,22 +61,22 @@ public class InviteService {
                 request.getRole().name()
         );
 
-        // 6. 엔티티 저장
-        InviteEntity invite = InviteEntity.builder()
-                .companyId(company.getId().toString())
+        // 6. 새 엔티티 저장
+        InviteEntity newInvite = InviteEntity.builder()
+                .company(company) // FK 매핑
                 .email(request.getEmail())
                 .role(request.getRole())
                 .status(InviteStatus.PENDING)
-                .inviteToken(inviteToken) // ✅ DB에는 JWT만 저장
+                .inviteToken(inviteToken)
                 .expiresAt(LocalDateTime.now().plusDays(7))
                 .build();
-        inviteRepository.save(invite);
+        inviteRepository.save(newInvite);
 
-        // 7. 메일 발송 (JWT만 전달)
-        sendGridService.sendInviteEmail(invite.getEmail(), inviteToken);
+        // 7. 메일 발송
+        String inviteUrl = inviteBaseUrl + "?token=" + inviteToken;
+        sendGridService.sendInviteEmail(newInvite.getEmail(), inviteUrl);
 
         // 8. 응답 반환
-        String inviteUrl = inviteBaseUrl + "?token=" + inviteToken;
         return InviteResponseDto.builder()
                 .message("초대 메일이 발송되었습니다.")
                 .inviteUrl(inviteUrl)

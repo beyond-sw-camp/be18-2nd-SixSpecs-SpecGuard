@@ -1,5 +1,6 @@
 package com.beyond.specguard.invite.model.entity;
 
+import com.beyond.specguard.auth.model.entity.ClientCompany;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -21,8 +22,9 @@ public class InviteEntity {
     @Column(columnDefinition = "CHAR(36)")
     private String id;
 
-    @Column(name = "company_id", nullable = false, columnDefinition = "CHAR(36)")
-    private String companyId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "company_id", nullable = false, columnDefinition = "CHAR(36)")
+    private ClientCompany company;
 
     @Column(nullable = false, length = 100)
     private String email;

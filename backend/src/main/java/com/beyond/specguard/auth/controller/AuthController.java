@@ -85,9 +85,10 @@ public class AuthController {
 
     @PostMapping("/signup/invite")
     public ResponseEntity<SignupResponseDto> signupWithInvite(
-            @Valid @RequestBody InviteSignupRequestDto request
+            @RequestBody @Valid InviteSignupRequestDto request
     ) {
-        return ResponseEntity.ok(inviteSignupService.signupWithInvite(request.getToken(), request));
+        SignupResponseDto response = inviteSignupService.signupWithInvite(request);
+        return ResponseEntity.ok(response);
     }
 //        ClientUser user = inviteSignupService.signupWithInvite(request.getToken(), request);
 
@@ -116,6 +117,4 @@ public class AuthController {
         InviteCheckResponseDto response = inviteSignupService.checkInvite(request.getToken());
         return ResponseEntity.ok(response);
     }
-
-
 }

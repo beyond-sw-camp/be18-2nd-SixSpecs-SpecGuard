@@ -7,8 +7,11 @@ import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientCompanyRepository;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
+import com.beyond.specguard.common.exception.InviteException;
+import com.beyond.specguard.common.exception.errorcode.InviteErrorCode;
 import com.beyond.specguard.invite.model.entity.InviteEntity;
 import com.beyond.specguard.invite.model.repository.InviteRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,35 +26,33 @@ public class InviteSignupService {
 
     private final InviteRepository inviteRepository;
     private final ClientUserRepository clientUserRepository;
-    private final ClientCompanyRepository clientCompanyRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EntityManager entityManager;
 
     @Transactional
-    public SignupResponseDto signupWithInvite(String inviteToken, InviteSignupRequestDto dto) {
+    public SignupResponseDto signupWithInvite(InviteSignupRequestDto dto) {
         // 1. 초대 토큰 조회
         InviteEntity invite = inviteRepository.findByInviteTokenAndStatus(
-                inviteToken,
+                dto.getToken(),
                 InviteEntity.InviteStatus.PENDING
-        ).orElseThrow(() -> new IllegalArgumentException("유효하지 않거나 이미 처리된 초대입니다."));
+        ).orElseThrow(() -> new InviteException(InviteErrorCode.INVALID_TOKEN));
 
         // 2. 만료 여부 확인
         if (invite.getExpiresAt().isBefore(LocalDateTime.now())) {
             invite.setStatus(InviteEntity.InviteStatus.EXPIRED);
-            inviteRepository.save(invite);
-            throw new IllegalStateException("초대가 만료되었습니다.");
+            throw new InviteException(InviteErrorCode.EXPIRED_TOKEN);
         }
 
-        // 3. 회사 조회
-        ClientCompany company = clientCompanyRepository.findById(UUID.fromString(invite.getCompanyId()))
-                .orElseThrow(() -> new IllegalStateException("회사를 찾을 수 없습니다."));
+        // 3. 회사 조회 (FK 매핑으로 단순화)
+        ClientCompany company = invite.getCompany();
 
-        // 4. 유저 생성 (빌더 패턴)
+        // 4. 유저 생성
         ClientUser newUser = ClientUser.builder()
                 .company(company)
-                .email(invite.getEmail()) //  초대 이메일 고정
+                .email(invite.getEmail()) // 초대 이메일 고정
                 .name(dto.getName())
                 .phone(dto.getPhone())
-                .passwordHash(dto.getPassword() != null ? passwordEncoder.encode(dto.getPassword()) : null)
+                .passwordHash(passwordEncoder.encode(dto.getPassword()))
                 .role(ClientUser.Role.valueOf(invite.getRole().name()))
                 .provider("local")
                 .providerId(null)
@@ -59,10 +60,11 @@ public class InviteSignupService {
                 .build();
 
         clientUserRepository.save(newUser);
+        entityManager.flush();
+        entityManager.refresh(newUser);
 
         // 5. 초대 상태 갱신
         invite.setStatus(InviteEntity.InviteStatus.ACCEPTED);
-        inviteRepository.save(invite);
 
         return SignupResponseDto.builder()
                 .user(SignupResponseDto.UserDTO.builder()
@@ -80,18 +82,18 @@ public class InviteSignupService {
                         .build())
                 .build();
     }
+
     @Transactional(readOnly = true)
-    public InviteCheckResponseDto checkInvite(String inviteToken) {
+    public InviteCheckResponseDto checkInvite(String token) {
         InviteEntity invite = inviteRepository.findByInviteTokenAndStatus(
-                inviteToken, InviteEntity.InviteStatus.PENDING
-        ).orElseThrow(() -> new IllegalArgumentException("유효하지 않거나 이미 처리된 초대입니다."));
+                token, InviteEntity.InviteStatus.PENDING
+        ).orElseThrow(() -> new InviteException(InviteErrorCode.INVALID_TOKEN));
 
         if (invite.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("초대가 만료되었습니다.");
+            throw new InviteException(InviteErrorCode.EXPIRED_TOKEN);
         }
 
-        ClientCompany company = clientCompanyRepository.findById(UUID.fromString(invite.getCompanyId()))
-                .orElseThrow(() -> new IllegalStateException("회사를 찾을 수 없습니다."));
+        ClientCompany company = invite.getCompany();
 
         return InviteCheckResponseDto.builder()
                 .email(invite.getEmail())
