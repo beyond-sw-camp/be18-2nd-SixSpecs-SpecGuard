@@ -48,33 +48,6 @@ public class AuthController {
         tokenResponseWriter.writeTokens(response, dto);
         return ResponseEntity.ok().build();
 
-//        // ✅ 쿠키에서 refresh_token 꺼내기
-//        String refreshToken = CookieUtil.getCookieValue(request, "refresh_token");
-//
-//        // ✅ Service 호출
-//        ReissueResponseDto dto = reissueService.reissue(refreshToken);
-//
-//        // ✅ 새 Access Token → Authorization 헤더
-//        response.setHeader("Authorization", "Bearer " + dto.getAccessToken());
-//
-//        // ✅ 새 Refresh Token → HttpOnly 쿠키
-//        int maxAge = (int) (
-//                (jwtUtil.getExpiration(dto.getRefreshToken()).getTime() - System.currentTimeMillis()) / 1000
-//        );
-//
-//        response.addCookie(
-//                CookieUtil.createHttpOnlyCookie(
-//                        "refresh_token",
-//                        dto.getRefreshToken(),
-//                        maxAge
-//                )
-//        );
-//
-//        // ✅ JSON 바디에는 accessToken만 담아주면 충분
-//        return ResponseEntity.ok(Map.of(
-//                "accessToken", dto.getAccessToken(),
-//                "message", "access token 재발급 성공"
-//        ));
     }
 
     @PostMapping("/logout")
@@ -90,26 +63,7 @@ public class AuthController {
         SignupResponseDto response = inviteSignupService.signupWithInvite(request);
         return ResponseEntity.ok(response);
     }
-//        ClientUser user = inviteSignupService.signupWithInvite(request.getToken(), request);
 
-//        SignupResponseDto response = SignupResponseDto.builder()
-//                .user(SignupResponseDto.UserDTO.builder()
-//                        .id(user.getId().toString())
-//                        .name(user.getName())
-//                        .email(user.getEmail())
-//                        .phone(user.getPhone())
-//                        .role(user.getRole().name())
-//                        .createdAt(user.getCreatedAt().toString())
-//                        .build())
-//                .company(SignupResponseDto.CompanyDTO.builder()
-//                        .id(user.getCompany().getId().toString())
-//                        .name(user.getCompany().getName())
-//                        .slug(user.getCompany().getSlug())
-//                        .build())
-//                .build();
-//
-//        return ResponseEntity.ok(response);
-//    }
     @PostMapping("/signup/invite/check")
     public ResponseEntity<InviteCheckResponseDto> checkInvite(
             @RequestBody @Valid InviteCheckRequestDto request
