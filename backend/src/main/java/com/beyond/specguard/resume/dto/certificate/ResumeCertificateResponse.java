@@ -1,0 +1,16 @@
+package com.beyond.specguard.resume.dto.certificate;
+
+import java.time.LocalDate;
+
+public record ResumeCertificateResponse(
+        String id,
+        String resumeId,
+        String certificateName,
+        String certificateNumber,
+        String issuer,
+        LocalDate issuedDate,
+        String certUrl,
+        String createdAt,
+        String updatedAt
+) {
+}
