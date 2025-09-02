@@ -31,13 +31,9 @@ public class PhoneVerificationService {
     @Value("${verify.receiver.email:specguard55@gmail.com}")
     private String emailReceiver;
 
-    private static String keyPhone(String p)    { return "verif:phone:" + p; }
-    //    private String pKey(String phone) { return "pv:phone:" + HashUtil.sha256(phone); }
-//    private String aKey(String phone) {return "a:phone:" + HashUtil.sha256(phone); }
-//    private String tokenKey(String token) { return "pv:token:" + token; }
-
-    private static String aKey(String p)  { return "verif:attempt:" + p; }
-    private static String pKey(String p)    { return "verif:phone:" + p; }
+    private static String attemptKey(String p)  { return "verif:attempt:" + p; }
+    private static String phoneKey(String p)    { return "verif:phone:" + p; }
+    private String norm(String raw) { return normalizePhone(raw); }
 
     private static final long SUCCESS_GRACE_SECONDS = 60;
     private Duration ttl() { return Duration.ofSeconds(ttlSeconds); }
@@ -92,11 +88,11 @@ public class PhoneVerificationService {
     // ===== Start: 토큰 발급 =====
     @Transactional
     public VerifyDto.VerifyStartResponse start(VerifyDto.VerifyStartRequest req) {
-        final String phone = normalizePhone(req.phone().replaceAll("[^0-9]", ""));
+        final String phone = norm(req.phone());
         final String token = generateToken();
 
         var startScript = new DefaultRedisScript<>(START_LUA, String.class);
-        redis.execute(startScript, List.of(pKey(phone), aKey(phone)), token, String.valueOf(ttlSeconds));
+        redis.execute(startScript, List.of(phoneKey(phone), attemptKey(phone)), token, String.valueOf(ttlSeconds));
 
         // 사용자에게 보낼 본문(이메일/SMS)
         String manualBody = "[SpecGuard] 본인인증번호: " + token + " (" + (ttlSeconds / 60) +
@@ -118,8 +114,8 @@ public class PhoneVerificationService {
     }
     // ===== STATUS =====
     public VerifyDto.VerifyStatusResponse status(String phoneRaw) {
-        final String phone = normalizePhone(phoneRaw);
-        Map<Object, Object> map = redis.opsForHash().entries(pKey(phone));
+        final String phone = norm(phoneRaw);
+        Map<Object, Object> map = redis.opsForHash().entries(phoneKey(phone));
         if (map == null || map.isEmpty()) return new VerifyDto.VerifyStatusResponse("NONE");
         String status = (String) map.getOrDefault("status", "PENDING");
         return new VerifyDto.VerifyStatusResponse(status);
@@ -127,21 +123,22 @@ public class PhoneVerificationService {
 
     // ===== FINISH =====
     public VerifyDto.FinishResponse finish(VerifyDto.VerifyFinishRequest req) {
-        final String phone = normalizePhone(req.phone());
+        final String phone = norm(req.phone());
         final String token = req.token();
 
         var finishScript = new DefaultRedisScript<>(FINISH_LUA, String.class);
-        String result = redis.execute(finishScript, List.of(pKey(phone), aKey(phone)),
+        String result = redis.execute(finishScript, List.of(phoneKey(phone), attemptKey(phone)),
                 token, String.valueOf(maxAttempts));
         // 항상 200 + {status} 로 응답하는 컨벤션 유지
         return new VerifyDto.FinishResponse(result == null ? "FAILED" : result);
     }
 
     // ===== POLL =====
-    public VerifyDto.VerifyPollResponse poll(String phone) {
-        Map<Object, Object> payload = redis.opsForHash().entries(pKey(phone));
+    public VerifyDto.VerifyPollResponse poll(String phoneRaw) {
+        final String phone = norm(phoneRaw);
+        Map<Object, Object> payload = redis.opsForHash().entries(phoneKey(phone));
         if (payload == null || payload.isEmpty())
-            return new VerifyDto.VerifyPollResponse(null, "EXPIRED");
+            return new VerifyDto.VerifyPollResponse(null, "NONE");
         String token = (String) payload.getOrDefault("token", "");
         String status = (String) payload.getOrDefault("status", "PENDING");
         return new VerifyDto.VerifyPollResponse(token, status);

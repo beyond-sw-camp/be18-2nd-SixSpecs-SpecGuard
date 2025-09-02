@@ -148,7 +148,7 @@
                 const body = { phone: normalizePhone(state.phone), channel: state.channel };
 
                 try {
-                    const res = await fetch(`${state.apiBase}/api/verify/phone/start`, {
+                    const res = await fetch(`${state.apiBase}/api/v1/verify/phone/start`, {
                         method: 'POST', headers: {'Content-Type':'application/json'},
                         body: JSON.stringify(body)
                     });
@@ -201,7 +201,7 @@
 
             function normalizeStatus(s) {
                 const v = String(s || '').toUpperCase();
-                if (['SUCCESS','VERIFIED','OK','DONE','PASS','PASSED','CONFIRMED'].includes(v)) return 'SUCCESS';
+                if (['SUCCESS','OK','DONE','PASS','PASSED','CONFIRMED'].includes(v)) return 'SUCCESS';
                 if (['EXPIRED','TIMEOUT','NONE'].includes(v)) return 'EXPIRED';
                 if (['FAILED','FAIL','ERROR','INVALID','MISMATCH'].includes(v)) return 'FAILED';
                 if (['PENDING','WAITING','PROCESSING'].includes(v)) return 'PENDING';
@@ -213,7 +213,7 @@
                 if (!phone) return;
 
                 try {
-                    const url = `${state.apiBase}/api/verify/phone/status?phone=${encodeURIComponent(phone)}`;
+                    const url = `${state.apiBase}/api/v1/verify/phone/status?phone=${encodeURIComponent(phone)}`;
                     const res = await fetch(url);
                     if (!res.ok) throw new Error(`status http ${res.status}`);
                     const data = await res.json();

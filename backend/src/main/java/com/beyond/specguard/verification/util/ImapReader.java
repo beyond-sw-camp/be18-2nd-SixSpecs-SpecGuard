@@ -31,7 +31,7 @@ public class ImapReader {
     private Properties props;
     private Session session;
     private Store store;
-    private Folder inbox; // Gmail이면 com.sun.mail.imap.IMAPFolder로 캐스팅 가능(UID 지원)
+    private Folder inbox;
 
     private static final Pattern PHONE_BLOCK =
             Pattern.compile("(\\+82\\d{9,10}|0\\d{9,10}|\\b\\d{10,11}\\b)");
@@ -72,7 +72,7 @@ public class ImapReader {
                 }
             }
         }
-        // 3) 실패 시 전체 문자열에서라도 마지막 시도 (방어적)
+        // 3) 실패 시 전체 문자열에서 시도
         String fromStr = fromString(m);
         Matcher any = PHONE_BLOCK.matcher(fromStr);
         if (any.find()) return normalizeKrPhone(any.group(1));
@@ -88,7 +88,6 @@ public class ImapReader {
         props.put("mail.imaps.ssl.enable", "true");
 
         session = Session.getInstance(props, null);
-        // session.setDebug(true);
         store = session.getStore("imaps");
         store.connect(host, port, username, password);
 
@@ -113,7 +112,7 @@ public class ImapReader {
         }
     }
 
-    /** ① 마지막 UID 이후 + 미열람만(최근 N개 범위) */
+    // 마지막 UID 이후 + 미열람만(최근 N개 범위)
     public Message[] fetchUnreadSinceUid(long lastUid) throws Exception {
         ensureOpen();
 
@@ -139,7 +138,7 @@ public class ImapReader {
                 .toArray(Message[]::new);
     }
 
-    /** ② 미열람 전체(최근 N개로 슬라이스) — 필요시 사용 */
+    // 미열람 전체(최근 N개로 슬라이스) — 필요시 사용
     public Message[] fetchUnread() throws Exception {
         ensureOpen();
         // UNSEEN만 먼저 찾고, 그중 최근 N개만 슬라이스
@@ -155,22 +154,22 @@ public class ImapReader {
         return slice;
     }
 
-    /** ③ 개별 메시지 UID (IMAPFolder 필요) */
+    // 개별 메시지 UID (IMAPFolder 필요)
     public long uidOf(Message m) throws MessagingException {
         ensureOpen();
         if (inbox instanceof com.sun.mail.imap.IMAPFolder imapFolder) {
             return imapFolder.getUID(m);
         }
-        // UID 미지원 서버 대비: fallback (비권장, 항상 0)
+        // UID 미지원 서버 대비: fallback
         return 0L;
     }
 
-    /** ④ 처리 후 읽음 표시 */
+    // 처리 후 읽음 표시
     public void markSeen(Message m) throws MessagingException {
         m.setFlag(Flags.Flag.SEEN, true);
     }
 
-    /** ⑤ 제목/본문/첨부(txt)에서 토큰 포함 여부 — 빠른 검사용 */
+    // 제목/본문/첨부(txt)에서 토큰 포함 여부 — 빠른 검사용
     public boolean containsToken(Message m, String token) throws Exception {
         // 제목 먼저(속도↑, 인코딩 이슈↓)
         String subj = Optional.ofNullable(m.getSubject()).orElse("");
@@ -180,7 +179,7 @@ public class ImapReader {
         return text != null && text.contains(token);
     }
 
-    /** ⑥ From을 문자열로 풀기(번호 추출 전 단계) */
+    // From을 문자열로 풀기(번호 추출 전 단계)
     public String fromString(Message m) throws Exception {
         Address[] arr = m.getFrom();
         if (arr == null || arr.length == 0) return "";
@@ -193,7 +192,7 @@ public class ImapReader {
         return a.toString();
     }
 
-    /** ⑦ 제목 + 모든 텍스트 파트(본문/첨부)를 합쳐 문자열로 */
+    // 제목 + 모든 텍스트 파트(본문/첨부)를 합쳐 문자열로
     public String extractAllText(Part p) throws Exception {
         if (p.isMimeType("text/plain")) {
             Object c = p.getContent();
@@ -201,7 +200,7 @@ public class ImapReader {
         }
         if (p.isMimeType("text/html")) {
             String html = (String) p.getContent();
-            // 태그 제거 (아주 러프하게)
+            // 태그 제거
             return html.replaceAll("<[^>]+>", " ");
         }
         if (p.isMimeType("multipart/*")) {
@@ -243,7 +242,7 @@ public class ImapReader {
         return null;
     }
 
-    /** ⑧ 기존 findToken 보완: 최근 N개에서 토큰 포함 메일 1건 찾아 From/Message-ID 반환 */
+    // 기존 findToken 보완: 최근 N개에서 토큰 포함 메일 1건 찾아 From/Message-ID 반환
     public Optional<ImapMatch> findToken(String token) {
         try {
             ensureOpen();

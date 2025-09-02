@@ -46,15 +46,9 @@ public class ImapPollingJob {
         }
     }
 
-    /** 개별 메일 처리: From에서 번호, 본문/첨부에서 OTP 추출 → finish() 호출 */
+    // 개별 메일 처리: From에서 번호, 본문/첨부에서 OTP 추출 → finish() 호출
     private void process(Message m) {
         try {
-//            String from = imapReader.fromString(m);
-//            String phone = normalizePhone(from);
-//            if (phone.isEmpty()) {
-//                log.info("skip (no phone) from={}", from);
-//                return;
-//            }
             String phone = imapReader.extractPhone(m);
             if (phone.isEmpty()) {
                 String fromLog = imapReader.fromString(m);
@@ -66,7 +60,6 @@ public class ImapPollingJob {
             if (text == null) text = "";
 
             // OTP 추출 보강: '인증번호 : 123456' 패턴 우선, 실패 시 6자리 백업
-//            Matcher mm = OTP.matcher(text);
             String token = null;
             Matcher m1 = Pattern.compile("(?:인증\\s*번호|인증번호|OTP|코드)\\s*[:：]\\s*(\\d{6})").matcher(text);
             if (m1.find()) {
@@ -91,17 +84,5 @@ public class ImapPollingJob {
         } catch (Exception e) {
             log.warn("process mail failed", e);
         }
-
     }
-
-    /** +82 → 0, 숫자만, 10~11자리만 허용 */
-//    private static String normalizePhone(String raw) {
-//        if (raw == null) return "";
-//        // InternetAddress 형태에서 주소/표시명 어디에 있어도 숫자만 뽑힘
-//        String s = raw.replaceAll("[^0-9+]", "");
-//        if (s.startsWith("+82")) s = "0" + s.substring(3);
-//        s = s.replaceAll("\\D", "");
-//        if (s.length() < 10 || s.length() > 11) return "";
-//        return s;
-//    }
 }

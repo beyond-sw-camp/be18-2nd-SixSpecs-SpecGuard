@@ -5,7 +5,6 @@ import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.VerifyErrorCode;
 import com.beyond.specguard.verification.dto.VerifyDto;
 import com.beyond.specguard.verification.service.PhoneVerificationService;
-import com.beyond.specguard.verification.util.PhoneUtil;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -16,41 +15,41 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @RestController
-@RequestMapping("/api/verify/phone")
+@RequestMapping("/api/v1/verify/phone")
 @RequiredArgsConstructor
 public class PhoneVerificationController {
 
 
     private final PhoneVerificationService service;
 
-    /** 1) 인증코드 생성 */
+    // 1) 인증코드 생성
     @PostMapping("/start")
     public VerifyDto.VerifyStartResponse start(@Valid @RequestBody VerifyDto.VerifyStartRequest req) {
         return service.start(req);
     }
 
-    /** 2) 폴링 (UI에서 2~3초 간격) — phone 기준 */
+    // 2) 폴링 (UI에서 2~3초 간격) — phone 기준
     @GetMapping("/poll")
     public VerifyDto.VerifyPollResponse poll(@RequestParam("phone") String phone) {
         return service.poll(phone);
     }
 
-    /** 3) 최종 인증 — phone + token */
+    // 3) 최종 인증 — phone + token
     @PostMapping("/finish")
     public VerifyDto.FinishResponse finish(@Valid @RequestBody VerifyDto.VerifyFinishRequest req) {
         return service.finish(req);
     }
 
-    /** 4) 상태 조회 — phone 기준 */
+    // 4) 상태 조회 — phone 기준
     @GetMapping("/status")
     public VerifyDto.VerifyStatusResponse status(@RequestParam("phone") String phone) {
         return service.status(phone);
     }
 
-    /**
-     * 5) SMS/메일 웹훅 수신
-     *    - 경로 충돌 방지를 위해 /inbound 로 분리
-     *    - start 시 manualBody에 "PHONE:{phone}"를 포함하면 본문에서 추출 가능
+    /*
+      5) SMS/메일 웹훅 수신
+        - 경로 충돌 방지를 위해 /inbound 로 분리
+        - start 시 manualBody에 "PHONE:{phone}"를 포함하면 본문에서 추출 가능
      */
     @PostMapping(value = "/inbound", consumes = "application/json")
     public ResponseEntity<Void> inbound(
@@ -71,19 +70,6 @@ public class PhoneVerificationController {
 
         service.finish(new VerifyDto.VerifyFinishRequest(token, phone));
         return ResponseEntity.accepted().build();
-
-//        // 1) 본문에 PHONE:010... 이 있으면 그 번호로 처리
-//        String phone = extractPhoneFromBody(body);
-
-        // 2) 없으면 from(게이트웨이의 발신 번호)에서 추출 시도
-//        if (phone == null && p.from() != null && p.from().matches(".*\\d.*")) {
-//            phone = p.from();
-//        }
-//
-//        if (phone == null) return ResponseEntity.badRequest().build();
-//
-//        service.finish(new VerifyDto.VerifyFinishRequest(token, phone));
-//        return ResponseEntity.accepted().build();
     }
 
     private String extractSixDigits(String text) {
@@ -93,14 +79,7 @@ public class PhoneVerificationController {
         return m.group(1);
     }
 
-    /** 본문에서 "PHONE:010..." 추출 */
-    private String extractPhoneFromBody(String text) {
-        if (text == null) return null;
-        Matcher m = Pattern.compile("PHONE:([0-9\\-]+)").matcher(text);
-        return m.find() ? m.group(1) : null;
-    }
-
-    /** 웹훅 최소 페이로드 */
+    // 웹훅 최소 페이로드
     public record InboundPayload(
             @NotBlank String body,
             String from,
