@@ -1,4 +1,7 @@
 package com.beyond.specguard.resume.repository;
 
-public interface ResumeLinkRepository {
+import com.beyond.specguard.resume.entity.core.ResumeLink;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ResumeLinkRepository extends JpaRepository<ResumeLink, String> {
 }
