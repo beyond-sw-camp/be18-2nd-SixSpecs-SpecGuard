@@ -21,12 +21,12 @@ public class CustomUserDetails implements UserDetails {
         return user.getId().toString(); // UUID → String 변환
     }
 
-    // ✅ 유저 엔티티 접근
+    //  유저 엔티티 접근
     public ClientUser getUser() {
         return user;
     }
 
-    // ✅ 회사 엔티티 바로 접근 (헬퍼 메서드)
+    //  회사 엔티티 바로 접근 (헬퍼 메서드)
     public ClientCompany getCompany() {
         return user.getCompany();
     }

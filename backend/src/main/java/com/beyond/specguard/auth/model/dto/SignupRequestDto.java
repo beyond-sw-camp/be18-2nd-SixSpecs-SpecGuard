@@ -16,7 +16,7 @@ public class SignupRequestDto {
     @NotNull(message = "유저 정보는 필수입니다.")
     private UserDTO user;
 
-    // ✅ 회사 정보
+    //  회사 정보
     @Getter
     @Setter
     @NoArgsConstructor
@@ -43,7 +43,7 @@ public class SignupRequestDto {
         private String contactMobile;
     }
 
-    // ✅ 최초 사용자 정보
+    //  최초 사용자 정보
     @Getter
     @Setter
     @NoArgsConstructor

@@ -27,22 +27,22 @@ public class SignupService {
         SignupRequestDto.CompanyDTO companyReq = request.getCompany();
         SignupRequestDto.UserDTO userReq = request.getUser();
 
-        // ✅ 사업자번호 중복 체크
+        //  사업자번호 중복 체크
         if (companyRepository.existsByBusinessNumber(companyReq.getBusinessNumber())) {
             throw new CustomException(AuthErrorCode.DUPLICATE_COMPANY);
         }
 
-        // ✅ 이메일 중복 체크
+        //  이메일 중복 체크
         if (userRepository.existsByEmail(userReq.getEmail())) {
             throw new CustomException(AuthErrorCode.DUPLICATE_EMAIL);
         }
 
-        // ✅ 슬러그 중복 체크
+        //  슬러그 중복 체크
         if (companyRepository.existsBySlug(companyReq.getSlug())) {
             throw new CustomException(AuthErrorCode.DUPLICATE_SLUG);
         }
 
-        // ✅ 회사 생성
+        //  회사 생성
         ClientCompany company = ClientCompany.builder()
                 .name(companyReq.getName())
                 .businessNumber(companyReq.getBusinessNumber())
@@ -54,7 +54,7 @@ public class SignupService {
                 .build();
         companyRepository.save(company);
 
-        // ✅ 최초 유저 생성
+        //  최초 유저 생성
         ClientUser masterUser = ClientUser.builder()
                 .company(company)
                 .name(userReq.getName())
@@ -68,23 +68,11 @@ public class SignupService {
                 .build();
         ClientUser savedUser = userRepository.save(masterUser);
 
-        // ✅ 응답 DTO 변환
+        //  응답 DTO 변환
         return SignupResponseDto.builder()
-                .user(SignupResponseDto.UserDTO.builder()
-                        .id(savedUser.getId().toString())
-                        .name(savedUser.getName())
-                        .email(savedUser.getEmail())
-                        .phone(savedUser.getPhone())
-                        .role(savedUser.getRole().name())
-                        .createdAt(savedUser.getCreatedAt() != null
-                                ? savedUser.getCreatedAt().toString()
-                                : java.time.LocalDateTime.now().toString())
-                        .build())
-                .company(SignupResponseDto.CompanyDTO.builder()
-                        .id(company.getId().toString())
-                        .name(company.getName())
-                        .slug(company.getSlug())
-                        .build())
+                .user(SignupResponseDto.UserDTO.from(savedUser))
+                .company(SignupResponseDto.CompanyDTO.from(company))
                 .build();
+
     }
 }

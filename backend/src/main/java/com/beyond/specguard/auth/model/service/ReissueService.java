@@ -29,19 +29,19 @@ public class ReissueService {
             throw new CustomException(AuthErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        // ✅ RefreshToken 만료 검사
+        //  RefreshToken 만료 검사
         try {
             jwtUtil.isExpired(refreshToken);
         } catch (ExpiredJwtException e) {
             throw new CustomException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
         }
 
-        // ✅ category 확인
+        //  category 확인
         if (!"refresh".equals(jwtUtil.getCategory(refreshToken))) {
             throw new CustomException(AuthErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        // ✅ username 추출
+        //  username 추출
         String username = jwtUtil.getUsername(refreshToken);
 
         // ✅ Redis에서 RefreshToken 확인
@@ -50,18 +50,18 @@ public class ReissueService {
             throw new CustomException(AuthErrorCode.INVALID_REFRESH_TOKEN);
         }
 
-        // ✅ DB에서 유저 다시 조회 → role, slug 확보
+        //  DB에서 유저 다시 조회 → role, slug 확보
         ClientUser user = userRepository.findByEmailWithCompany(username)
                 .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
 
         String role = user.getRole().name();
         String companySlug = user.getCompany().getSlug();
 
-        // ✅ 새 토큰 발급
+        //  새 토큰 발급
         String newAccess = jwtUtil.createAccessToken(username, role, companySlug);
         String newRefresh = jwtUtil.createRefreshToken(username);
 
-        // ✅ Redis 갱신
+        //  Redis 갱신
         redisTokenService.deleteRefreshToken(username);
         long ttl = (jwtUtil.getExpiration(newRefresh).getTime() - System.currentTimeMillis()) / 1000;
         redisTokenService.saveRefreshToken(username, newRefresh, ttl);

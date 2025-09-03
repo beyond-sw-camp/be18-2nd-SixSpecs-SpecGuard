@@ -1,5 +1,6 @@
 package com.beyond.specguard.auth.model.dto;
 
+import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import lombok.*;
 
@@ -26,7 +27,7 @@ public class SignupResponseDto {
         private String role;
         private String createdAt;
 
-        // ✅ 정적 팩토리 메서드 추가
+        // 정적 팩토리 메서드
         public static UserDTO from(ClientUser user) {
             return UserDTO.builder()
                     .id(user.getId().toString())
@@ -50,6 +51,15 @@ public class SignupResponseDto {
         private String id;
         private String name;
         private String slug;
+
+        // 정적 팩토리 메서드
+        public static CompanyDTO from(ClientCompany company) {
+            return CompanyDTO.builder()
+                    .id(company.getId().toString())
+                    .name(company.getName())
+                    .slug(company.getSlug())
+                    .build();
+        }
     }
 }
 
