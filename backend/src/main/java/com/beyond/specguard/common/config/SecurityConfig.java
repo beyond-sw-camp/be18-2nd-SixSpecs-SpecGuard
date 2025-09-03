@@ -6,9 +6,9 @@ import com.beyond.specguard.auth.model.handler.CustomFailureHandler;
 import com.beyond.specguard.auth.model.handler.CustomSuccessHandler;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.auth.model.service.RedisTokenService;
-import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
+import com.beyond.specguard.common.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -60,6 +60,8 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
                         "/api/v1/auth/signup/**",
                         "/api/v1/auth/login",
                         "/api/v1/auth/token/refresh",
@@ -68,7 +70,7 @@ public class SecurityConfig {
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/**").hasAnyRole("OWNER", "MANAGER", "VIEWER")
                 .requestMatchers("/api/v1/invite/**").hasRole("OWNER")
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
         );
 
         // 🔹 인증/인가 실패 핸들러 - 스프링 빈 주입된 걸 사용

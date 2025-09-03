@@ -1,7 +1,11 @@
 package com.beyond.specguard.auth.controller;
 
-import com.beyond.specguard.auth.model.dto.*;
-import com.beyond.specguard.auth.model.entity.ClientUser;
+import com.beyond.specguard.auth.model.dto.InviteCheckRequestDto;
+import com.beyond.specguard.auth.model.dto.InviteCheckResponseDto;
+import com.beyond.specguard.auth.model.dto.InviteSignupRequestDto;
+import com.beyond.specguard.auth.model.dto.ReissueResponseDto;
+import com.beyond.specguard.auth.model.dto.SignupRequestDto;
+import com.beyond.specguard.auth.model.dto.SignupResponseDto;
 import com.beyond.specguard.auth.model.service.InviteSignupService;
 import com.beyond.specguard.auth.model.service.LogoutService;
 import com.beyond.specguard.auth.model.service.ReissueService;
@@ -9,12 +13,17 @@ import com.beyond.specguard.auth.model.service.SignupService;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;
 import com.beyond.specguard.common.util.TokenResponseWriter;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
@@ -38,6 +47,13 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(
+            summary = "Access Token 갱신",
+            description = "쿠키에 담긴 Refresh Token을 이용해 Access Token을 갱신합니다.",
+            security = {
+                    @SecurityRequirement(name = "refreshTokenCookie")
+            }
+    )
     @PostMapping("/token/refresh")
     public ResponseEntity<Void> reissue(
             HttpServletRequest request,
