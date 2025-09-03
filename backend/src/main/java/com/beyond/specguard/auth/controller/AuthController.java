@@ -20,10 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -80,11 +77,11 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/signup/invite/check")
+    @GetMapping("/signup/invite/check")
     public ResponseEntity<InviteCheckResponseDto> checkInvite(
-            @RequestBody @Valid InviteCheckRequestDto request
+            @RequestParam("token") String token
     ) {
-        InviteCheckResponseDto response = inviteSignupService.checkInvite(request.getToken());
+        InviteCheckResponseDto response = inviteSignupService.checkInvite(token);
         return ResponseEntity.ok(response);
     }
 }

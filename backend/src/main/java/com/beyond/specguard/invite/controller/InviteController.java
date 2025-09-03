@@ -29,11 +29,4 @@ public class InviteController {
         InviteResponseDto response = inviteService.sendInvite(slug, request, currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
-//    // ✅ 초대 수락 (로그인 안 한 사용자도 접근 가능)
-//    @GetMapping("/accept")
-//    public ResponseEntity<String> acceptInvite(@RequestParam String token){
-//        inviteService.acceptInvite(token);
-//        return ResponseEntity.ok("초대가 수락되었습니다.");
-//    }
 }

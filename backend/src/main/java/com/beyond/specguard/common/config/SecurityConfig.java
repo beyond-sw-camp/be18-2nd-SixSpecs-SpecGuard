@@ -65,7 +65,8 @@ public class SecurityConfig {
                         "/api/v1/auth/signup/**",
                         "/api/v1/auth/login",
                         "/api/v1/auth/token/refresh",
-                        "/api/v1/invite/accept/**"
+                        "/api/v1/invite/accept/**",
+                        "/api/v1/auth/invite/**"
                 ).permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/**").hasAnyRole("OWNER", "MANAGER", "VIEWER")
