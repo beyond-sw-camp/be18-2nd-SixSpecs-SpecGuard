@@ -11,7 +11,7 @@ public class ErrorResponse {
     private final String code;    // 에러 코드
     private final String message; // 에러 메시지
 
-    // ✅ 기본 에러코드 그대로 사용
+    //  기본 에러코드 그대로 사용
     public static ErrorResponse of(ErrorCode errorCode) {
         return new ErrorResponse(
                 errorCode.getStatus().value(),
@@ -20,7 +20,7 @@ public class ErrorResponse {
         );
     }
 
-    // ✅ 기본 코드 + 커스텀 메시지 오버라이드
+    //  기본 코드 + 커스텀 메시지 오버라이드
     public static ErrorResponse of(ErrorCode errorCode, String customMessage) {
         return new ErrorResponse(
                 errorCode.getStatus().value(),

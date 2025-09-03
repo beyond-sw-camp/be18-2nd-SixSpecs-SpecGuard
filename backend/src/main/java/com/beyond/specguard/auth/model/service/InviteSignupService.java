@@ -5,10 +5,9 @@ import com.beyond.specguard.auth.model.dto.InviteSignupRequestDto;
 import com.beyond.specguard.auth.model.dto.SignupResponseDto;
 import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.auth.model.entity.ClientUser;
-import com.beyond.specguard.auth.model.repository.ClientCompanyRepository;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
-import com.beyond.specguard.common.exception.InviteException;
-import com.beyond.specguard.common.exception.errorcode.InviteErrorCode;
+import com.beyond.specguard.invite.exception.InviteException;
+import com.beyond.specguard.invite.exception.errorcode.InviteErrorCode;
 import com.beyond.specguard.invite.model.entity.InviteEntity;
 import com.beyond.specguard.invite.model.repository.InviteRepository;
 import jakarta.persistence.EntityManager;
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor

@@ -1,6 +1,6 @@
-package com.beyond.specguard.common.exception;
+package com.beyond.specguard.auth.exception;
 
-import com.beyond.specguard.common.exception.errorcode.AuthErrorCode;
+import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import lombok.Getter;
 import org.springframework.security.core.AuthenticationException;
 

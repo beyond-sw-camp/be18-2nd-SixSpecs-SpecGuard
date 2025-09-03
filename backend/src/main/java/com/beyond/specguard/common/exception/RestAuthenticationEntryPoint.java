@@ -1,6 +1,7 @@
 package com.beyond.specguard.common.exception;
 
-import com.beyond.specguard.common.exception.errorcode.AuthErrorCode;
+import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
+import com.beyond.specguard.auth.exception.AuthException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

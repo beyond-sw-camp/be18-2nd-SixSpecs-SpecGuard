@@ -1,5 +1,6 @@
-package com.beyond.specguard.common.exception.errorcode;
+package com.beyond.specguard.invite.exception.errorcode;
 
+import com.beyond.specguard.common.exception.errorcode.ErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

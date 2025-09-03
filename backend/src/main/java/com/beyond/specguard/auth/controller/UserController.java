@@ -3,7 +3,7 @@ package com.beyond.specguard.auth.controller;
 import com.beyond.specguard.auth.model.dto.SignupResponseDto;
 import com.beyond.specguard.auth.model.service.CustomUserDetails;
 import com.beyond.specguard.common.exception.CustomException;
-import com.beyond.specguard.common.exception.errorcode.AuthErrorCode;
+import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;

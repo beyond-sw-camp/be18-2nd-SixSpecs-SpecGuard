@@ -1,6 +1,6 @@
 package com.beyond.specguard.common.exception;
 
-import com.beyond.specguard.common.exception.errorcode.AuthErrorCode;
+import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
