@@ -1,5 +1,6 @@
 package com.beyond.specguard.companytemplate.model.entity;
 
+import com.beyond.specguard.companytemplate.model.dto.CompanyTemplateDetailRequestDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -75,5 +76,10 @@ public class CompanyTemplate {
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void update(CompanyTemplateDetailRequestDto requestDto) {
+        this.startDate = requestDto.getStartDate();
+        this.endDate = requestDto.getEndDate();
     }
 }

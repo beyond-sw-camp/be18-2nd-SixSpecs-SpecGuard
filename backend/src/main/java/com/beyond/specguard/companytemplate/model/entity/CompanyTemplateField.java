@@ -15,6 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,7 @@ import java.util.UUID;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class CompanyTemplateField {
     @Id
     @GeneratedValue(strategy= GenerationType.UUID)
@@ -44,6 +46,7 @@ public class CompanyTemplateField {
     private FieldType fieldType;
 
     @Column(name = "is_required", nullable = false)
+    @Builder.Default
     private boolean isRequired = false;
 
     @Column(name = "field_order")
@@ -53,9 +56,11 @@ public class CompanyTemplateField {
     private String options; // JSON 형식으로 저장, 필요시 ObjectMapper로 변환
 
     @Column(name = "min_length", nullable = false)
+    @Builder.Default
     private Integer minLength = 0;
 
     @Column(name = "max_length", nullable = false)
+    @Builder.Default
     private Integer maxLength = 500;
 
     @CreationTimestamp
