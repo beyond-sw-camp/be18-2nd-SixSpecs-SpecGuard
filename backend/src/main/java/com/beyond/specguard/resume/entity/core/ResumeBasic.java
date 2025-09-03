@@ -23,11 +23,6 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ResumeBasic extends BaseEntity {
 
-    //PK
-    @Id
-    @Column(name = "id", length = 36, nullable = false)
-    private String id;
-
     //일대일
     //resume_id는 FK
     @OneToOne(fetch = FetchType.LAZY)

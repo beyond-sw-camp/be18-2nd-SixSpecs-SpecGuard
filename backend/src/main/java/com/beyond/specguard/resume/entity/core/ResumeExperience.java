@@ -19,10 +19,7 @@ import java.time.LocalDate;
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ResumeExperience extends BaseEntity {
-    //PK
-    @Id
-    @Column(name = "id", length = 36, nullable = false)
-    private String id;
+
 
     //다대일
     //resume_id는 FK
@@ -60,8 +57,8 @@ public class ResumeExperience extends BaseEntity {
     private EmploymentStatus employmentStatus;
 
     @Builder
-    public ResumeExperience(String id, Resume resume, String companyName, String department, String position, String responsibilities, LocalDate startDate, LocalDate endDate, EmploymentStatus employmentStatus) {
-        this.id = id;
+    public ResumeExperience( Resume resume, String companyName, String department, String position, String responsibilities, LocalDate startDate, LocalDate endDate, EmploymentStatus employmentStatus) {
+
         this.resume = resume;
         this.companyName = companyName;
         this.department = department;

@@ -64,7 +64,6 @@ public class ResumeLinkService {
                 .orElseThrow(() -> new IllegalArgumentException("해당 링크가 존재하지 않습니다."));
 
         ResumeLink updated = ResumeLink.builder()
-                .id(link.getId())
                 .resume(link.getResume())
                 .url(req.url() != null ? req.url() : link.getUrl())
                 .linkType(req.linkType() != null ? req.linkType() : link.getLinkType())

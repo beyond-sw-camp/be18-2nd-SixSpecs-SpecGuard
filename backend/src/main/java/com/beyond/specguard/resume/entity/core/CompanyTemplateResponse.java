@@ -22,10 +22,6 @@ import lombok.NoArgsConstructor;
         })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CompanyTemplateResponse extends BaseEntity {
-    //PK
-    @Id
-    @Column(name = "id", length = 36, nullable = false)
-    private String id;
 
     //다대일
     //resume_id는 FK
@@ -43,8 +39,7 @@ public class CompanyTemplateResponse extends BaseEntity {
 
     @Builder
 
-    public CompanyTemplateResponse(String id, Resume resume, String fieldId, String answer) {
-        this.id = id != null ? id : java.util.UUID.randomUUID().toString();
+    public CompanyTemplateResponse( Resume resume, String fieldId, String answer) {
         this.resume = resume;
         this.fieldId = fieldId;
         this.answer = answer;

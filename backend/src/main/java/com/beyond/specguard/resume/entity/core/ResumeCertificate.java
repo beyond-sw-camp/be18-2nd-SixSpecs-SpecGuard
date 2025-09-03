@@ -18,10 +18,7 @@ import java.time.LocalDate;
 )
 @NoArgsConstructor
 public class ResumeCertificate extends BaseEntity {
-    //PK
-    @Id
-    @Column(name = "id", length = 36, nullable = false)
-    private String id;
+
 
     //다대일
     //resume_id는 FK
@@ -52,8 +49,7 @@ public class ResumeCertificate extends BaseEntity {
     private String certUrl;
 
     @Builder
-    public ResumeCertificate(String id, Resume resume, String certificateName, String certificateNumber, String issuer, LocalDate issuedDate, String certUrl) {
-        this.id = id;
+    public ResumeCertificate( Resume resume, String certificateName, String certificateNumber, String issuer, LocalDate issuedDate, String certUrl) {
         this.resume = resume;
         this.certificateName = certificateName;
         this.certificateNumber = certificateNumber;

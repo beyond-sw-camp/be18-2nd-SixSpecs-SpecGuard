@@ -17,10 +17,7 @@ import lombok.NoArgsConstructor;
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ResumeLink extends BaseEntity {
-    //PK
-    @Id
-    @Column(name = "id", length = 36, nullable = false)
-    private String id;
+
 
     //다대일
     //resume_id는 FK
@@ -43,9 +40,7 @@ public class ResumeLink extends BaseEntity {
     private String contents;
 
     @Builder
-
-    public ResumeLink(String id, Resume resume, String url, LinkType linkType, String contents) {
-        this.id = id != null ? id : java.util.UUID.randomUUID().toString();
+    public ResumeLink( Resume resume, String url, LinkType linkType, String contents) {
         this.resume = resume;
         this.url = url;
         this.linkType = linkType;

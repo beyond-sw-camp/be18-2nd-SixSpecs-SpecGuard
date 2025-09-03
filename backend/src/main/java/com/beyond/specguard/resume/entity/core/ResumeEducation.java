@@ -24,10 +24,6 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ResumeEducation extends BaseEntity {
 
-    //PK
-    @Id
-    @Column(name = "id", length = 36, nullable = false)
-    private String id;
 
     //다대일
     //resume_id는 FK
@@ -83,8 +79,7 @@ public class ResumeEducation extends BaseEntity {
 
     @Builder
 
-    public ResumeEducation(String id, Resume resume, SchoolType schoolType, String schoolName, String major, Degree degree, GraduationStatus graduationStatus, AdmissionType admissionType, Double gpa, Double maxGpa, LocalDate startDate, LocalDate endDate) {
-        this.id = (id != null) ? id : UUID.randomUUID().toString();
+    public ResumeEducation( Resume resume, SchoolType schoolType, String schoolName, String major, Degree degree, GraduationStatus graduationStatus, AdmissionType admissionType, Double gpa, Double maxGpa, LocalDate startDate, LocalDate endDate) {
         this.resume = resume;
         this.schoolType = schoolType;
         this.schoolName = schoolName;
