@@ -7,14 +7,15 @@ import com.beyond.specguard.auth.model.service.RedisTokenService;
 import com.beyond.specguard.common.exception.AuthException;
 import com.beyond.specguard.common.exception.errorcode.AuthErrorCode;
 import com.beyond.specguard.common.jwt.JwtUtil;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -24,13 +25,24 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final ClientUserRepository clientUserRepository;
     private final RedisTokenService redisTokenService;
+    private final AuthenticationEntryPoint entryPoint; // ✅ 주입받음
 
     public JwtFilter(JwtUtil jwtUtil,
                      ClientUserRepository clientUserRepository,
-                     RedisTokenService redisTokenService) {
+                     RedisTokenService redisTokenService,
+                     AuthenticationEntryPoint entryPoint) {
         this.jwtUtil = jwtUtil;
         this.clientUserRepository = clientUserRepository;
         this.redisTokenService = redisTokenService;
+        this.entryPoint = entryPoint;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.startsWith("/api/v1/auth/login")
+                || path.startsWith("/api/v1/auth/signup")
+                || path.startsWith("/api/v1/auth/token/refresh");
     }
 
     @Override
@@ -38,10 +50,10 @@ public class JwtFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-
+        System.out.println(">>> JwtFilter 진입, path=" + request.getRequestURI());
         String authorization = request.getHeader("Authorization");
+        System.out.println(">>> Authorization=" + authorization);
 
-        // Authorization 헤더가 없거나 Bearer 로 시작하지 않으면 그냥 통과
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -50,10 +62,8 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = authorization.substring(7);
 
         try {
-            // 토큰 만료 여부 확인
-            if (jwtUtil.isExpired(token)) {
-                throw new AuthException(AuthErrorCode.ACCESS_TOKEN_EXPIRED);
-            }
+            // ✅ 만료 여부 검증
+            jwtUtil.validateToken(token);
 
             // 블랙리스트 확인
             String jti = jwtUtil.getJti(token);
@@ -61,40 +71,43 @@ public class JwtFilter extends OncePerRequestFilter {
                 throw new AuthException(AuthErrorCode.BLACKLISTED_ACCESS_TOKEN);
             }
 
-            // 카테고리 확인 (access 토큰만 허용)
+            // 카테고리 확인
             String category = jwtUtil.getCategory(token);
             if (!"access".equals(category)) {
                 throw new AuthException(AuthErrorCode.INVALID_TOKEN_CATEGORY);
             }
 
-            // 사용자 정보 추출
+            // 사용자 조회
             String email = jwtUtil.getUsername(token);
-
             ClientUser user = clientUserRepository.findByEmailWithCompany(email)
                     .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
 
-            // CustomUserDetails 생성
             CustomUserDetails userDetails = new CustomUserDetails(user);
-
-            // 인증 객체 생성
             Authentication auth = new UsernamePasswordAuthenticationToken(
-                    userDetails,
-                    null,
-                    userDetails.getAuthorities()
+                    userDetails, null, userDetails.getAuthorities()
             );
-
-            // SecurityContext에 저장
             SecurityContextHolder.getContext().setAuthentication(auth);
 
-        } catch (AuthenticationException e) {
+            filterChain.doFilter(request, response);
+
+        } catch (ExpiredJwtException e) {
             SecurityContextHolder.clearContext();
-            throw e; // Security 필터 체인에서 처리됨
+            System.out.println(">>> ExpiredJwtException 잡힘, ACCESS_TOKEN_EXPIRED로 변환해서 EntryPoint 호출");
+            entryPoint.commence(request, response,
+                    new AuthException(AuthErrorCode.ACCESS_TOKEN_EXPIRED));
+            return;
+        } catch (AuthException e) {
+            SecurityContextHolder.clearContext();
+            System.out.println(">>> AuthException 잡힘, code=" + e.getErrorCode().getCode());
+            entryPoint.commence(request, response, e);
+            return;
         } catch (Exception e) {
             SecurityContextHolder.clearContext();
-            throw new AuthException(AuthErrorCode.UNAUTHORIZED);
+            System.out.println(">>> Exception 잡힘, UNAUTHORIZED로 변환: " + e.getClass());
+            entryPoint.commence(request, response,
+                    new AuthException(AuthErrorCode.UNAUTHORIZED));
+            return;
         }
 
-        // 다음 필터 실행
-        filterChain.doFilter(request, response);
     }
 }

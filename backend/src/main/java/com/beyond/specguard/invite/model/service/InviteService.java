@@ -47,36 +47,38 @@ public class InviteService {
             throw new CustomException(InviteErrorCode.FORBIDDEN_INVITE);
         }
 
-        // 4. 기존 PENDING 초대가 있으면 EXPIRED 처리
-        inviteRepository.findByEmailAndCompanyAndStatus(request.getEmail(), company, InviteStatus.PENDING)
+        // 4. 기존 PENDING 초대 → EXPIRED 처리
+        inviteRepository.findByEmailAndCompanyAndStatus(request.getEmail(), company, InviteEntity.InviteStatus.PENDING)
                 .ifPresent(existingInvite -> {
-                    existingInvite.setStatus(InviteStatus.EXPIRED);
+                    existingInvite.setStatus(InviteEntity.InviteStatus.EXPIRED);
                     existingInvite.setExpiresAt(LocalDateTime.now()); // 즉시 만료
                 });
 
-        // 5. 초대 토큰 생성 (JWT)
+        // 5. 초대 토큰 생성
         String inviteToken = jwtUtil.createInviteToken(
                 request.getEmail(),
                 slug,
                 request.getRole().name()
         );
 
-        // 6. 새 엔티티 저장
+        // 6. 엔티티 저장
         InviteEntity newInvite = InviteEntity.builder()
-                .company(company) // FK 매핑
+                .company(company)
                 .email(request.getEmail())
                 .role(request.getRole())
-                .status(InviteStatus.PENDING)
+                .status(InviteEntity.InviteStatus.PENDING)
                 .inviteToken(inviteToken)
                 .expiresAt(LocalDateTime.now().plusDays(7))
                 .build();
         inviteRepository.save(newInvite);
 
-        // 7. 메일 발송
+        // 7. 최종 초대 URL 조립 (InviteService에서만)
         String inviteUrl = inviteBaseUrl + "?token=" + inviteToken;
+
+        // 8. 메일 발송
         sendGridService.sendInviteEmail(newInvite.getEmail(), inviteUrl);
 
-        // 8. 응답 반환
+        // 9. 응답 반환
         return InviteResponseDto.builder()
                 .message("초대 메일이 발송되었습니다.")
                 .inviteUrl(inviteUrl)

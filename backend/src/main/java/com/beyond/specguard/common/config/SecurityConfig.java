@@ -77,8 +77,10 @@ public class SecurityConfig {
                 .accessDeniedHandler(restAccessDeniedHandler)            // 403
         );
 
-        http.addFilterBefore(new JwtFilter(jwtUtil, clientUserRepository, redisTokenService),
-                UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(
+                new JwtFilter(jwtUtil, clientUserRepository, redisTokenService, restAuthenticationEntryPoint),
+                UsernamePasswordAuthenticationFilter.class
+        );
 
         LoginFilter loginFilter = new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil);
         loginFilter.setAuthenticationSuccessHandler(customSuccessHandler);

@@ -1,5 +1,6 @@
 package com.beyond.specguard.common.jwt;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -16,7 +17,7 @@ public class JwtUtil {
     private final SecretKey secretKey;
 
     // ✅ TTL (밀리초 단위)
-    private static final long ACCESS_TTL = 15 * 60 * 1000L;            // 15분
+    private static final long ACCESS_TTL = 3 * 60 * 1000L;            // 15분
     private static final long REFRESH_TTL = 14L * 24 * 60 * 60 * 1000; // 14일
     private static final long INVITE_TTL = 7L * 24 * 60 * 60 * 1000;   // 7일
 
@@ -123,5 +124,14 @@ public class JwtUtil {
         return Jwts.parser().verifyWith(secretKey).build()
                 .parseSignedClaims(token).getPayload()
                 .getExpiration();
+    }
+
+    public void validateToken(String token) throws ExpiredJwtException {
+        // verifyWith(secretKey).build() 방식이 0.12.x에서 권장
+        Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token);
+        // ✅ 여기서 만료되면 ExpiredJwtException 발생
     }
 }

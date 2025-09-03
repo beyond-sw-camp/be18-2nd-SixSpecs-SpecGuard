@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 public class TokenResponseWriter {
     private final JwtUtil jwtUtil;
     public void writeTokens(HttpServletResponse response, ReissueResponseDto dto){
-        response.setHeader("Authorization","Bearer" + dto.getAccessToken());
+        response.setHeader("Authorization", "Bearer " + dto.getAccessToken());
 
         int maxAge = (int)((jwtUtil.getExpiration(dto.getRefreshToken()).getTime() - System.currentTimeMillis()) / 1000L);
 

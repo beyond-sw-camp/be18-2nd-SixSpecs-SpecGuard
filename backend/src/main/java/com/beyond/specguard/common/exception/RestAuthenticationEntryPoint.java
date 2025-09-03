@@ -21,12 +21,16 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
                          AuthenticationException ex) throws IOException {
         System.out.println(">>> EntryPoint ex=" + ex.getClass() + ", msg=" + ex.getMessage());
 
-        // 기본값
-        AuthErrorCode errorCode = AuthErrorCode.UNAUTHORIZED;
+        AuthErrorCode errorCode;
 
-        // AuthException이면 세부 errorCode 사용
         if (ex instanceof AuthException authEx) {
             errorCode = authEx.getErrorCode();
+        } else if (ex instanceof org.springframework.security.authentication.BadCredentialsException) {
+            errorCode = AuthErrorCode.INVALID_ACCESS_TOKEN;
+        } else if (ex instanceof org.springframework.security.authentication.InsufficientAuthenticationException) {
+            errorCode = AuthErrorCode.UNAUTHORIZED;
+        } else {
+            errorCode = AuthErrorCode.UNAUTHORIZED;
         }
 
         response.setStatus(errorCode.getStatus().value());

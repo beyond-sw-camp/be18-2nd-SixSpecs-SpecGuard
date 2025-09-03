@@ -23,17 +23,12 @@ public class SendGridService {
     @Value("${sendgrid.mail.from-name}")
     private String fromName;
 
-    @Value("${invite.base-url}")
-    private String inviteBaseUrl;
-
-    public void sendInviteEmail(String toEmail, String token) {
+    public void sendInviteEmail(String toEmail, String inviteUrl) {
         Email from = new Email(fromEmail, fromName);
         String subject = "[SpecGuard] 초대 메일이 도착했습니다!";
         Email to = new Email(toEmail);
 
-        // ✅ 여기서 최종 URL 조립
-        String inviteUrl = inviteBaseUrl + "?token=" + token;
-
+        // ✅ 여기서는 넘어온 inviteUrl만 사용
         String contentValue = "<h3>SpecGuard 초대 메일</h3>"
                 + "<p>아래 링크를 클릭하여 초대를 수락하세요:</p>"
                 + "<a href=\"" + inviteUrl + "\">초대 수락하기</a>";

@@ -1,5 +1,6 @@
 package com.beyond.specguard.auth.model.handler;
 
+import com.beyond.specguard.common.exception.AuthException;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.AuthErrorCode;
 import org.springframework.security.core.AuthenticationException;
@@ -17,7 +18,6 @@ public class CustomFailureHandler implements AuthenticationFailureHandler {
     public void onAuthenticationFailure(HttpServletRequest request,
                                         HttpServletResponse response,
                                         AuthenticationException exception) throws IOException {
-        // ✅ 전역 예외 핸들러가 처리하도록 CustomException 발생
-        throw new CustomException(AuthErrorCode.INVALID_LOGIN);
+        throw new AuthException(AuthErrorCode.INVALID_LOGIN);
     }
 }

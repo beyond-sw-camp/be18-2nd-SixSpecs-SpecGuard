@@ -1,5 +1,6 @@
 package com.beyond.specguard.auth.model.dto;
 
+import com.beyond.specguard.auth.model.entity.ClientUser;
 import lombok.*;
 
 @Getter
@@ -26,7 +27,7 @@ public class SignupResponseDto {
         private String createdAt;
 
         // ✅ 정적 팩토리 메서드 추가
-        public static UserDTO from(com.beyond.specguard.auth.model.entity.ClientUser user) {
+        public static UserDTO from(ClientUser user) {
             return UserDTO.builder()
                     .id(user.getId().toString())
                     .name(user.getName())

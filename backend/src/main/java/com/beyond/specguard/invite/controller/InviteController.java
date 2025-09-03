@@ -1,5 +1,6 @@
 package com.beyond.specguard.invite.controller;
 
+import com.beyond.specguard.auth.model.service.CustomUserDetails;
 import com.beyond.specguard.invite.model.dto.InviteRequestDto;
 import com.beyond.specguard.invite.model.dto.InviteResponseDto;
 import com.beyond.specguard.invite.model.service.InviteService;
@@ -22,7 +23,7 @@ public class InviteController {
     @PostMapping
     public ResponseEntity<InviteResponseDto> sendInvite(
             @PathVariable String slug,
-            @AuthenticationPrincipal com.beyond.specguard.auth.model.service.CustomUserDetails currentUser,
+            @AuthenticationPrincipal CustomUserDetails currentUser,
             @RequestBody @Validated InviteRequestDto request
     ) {
         InviteResponseDto response = inviteService.sendInvite(slug, request, currentUser);
