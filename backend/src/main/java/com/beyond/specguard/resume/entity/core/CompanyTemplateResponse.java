@@ -13,23 +13,19 @@ import lombok.NoArgsConstructor;
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_ctresp_resume_field",
                 columnNames = {"resume_id", "field_id"}
-        ),
-        indexes = {
-                @Index(name = "idx_ctresp_resume",
-                        columnList = "resume_id"),
-                @Index(name = "idx_ctresp_field",
-                        columnList = "field_id")
-        })
+        )
+        )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CompanyTemplateResponse extends BaseEntity {
 
     //다대일
     //resume_id는 FK
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false)
+    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "BINARY(16)")
     private Resume resume;
 
-    @Column(name = "field_id", length = 36, nullable = false)
+    //field_id
+    @Column(name = "field_id", nullable = false, columnDefinition = "BINARY(16)")
     private String fieldId;
 
     //지원자의 답변
@@ -37,10 +33,16 @@ public class CompanyTemplateResponse extends BaseEntity {
     @Column(name = "answer", columnDefinition = "TEXT")
     private String answer;
 
-    @Builder
+    void linkResume(Resume resume) {
+        this.resume = resume;
+    }
 
+    @Builder
     public CompanyTemplateResponse( Resume resume, String fieldId, String answer) {
         this.resume = resume;
+        if(resume != null){
+            resume.addCompanyTemplateResponse(this);
+        }
         this.fieldId = fieldId;
         this.answer = answer;
     }

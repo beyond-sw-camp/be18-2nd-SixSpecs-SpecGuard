@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -57,6 +59,58 @@ public class Resume extends BaseEntity {
 
     void linkBasic(ResumeBasic basic){
         this.basic = basic;
+    }
+
+    //ResumeEducation
+    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ResumeEducation> educations = new ArrayList<>();
+
+    public void addEducation(ResumeEducation education) {
+        this.educations.add(education);
+        if (education.getResume() != this) {
+            education.linkResume(this);
+        }
+    }
+
+    //ResumeExperience
+    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ResumeExperience> experiences = new ArrayList<>();
+
+    public void addExperience(ResumeExperience experience) {
+        this.experiences.add(experience);
+        if(experience.getResume() != this){
+            experience.linkResume(this);
+        }
+    }
+
+    //ResumeCertificate
+    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ResumeCertificate> certificates = new ArrayList<>();
+    public void addCertificate(ResumeCertificate certificate) {
+        this.certificates.add(certificate);
+        if(certificate.getResume() != this){
+            certificate.linkResume(this);
+        }
+    }
+
+    //ResumeLink
+    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ResumeLink> links = new ArrayList<>();
+    public void addLink(ResumeLink link) {
+        this.links.add(link);
+        if(link.getResume() != this){
+            link.linkResume(this);
+        }
+    }
+
+    //CompanyTemplateResponse
+    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CompanyTemplateResponse> companyTemplateResponses = new ArrayList<>();
+    public void addCompanyTemplateResponse(CompanyTemplateResponse companyTemplateResponse) {
+        this.companyTemplateResponses.add(companyTemplateResponse);
+        if(companyTemplateResponse.getResume() != this){
+            companyTemplateResponse.linkResume(this);
+        }
     }
 
 

@@ -17,9 +17,7 @@ import java.util.UUID;
 @Getter
 @Entity
 @Table(
-        name = "resume_education",
-        indexes = @Index(name="idx_edu_resume",
-                columnList="resume_id")
+        name = "resume_education"
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ResumeEducation extends BaseEntity {
@@ -28,37 +26,31 @@ public class ResumeEducation extends BaseEntity {
     //다대일
     //resume_id는 FK
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false)
+    @JoinColumn(name = "resume_id", nullable = false,  columnDefinition = "BINARY(16)")
     private Resume resume;
 
-    //고등학교/대학교/대학원 구분
-    @Enumerated(EnumType.STRING)
-    @Column(name = "school_type", nullable = false, length = 20)
-    private SchoolType schoolType;
-
     //학교명
-    @Column(name = "school_name", nullable = false, length = 150)
+    @Column(name = "school_name", nullable = false, length = 255)
     private String schoolName;
 
     //전공 -계열/학과 계열
-    @Column(name = "major", nullable = false, length = 150)
+    @Column(name = "major", nullable = true, length = 255)
     private String major;
-
-    //학위 구분
-    @Enumerated(EnumType.STRING)
-    @Column(name = "degree", nullable = false, length = 30)
-    private Degree degree;
 
     //졸업 구분
     @Enumerated(EnumType.STRING)
-    @Column(name = "graduation_status", nullable = false, length = 20)
+    @Column(name = "graduation_status", nullable = false)
     private GraduationStatus graduationStatus;
+
+    //학위 구분
+    @Enumerated(EnumType.STRING)
+    @Column(name = "degree", nullable = false, length = 100)
+    private Degree degree;
 
     //입학, 편입
     @Enumerated(EnumType.STRING)
     @Column(name="admission_type", nullable = false)
     private AdmissionType admissionType;
-
 
     //학점
     @Column(name = "gpa", nullable = false)
@@ -73,14 +65,29 @@ public class ResumeEducation extends BaseEntity {
     private LocalDate startDate;
 
     //졸업일
-    @Column(name = "end_date")
+    @Column(name = "end_date", nullable = true)
     private LocalDate endDate;
 
 
-    @Builder
+    //고등학교/대학교/대학원 구분
+    @Enumerated(EnumType.STRING)
+    @Column(name = "school_type", nullable = false, length = 20)
+    private SchoolType schoolType;
 
+
+    void linkResume(Resume resume) {
+        this.resume = resume;
+    }
+
+
+
+
+    @Builder
     public ResumeEducation( Resume resume, SchoolType schoolType, String schoolName, String major, Degree degree, GraduationStatus graduationStatus, AdmissionType admissionType, Double gpa, Double maxGpa, LocalDate startDate, LocalDate endDate) {
         this.resume = resume;
+        if(resume != null) {
+            resume.addEducation(this);
+        }
         this.schoolType = schoolType;
         this.schoolName = schoolName;
         this.major = major;

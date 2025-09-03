@@ -26,7 +26,7 @@ public class ResumeBasic extends BaseEntity {
     //일대일
     //resume_id는 FK
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "BINARY(16")
+    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "BINARY(16)")
     private Resume resume;
 
 

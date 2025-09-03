@@ -13,9 +13,7 @@ import java.time.LocalDate;
 @Getter
 @Entity
 @Table(
-        name = "resume_experience",
-        indexes = @Index(name = "idx_exp_resume",
-                columnList = "resume_id")
+        name = "resume_experience"
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ResumeExperience extends BaseEntity {
@@ -24,7 +22,7 @@ public class ResumeExperience extends BaseEntity {
     //다대일
     //resume_id는 FK
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false)
+    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "BINARY(16)")
     private Resume resume;
 
     //회사명
@@ -53,13 +51,19 @@ public class ResumeExperience extends BaseEntity {
 
     //고용 형태
     @Enumerated(EnumType.STRING)
-    @Column(name = "employment_status", nullable = false, length = 20)
+    @Column(name = "employment_status", nullable = false)
     private EmploymentStatus employmentStatus;
+
+    void linkResume(Resume resume) {
+        this.resume = resume;
+    }
 
     @Builder
     public ResumeExperience( Resume resume, String companyName, String department, String position, String responsibilities, LocalDate startDate, LocalDate endDate, EmploymentStatus employmentStatus) {
-
         this.resume = resume;
+        if(resume != null){
+            resume.addExperience(this);
+        }
         this.companyName = companyName;
         this.department = department;
         this.position = position;

@@ -5,16 +5,14 @@ import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.URL;
 
 import java.time.LocalDate;
 
 @Getter
 @Entity
 @Table(
-        name = "resume_certificate",
-        indexes = @Index(
-                name = "idx_cert_resume",
-                columnList = "resume_id")
+        name = "resume_certificate"
 )
 @NoArgsConstructor
 public class ResumeCertificate extends BaseEntity {
@@ -23,7 +21,7 @@ public class ResumeCertificate extends BaseEntity {
     //다대일
     //resume_id는 FK
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false)
+    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "BINARY(16)")
     private Resume resume;
 
     //자격증 명
@@ -45,12 +43,20 @@ public class ResumeCertificate extends BaseEntity {
     private LocalDate issuedDate;
 
     //자격증 URL
-    @Column(name = "cert_url", nullable = true)
+    @URL
+    @Column(name = "cert_url", nullable = true, columnDefinition = "TEXT")
     private String certUrl;
+
+    void linkResume(Resume resume) {
+        this.resume = resume;
+    }
 
     @Builder
     public ResumeCertificate( Resume resume, String certificateName, String certificateNumber, String issuer, LocalDate issuedDate, String certUrl) {
         this.resume = resume;
+        if(resume != null){
+            resume.addCertificate(this);
+        }
         this.certificateName = certificateName;
         this.certificateNumber = certificateNumber;
         this.issuer = issuer;

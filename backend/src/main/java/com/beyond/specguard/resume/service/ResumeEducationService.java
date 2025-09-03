@@ -61,7 +61,7 @@ public class ResumeEducationService {
                 .orElseThrow(() -> new IllegalArgumentException("EDUCATION_NOT_FOUND"));
 
         ResumeEducation updated = ResumeEducation.builder()
-                .id(cur.getId())
+
                 .resume(cur.getResume())
                 .schoolName(req.schoolName() != null ? req.schoolName() : cur.getSchoolName())
                 .major     (req.major()      != null ? req.major()      : cur.getMajor())
