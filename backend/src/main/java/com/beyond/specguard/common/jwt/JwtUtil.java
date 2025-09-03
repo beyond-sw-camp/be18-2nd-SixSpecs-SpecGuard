@@ -127,11 +127,10 @@ public class JwtUtil {
     }
 
     public void validateToken(String token) throws ExpiredJwtException {
-        // verifyWith(secretKey).build() 방식이 0.12.x에서 권장
         Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token);
-        // ✅ 여기서 만료되면 ExpiredJwtException 발생
+        //  여기서 만료되면 ExpiredJwtException 발생
     }
 }

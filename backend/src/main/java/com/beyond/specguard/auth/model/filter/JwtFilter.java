@@ -25,7 +25,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final ClientUserRepository clientUserRepository;
     private final RedisTokenService redisTokenService;
-    private final AuthenticationEntryPoint entryPoint; // ✅ 주입받음
+    private final AuthenticationEntryPoint entryPoint;
 
     public JwtFilter(JwtUtil jwtUtil,
                      ClientUserRepository clientUserRepository,

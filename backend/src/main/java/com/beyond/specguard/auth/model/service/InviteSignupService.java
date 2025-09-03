@@ -65,19 +65,8 @@ public class InviteSignupService {
         invite.setStatus(InviteEntity.InviteStatus.ACCEPTED);
 
         return SignupResponseDto.builder()
-                .user(SignupResponseDto.UserDTO.builder()
-                        .id(newUser.getId().toString())
-                        .name(newUser.getName())
-                        .email(newUser.getEmail())
-                        .phone(newUser.getPhone())
-                        .role(newUser.getRole().name())
-                        .createdAt(newUser.getCreatedAt().toString())
-                        .build())
-                .company(SignupResponseDto.CompanyDTO.builder()
-                        .id(company.getId().toString())
-                        .name(company.getName())
-                        .slug(company.getSlug())
-                        .build())
+                .user(SignupResponseDto.UserDTO.from(newUser))
+                .company(SignupResponseDto.CompanyDTO.from(company))
                 .build();
     }
 

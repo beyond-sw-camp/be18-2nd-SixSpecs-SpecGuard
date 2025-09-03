@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class LogoutService {
 
     private final JwtUtil jwtUtil;
-    private final RedisTokenService redisTokenService; // ✅ DB 대신 Redis 사용
+    private final RedisTokenService redisTokenService; //  DB 대신 Redis 사용
 
     @Transactional
     public void logout(HttpServletRequest request, HttpServletResponse response) {
@@ -36,13 +36,13 @@ public class LogoutService {
         //  사용자 식별자 추출
         String username = jwtUtil.getUsername(accessToken);
 
-        // ✅ Refresh Token 삭제 (Redis)
+        //  Refresh Token 삭제 (Redis)
         redisTokenService.deleteRefreshToken(username);
 
-        // ✅ Refresh Token 쿠키 삭제
+        //  Refresh Token 쿠키 삭제
         response.addCookie(CookieUtil.deleteCookie("refresh_token"));
 
-        // ✅ Access Token 블랙리스트 등록
+        //  Access Token 블랙리스트 등록
         String jti = jwtUtil.getJti(accessToken); // Access Token의 jti 추출
         long ttl = (jwtUtil.getExpiration(accessToken).getTime() - System.currentTimeMillis()) / 1000; // 남은 만료 시간
         redisTokenService.blacklistAccessToken(jti, ttl);

@@ -44,7 +44,7 @@ public class ReissueService {
         //  username 추출
         String username = jwtUtil.getUsername(refreshToken);
 
-        // ✅ Redis에서 RefreshToken 확인
+        //  Redis에서 RefreshToken 확인
         String savedRefresh = redisTokenService.getRefreshToken(username);
         if (savedRefresh == null || !savedRefresh.equals(refreshToken)) {
             throw new CustomException(AuthErrorCode.INVALID_REFRESH_TOKEN);

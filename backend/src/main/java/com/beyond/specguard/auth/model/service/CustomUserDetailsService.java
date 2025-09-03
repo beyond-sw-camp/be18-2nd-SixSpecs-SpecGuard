@@ -18,7 +18,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        // ✅ company 를 join fetch 해서 같이 로딩
+        //  company 를 join fetch 해서 같이 로딩
         ClientUser user = userRepository.findByEmailWithCompany(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
