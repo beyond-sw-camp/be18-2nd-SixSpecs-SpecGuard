@@ -1,5 +1,6 @@
 package com.beyond.specguard.common.jwt;
 
+import com.beyond.specguard.common.properties.AppProperties;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,29 +16,27 @@ import java.util.UUID;
 public class JwtUtil {
 
     private final SecretKey secretKey;
+    private final AppProperties appProperties;
 
-    // ✅ TTL (밀리초 단위)
-    private static final long ACCESS_TTL = 3 * 60 * 1000L;            // 15분
-    private static final long REFRESH_TTL = 14L * 24 * 60 * 60 * 1000; // 14일
-    private static final long INVITE_TTL = 7L * 24 * 60 * 60 * 1000;   // 7일
-
-    public JwtUtil(@Value("${spring.jwt.secret}") String secret) {
+    public JwtUtil(@Value("${spring.jwt.secret}") String secret,
+                   AppProperties appProperties) {
         this.secretKey = new SecretKeySpec(
                 secret.getBytes(StandardCharsets.UTF_8),
                 Jwts.SIG.HS256.key().build().getAlgorithm()
         );
+        this.appProperties = appProperties;
     }
 
     // ================== Access Token ==================
     public String createAccessToken(String username, String role, String companySlug) {
         return Jwts.builder()
-                .id(UUID.randomUUID().toString()) // ✅ jti
+                .id(UUID.randomUUID().toString())
                 .claim("category", "access")
                 .claim("username", username)
                 .claim("role", role)
                 .claim("companySlug", companySlug)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + ACCESS_TTL))
+                .expiration(new Date(System.currentTimeMillis() + appProperties.getJwt().getAccessTtl()))
                 .signWith(secretKey)
                 .compact();
     }
@@ -45,16 +44,16 @@ public class JwtUtil {
     // ================== Refresh Token ==================
     public String createRefreshToken(String username) {
         return Jwts.builder()
-                .id(UUID.randomUUID().toString()) // ✅ jti
+                .id(UUID.randomUUID().toString())
                 .claim("category", "refresh")
-                .claim("username", username)      // ✅ 최소한의 식별자만
+                .claim("username", username)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + REFRESH_TTL))
+                .expiration(new Date(System.currentTimeMillis() + appProperties.getJwt().getRefreshTtl()))
                 .signWith(secretKey)
                 .compact();
     }
 
-    // ================== Invite 토큰 ==================
+    // ================== Invite Token ==================
     public String createInviteToken(String email, String slug, String role) {
         return Jwts.builder()
                 .claim("category", "invite")
@@ -62,7 +61,7 @@ public class JwtUtil {
                 .claim("slug", slug)
                 .claim("role", role)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + INVITE_TTL))
+                .expiration(new Date(System.currentTimeMillis() + appProperties.getJwt().getInviteTtl()))
                 .signWith(secretKey)
                 .compact();
     }
@@ -92,7 +91,6 @@ public class JwtUtil {
                 .get("companySlug", String.class);
     }
 
-    // Invite 전용 claim 추출
     public String getInviteEmail(String token) {
         return Jwts.parser().verifyWith(secretKey).build()
                 .parseSignedClaims(token).getPayload()
@@ -131,6 +129,5 @@ public class JwtUtil {
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token);
-        //  여기서 만료되면 ExpiredJwtException 발생
     }
 }

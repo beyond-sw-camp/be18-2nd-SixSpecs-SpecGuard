@@ -1,5 +1,6 @@
 package com.beyond.specguard.auth.model.service;
 
+import com.beyond.specguard.common.properties.AppProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -11,17 +12,14 @@ import java.util.concurrent.TimeUnit;
 public class RedisTokenService {
 
     private final RedisTemplate<String, String> redisTemplate;
-
-    // Key Prefix (프로젝트명 기준으로 명확하게)
-    private static final String REFRESH_PREFIX = "specguard:refresh:";
-    private static final String BLACKLIST_PREFIX = "specguard:blacklist:";
+    private final AppProperties appProperties;
 
     // ================== Refresh Token 관리 ==================
 
     // 저장 (username 기준)
     public void saveRefreshToken(String username, String refreshToken, long ttlSeconds) {
         redisTemplate.opsForValue().set(
-                REFRESH_PREFIX + username,
+                appProperties.getRedis().getPrefix().getRefresh() + username,
                 refreshToken,
                 ttlSeconds,
                 TimeUnit.SECONDS
@@ -30,12 +28,16 @@ public class RedisTokenService {
 
     // 조회
     public String getRefreshToken(String username) {
-        return redisTemplate.opsForValue().get(REFRESH_PREFIX + username);
+        return redisTemplate.opsForValue().get(
+                appProperties.getRedis().getPrefix().getRefresh() + username
+        );
     }
 
     // 삭제
     public void deleteRefreshToken(String username) {
-        redisTemplate.delete(REFRESH_PREFIX + username);
+        redisTemplate.delete(
+                appProperties.getRedis().getPrefix().getRefresh() + username
+        );
     }
 
     // ================== Access Token 블랙리스트 관리 ==================
@@ -43,7 +45,7 @@ public class RedisTokenService {
     // 블랙리스트 등록 (jti 기준)
     public void blacklistAccessToken(String jti, long ttlSeconds) {
         redisTemplate.opsForValue().set(
-                BLACKLIST_PREFIX + jti,
+                appProperties.getRedis().getPrefix().getBlacklist() + jti,
                 "logout",
                 ttlSeconds,
                 TimeUnit.SECONDS
@@ -52,6 +54,8 @@ public class RedisTokenService {
 
     // 블랙리스트 조회
     public boolean isBlacklisted(String jti) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(BLACKLIST_PREFIX + jti));
+        return Boolean.TRUE.equals(
+                redisTemplate.hasKey(appProperties.getRedis().getPrefix().getBlacklist() + jti)
+        );
     }
 }
