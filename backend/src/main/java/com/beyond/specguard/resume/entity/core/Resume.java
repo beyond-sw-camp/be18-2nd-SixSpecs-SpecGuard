@@ -50,8 +50,18 @@ public class Resume extends BaseEntity {
     @Column(name = "password_hash", columnDefinition = "CHAR(64)", nullable = false)
     private String passwordHash;
 
+    //ResumeBasic이랑 OneToOne
+    @OneToOne(mappedBy = "resume", fetch = FetchType.LAZY,
+    cascade = CascadeType.ALL, orphanRemoval = true)
+    private ResumeBasic basic;
+
+    void linkBasic(ResumeBasic basic){
+        this.basic = basic;
+    }
+
+
     @Builder
-    public Resume(java.util.UUID templateId, ResumeStatus status, String name, String phone, String email, String passwordHash) {
+    public Resume(UUID templateId, ResumeStatus status, String name, String phone, String email, String passwordHash) {
         this.templateId = templateId;
         this.status = status;
         this.name = name;

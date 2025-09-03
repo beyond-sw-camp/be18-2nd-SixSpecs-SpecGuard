@@ -25,8 +25,8 @@ public class ResumeBasic extends BaseEntity {
 
     //일대일
     //resume_id는 FK
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "BINARY(16")
     private Resume resume;
 
 
@@ -70,8 +70,10 @@ public class ResumeBasic extends BaseEntity {
 
     @Builder
     public ResumeBasic(String id, Resume resume, String englishName, Gender gender, LocalDate birthDate, String nationality, String applyField, String profileImageUrl, String address, String specialty, String hobbies) {
-        this.id = (id != null) ? id : UUID.randomUUID().toString();
         this.resume = resume;
+        if(resume != null){
+            resume.linkBasic(this);
+        }
         this.englishName = englishName;
         this.gender = gender;
         this.birthDate = birthDate;
