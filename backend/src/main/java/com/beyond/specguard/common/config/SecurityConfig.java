@@ -39,6 +39,16 @@ public class SecurityConfig {
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint; //  주입
     private final RestAccessDeniedHandler restAccessDeniedHandler;           //  주입
 
+    private final static String[] AUTH_WHITE_LIST = {
+            // SpringDocs OpenApi Swagger API
+            "/swagger-ui/**", "/v3/api-docs/**",
+            "/api/v1/auth/signup/**",
+            "/api/v1/auth/login",
+            "/api/v1/auth/token/refresh",
+            "/api/v1/invite/accept/**",
+            "/api/v1/auth/invite/**"
+    };
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
@@ -59,15 +69,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                        "/swagger-ui/**",
-                        "/v3/api-docs/**",
-                        "/api/v1/auth/signup/**",
-                        "/api/v1/auth/login",
-                        "/api/v1/auth/token/refresh",
-                        "/api/v1/invite/accept/**",
-                        "/api/v1/auth/invite/**"
-                ).permitAll()
+                .requestMatchers(AUTH_WHITE_LIST).permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/**").hasAnyRole("OWNER", "MANAGER", "VIEWER")
                 .requestMatchers("/api/v1/invite/**").hasRole("OWNER")
