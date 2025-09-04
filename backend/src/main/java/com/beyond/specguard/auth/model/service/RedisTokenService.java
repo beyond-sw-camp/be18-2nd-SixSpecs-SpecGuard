@@ -58,4 +58,30 @@ public class RedisTokenService {
                 redisTemplate.hasKey(appProperties.getRedis().getPrefix().getBlacklist() + jti)
         );
     }
+
+    // ================== Access Token 세션 관리 (단일 세션) ==================
+
+    // 저장 (username → AccessToken jti 매핑)
+    public void saveUserSession(String email, String accessJti, long ttlSeconds) {
+        redisTemplate.opsForValue().set(
+                appProperties.getRedis().getPrefix().getSession() + email,
+                accessJti,
+                ttlSeconds,
+                TimeUnit.SECONDS
+        );
+    }
+    // 조회 (username으로 현재 세션의 accessJti 확인)
+    public String getUserSession(String email) {
+        return redisTemplate.opsForValue().get(
+                appProperties.getRedis().getPrefix().getSession() + email
+        );
+    }
+
+    // 삭제 (username 기준 세션 삭제)
+    public void deleteUserSession(String email) {
+        redisTemplate.delete(
+                appProperties.getRedis().getPrefix().getSession() + email
+        );
+    }
 }
+

@@ -21,7 +21,7 @@ import java.util.Date;
 public class CustomSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtUtil jwtUtil;
-    private final RedisTokenService redisTokenService; //  Redis 사용
+    private final RedisTokenService redisTokenService; // Redis 사용
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -33,25 +33,37 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         String role = userDetails.getUser().getRole().name();
         String companySlug = userDetails.getUser().getCompany().getSlug();
 
-        //  토큰 생성
-        String access = jwtUtil.createAccessToken(email, role, companySlug);
-        String refresh = jwtUtil.createRefreshToken(email);
+        // 1. 토큰 생성
+        String accessToken = jwtUtil.createAccessToken(email, role, companySlug);
+        String refreshToken = jwtUtil.createRefreshToken(email);
 
-        //  Refresh 저장 (Redis)
-        Date refreshExpiration = jwtUtil.getExpiration(refresh);
-        long ttl = (refreshExpiration.getTime() - System.currentTimeMillis()) / 1000;
-        redisTokenService.saveRefreshToken(email, refresh, ttl);
+        // 2. AccessToken jti 추출
+        String accessJti = jwtUtil.getJti(accessToken);
 
-        //  Access Token → Authorization 헤더
-        response.setHeader("Authorization", "Bearer " + access);
+        // 3. 기존 세션/토큰 제거
+        redisTokenService.deleteUserSession(email);
+        redisTokenService.deleteRefreshToken(email);
 
-        //  Refresh Token → HttpOnly, Secure, SameSite=None 쿠키
-        int maxAge = (int) ttl;
+        // 4. 새로운 Access 세션 저장
+        Date accessExpiration = jwtUtil.getExpiration(accessToken);
+        long accessTtl = (accessExpiration.getTime() - System.currentTimeMillis()) / 1000;
+        redisTokenService.saveUserSession(email, accessJti, accessTtl);
+
+        // 5. 새로운 Refresh 저장
+        Date refreshExpiration = jwtUtil.getExpiration(refreshToken);
+        long refreshTtl = (refreshExpiration.getTime() - System.currentTimeMillis()) / 1000;
+        redisTokenService.saveRefreshToken(email, refreshToken, refreshTtl);
+
+        // 6. Access Token → Authorization 헤더
+        response.setHeader("Authorization", "Bearer " + accessToken);
+
+        // 7. Refresh Token → HttpOnly, Secure, SameSite=None 쿠키
+        int maxAge = (int) refreshTtl;
         response.addCookie(
-                CookieUtil.createHttpOnlyCookie("refresh_token", refresh, maxAge)
+                CookieUtil.createHttpOnlyCookie("refresh_token", refreshToken, maxAge)
         );
 
-        //  상태 코드만 반환
+        // 8. 상태 코드만 반환
         response.setStatus(HttpStatus.OK.value());
     }
 }

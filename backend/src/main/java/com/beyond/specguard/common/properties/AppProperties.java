@@ -29,6 +29,7 @@ public class AppProperties {
         public static class Prefix {
             private String refresh;
             private String blacklist;
+            private String session;
         }
     }
 }

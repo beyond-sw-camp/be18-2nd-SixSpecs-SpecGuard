@@ -83,6 +83,12 @@ public class JwtFilter extends OncePerRequestFilter {
             ClientUser user = clientUserRepository.findByEmailWithCompany(email)
                     .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
 
+            //  세션 조회
+            String session = redisTokenService.getUserSession(email);
+            if(session == null || !session.equals(jti)) {
+                throw new AuthException(AuthErrorCode.BLACKLISTED_ACCESS_TOKEN);
+            }
+
             CustomUserDetails userDetails = new CustomUserDetails(user);
             Authentication auth = new UsernamePasswordAuthenticationToken(
                     userDetails, null, userDetails.getAuthorities()
