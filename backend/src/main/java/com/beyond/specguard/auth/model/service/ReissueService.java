@@ -1,6 +1,6 @@
 package com.beyond.specguard.auth.model.service;
 
-import com.beyond.specguard.auth.model.dto.ReissueResponseDto;
+import com.beyond.specguard.auth.model.dto.response.ReissueResponseDto;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.common.exception.CustomException;

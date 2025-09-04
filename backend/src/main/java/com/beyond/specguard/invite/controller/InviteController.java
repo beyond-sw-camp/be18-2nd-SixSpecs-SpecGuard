@@ -1,8 +1,8 @@
 package com.beyond.specguard.invite.controller;
 
 import com.beyond.specguard.auth.model.service.CustomUserDetails;
-import com.beyond.specguard.invite.model.dto.InviteRequestDto;
-import com.beyond.specguard.invite.model.dto.InviteResponseDto;
+import com.beyond.specguard.invite.model.dto.request.InviteRequestDto;
+import com.beyond.specguard.invite.model.dto.response.InviteResponseDto;
 import com.beyond.specguard.invite.model.service.InviteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

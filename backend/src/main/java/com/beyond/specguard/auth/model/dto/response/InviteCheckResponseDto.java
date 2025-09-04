@@ -1,4 +1,4 @@
-package com.beyond.specguard.auth.model.dto;
+package com.beyond.specguard.auth.model.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;

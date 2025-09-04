@@ -1,8 +1,8 @@
-package com.beyond.specguard.auth.model.dto;
+package com.beyond.specguard.auth.model.dto.response;
 
 import java.util.Map;
 
-public class GoogleResponseDto implements OAuth2Response{
+public class GoogleResponseDto implements OAuth2Response {
 
     private final Map<String, Object> attribute;
 

@@ -1,11 +1,10 @@
 package com.beyond.specguard.auth.controller;
 
-import com.beyond.specguard.auth.model.dto.InviteCheckRequestDto;
-import com.beyond.specguard.auth.model.dto.InviteCheckResponseDto;
-import com.beyond.specguard.auth.model.dto.InviteSignupRequestDto;
-import com.beyond.specguard.auth.model.dto.ReissueResponseDto;
-import com.beyond.specguard.auth.model.dto.SignupRequestDto;
-import com.beyond.specguard.auth.model.dto.SignupResponseDto;
+import com.beyond.specguard.auth.model.dto.response.InviteCheckResponseDto;
+import com.beyond.specguard.auth.model.dto.request.InviteSignupRequestDto;
+import com.beyond.specguard.auth.model.dto.response.ReissueResponseDto;
+import com.beyond.specguard.auth.model.dto.request.SignupRequestDto;
+import com.beyond.specguard.auth.model.dto.response.SignupResponseDto;
 import com.beyond.specguard.auth.model.service.InviteSignupService;
 import com.beyond.specguard.auth.model.service.LogoutService;
 import com.beyond.specguard.auth.model.service.ReissueService;

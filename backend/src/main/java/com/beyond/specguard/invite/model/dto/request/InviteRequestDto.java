@@ -1,4 +1,4 @@
-package com.beyond.specguard.invite.model.dto;
+package com.beyond.specguard.invite.model.dto.request;
 
 import com.beyond.specguard.invite.model.entity.InviteEntity;
 import io.swagger.v3.oas.annotations.media.Schema;

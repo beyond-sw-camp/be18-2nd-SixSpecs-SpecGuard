@@ -1,8 +1,8 @@
 package com.beyond.specguard.auth.model.service;
 
-import com.beyond.specguard.auth.model.dto.InviteCheckResponseDto;
-import com.beyond.specguard.auth.model.dto.InviteSignupRequestDto;
-import com.beyond.specguard.auth.model.dto.SignupResponseDto;
+import com.beyond.specguard.auth.model.dto.response.InviteCheckResponseDto;
+import com.beyond.specguard.auth.model.dto.request.InviteSignupRequestDto;
+import com.beyond.specguard.auth.model.dto.response.SignupResponseDto;
 import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
