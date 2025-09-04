@@ -5,7 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public class CookieUtil {
 
-    // ✅ HttpOnly 쿠키 생성
+    //  HttpOnly 쿠키 생성
     public static Cookie createHttpOnlyCookie(String key, String value, int maxAge) {
         Cookie cookie = new Cookie(key, value);
         cookie.setHttpOnly(true);
@@ -16,7 +16,7 @@ public class CookieUtil {
         return cookie;
     }
 
-    // ✅ 쿠키 삭제
+    //  쿠키 삭제
     public static Cookie deleteCookie(String key) {
         Cookie cookie = new Cookie(key, null);
         cookie.setHttpOnly(true);
@@ -27,7 +27,7 @@ public class CookieUtil {
         return cookie;
     }
 
-    // ✅ 요청에서 특정 쿠키 값 꺼내기
+    //  요청에서 특정 쿠키 값 꺼내기
     public static String getCookieValue(HttpServletRequest request, String name) {
         if (request.getCookies() == null) return null;
 

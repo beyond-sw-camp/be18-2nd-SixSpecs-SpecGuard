@@ -13,7 +13,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -48,7 +47,6 @@ public class SignupRequestDto {
 
     //  회사 정보
     @Getter
-    @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
@@ -84,7 +82,6 @@ public class SignupRequestDto {
 
     //  최초 사용자 정보
     @Getter
-    @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder

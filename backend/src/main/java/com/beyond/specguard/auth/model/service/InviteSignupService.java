@@ -37,7 +37,7 @@ public class InviteSignupService {
 
         // 2. 만료 여부 확인
         if (invite.getExpiresAt().isBefore(LocalDateTime.now())) {
-            invite.setStatus(InviteEntity.InviteStatus.EXPIRED);
+            invite.inviteExpired();
             throw new InviteException(InviteErrorCode.EXPIRED_TOKEN);
         }
 
@@ -62,7 +62,7 @@ public class InviteSignupService {
         entityManager.refresh(newUser);
 
         // 5. 초대 상태 갱신
-        invite.setStatus(InviteEntity.InviteStatus.ACCEPTED);
+        invite.inviteAccepted();
 
         return SignupResponseDto.builder()
                 .user(SignupResponseDto.UserDTO.from(newUser))

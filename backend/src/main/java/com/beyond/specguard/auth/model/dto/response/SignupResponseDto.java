@@ -5,7 +5,6 @@ import com.beyond.specguard.auth.model.entity.ClientUser;
 import lombok.*;
 
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -15,7 +14,6 @@ public class SignupResponseDto {
     private CompanyDTO company;
 
     @Getter
-    @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
@@ -43,7 +41,6 @@ public class SignupResponseDto {
     }
 
     @Getter
-    @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder

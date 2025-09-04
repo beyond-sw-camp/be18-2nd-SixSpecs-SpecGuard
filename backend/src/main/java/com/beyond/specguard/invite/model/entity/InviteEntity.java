@@ -71,4 +71,11 @@ public class InviteEntity {
         ACCEPTED,  // 수락 완료
         EXPIRED    // 만료됨
     }
+    public void inviteExpired() {
+        this.status = InviteStatus.EXPIRED;
+    }
+
+    public void inviteAccepted() {
+        this.status = InviteStatus.ACCEPTED;
+    }
 }
