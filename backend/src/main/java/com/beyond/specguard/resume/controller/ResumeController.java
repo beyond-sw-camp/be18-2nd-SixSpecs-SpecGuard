@@ -26,24 +26,24 @@ public class ResumeController {
         return resumeService.create(req);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{resumeId}")
     public ResumeResponse get(@PathVariable UUID id) {
         return resumeService.get(id);
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping("/{resumeId}")
     public ResumeResponse update(@PathVariable UUID id,
                                  @Valid @RequestBody ResumeUpdateRequest req) {
         return resumeService.update(id, req);
     }
 
-    @PatchMapping("/{id}/status")
+    @PatchMapping("/{resumeId}/status")
     public ResumeResponse updateStatus(@PathVariable UUID id,
                                        @Valid @RequestBody ResumeStatusUpdateRequest req) {
         return resumeService.updateStatus(id, req);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{resumeId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable UUID id) {
         resumeService.delete(id);

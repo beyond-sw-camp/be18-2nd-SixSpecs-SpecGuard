@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +26,7 @@ public class CompanyTemplateResponseService {
 
     /** 생성 */
     @Transactional
-    public CompanyTemplateResponseResponse create(String resumeId, CompanyTemplateResponseCreateRequest req) {
+    public CompanyTemplateResponseResponse create(UUID resumeId, CompanyTemplateResponseCreateRequest req) {
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 resumeId 입니다."));
 
@@ -45,14 +46,14 @@ public class CompanyTemplateResponseService {
 
     /** 목록 조회 */
     @Transactional(readOnly = true)
-    public List<CompanyTemplateResponseResponse> list(String resumeId) {
+    public List<CompanyTemplateResponseResponse> list(UUID resumeId) {
         return repository.findAllByResumeId(resumeId)
                 .stream().map(this::toResponse).toList();
     }
 
     /** 단건 조회 */
     @Transactional(readOnly = true)
-    public CompanyTemplateResponseResponse get(String resumeId, String respId) {
+    public CompanyTemplateResponseResponse get(UUID resumeId, String respId) {
         var resp = repository.findByIdAndResumeId(respId, resumeId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 답변이 존재하지 않습니다."));
         return toResponse(resp);
@@ -60,7 +61,7 @@ public class CompanyTemplateResponseService {
 
     /** 수정 */
     @Transactional
-    public CompanyTemplateResponseResponse update(String resumeId, String respId, CompanyTemplateResponseUpdateRequest req) {
+    public CompanyTemplateResponseResponse update(UUID resumeId, String respId, CompanyTemplateResponseUpdateRequest req) {
         var cur = repository.findByIdAndResumeId(respId, resumeId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 답변이 존재하지 않습니다."));
 
@@ -77,7 +78,7 @@ public class CompanyTemplateResponseService {
 
     /** 삭제 */
     @Transactional
-    public void delete(String resumeId, String respId) {
+    public void delete(UUID resumeId, String respId) {
         repository.deleteByIdAndResumeId(respId, resumeId);
     }
 
