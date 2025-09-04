@@ -1,4 +1,4 @@
-package com.beyond.specguard.companytemplate.model.dto;
+package com.beyond.specguard.companytemplate.model.dto.request;
 
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import io.swagger.v3.oas.annotations.media.Schema;

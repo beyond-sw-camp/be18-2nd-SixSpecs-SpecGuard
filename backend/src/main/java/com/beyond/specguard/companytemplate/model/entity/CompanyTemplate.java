@@ -1,6 +1,6 @@
 package com.beyond.specguard.companytemplate.model.entity;
 
-import com.beyond.specguard.companytemplate.model.dto.CompanyTemplateDetailRequestDto;
+import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateDetailRequestDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,8 +21,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "company_template")
-@AllArgsConstructor
-@NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @Getter
 @ToString
@@ -47,6 +48,7 @@ public class CompanyTemplate {
     private String description;
 
     @Column(name = "years_of_experience", nullable = false)
+    @Builder.Default
     private int yearsOfExperience = 0;
 
     @Column(name = "start_date", nullable = false)

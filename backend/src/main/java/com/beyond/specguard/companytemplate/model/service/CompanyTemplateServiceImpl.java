@@ -25,12 +25,16 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
     @Override
     public CompanyTemplate createTemplate(CompanyTemplate template) {
         CompanyTemplate companyTemplate = template;
+
         if (template.getId() == null) {
+            // 신규 생성 케이스: ID가 없으므로 save() → INSERT 발생
             companyTemplate = companyTemplateRepository.save(template);
         } else {
+            // 업데이트 케이스: ID가 존재하는 경우
             if (companyTemplateRepository.existsById(template.getId())) {
                 companyTemplate = companyTemplateRepository.save(template);
             } else {
+                // ID는 있는데 DB에 존재하지 않는 경우 → 예외 처리
                 throw new CustomException(CompanyTemplateErrorCode.TEMPLATE_NOT_FOUND);
             }
         }

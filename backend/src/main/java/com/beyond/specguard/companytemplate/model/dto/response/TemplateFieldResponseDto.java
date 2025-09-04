@@ -1,15 +1,16 @@
-package com.beyond.specguard.companytemplate.model.dto;
+package com.beyond.specguard.companytemplate.model.dto.response;
 
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Data
+@Getter
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class TemplateFieldResponseDto {
     private String fieldName;
     private CompanyTemplateField.FieldType fieldType;

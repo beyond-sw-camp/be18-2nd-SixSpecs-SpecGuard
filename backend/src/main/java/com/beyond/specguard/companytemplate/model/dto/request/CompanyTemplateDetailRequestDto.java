@@ -1,4 +1,4 @@
-package com.beyond.specguard.companytemplate.model.dto;
+package com.beyond.specguard.companytemplate.model.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @Data
 public class CompanyTemplateDetailRequestDto {
-    @Schema(description = "1단계에서 생성된 공고 템플릿 ID", example = "550e8400-e29b-41d4-a716-446655440000")
+    @Schema(description = "1단계에서 생성된 공고 템플릿 ID")
     @NotNull(message = "템플릿 ID는 필수 입력값입니다.")
     private UUID templateId;
 

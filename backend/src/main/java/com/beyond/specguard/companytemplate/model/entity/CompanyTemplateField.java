@@ -1,16 +1,19 @@
 package com.beyond.specguard.companytemplate.model.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,8 +28,8 @@ import java.util.UUID;
 @Table(name = "company_template_field")
 @Builder
 @Getter
-@AllArgsConstructor
-@NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString
 public class CompanyTemplateField {
     @Id
@@ -35,7 +38,7 @@ public class CompanyTemplateField {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "template_id", nullable = false)
+    @JoinColumn(name = "template_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private CompanyTemplate template;
 
     @Column(name = "field_name", nullable = false, length = 100)
@@ -53,7 +56,7 @@ public class CompanyTemplateField {
     private Integer fieldOrder;
 
     @Column(columnDefinition = "JSON")
-    private String options; // JSON 형식으로 저장, 필요시 ObjectMapper로 변환
+    private String options;
 
     @Column(name = "min_length", nullable = false)
     @Builder.Default
