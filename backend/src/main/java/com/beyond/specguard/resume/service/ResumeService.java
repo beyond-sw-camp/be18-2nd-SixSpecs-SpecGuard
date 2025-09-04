@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class ResumeService {
@@ -22,7 +24,6 @@ public class ResumeService {
         Resume saved = resumeRepository.save(
                 Resume.builder()
                         .templateId(req.templateId())
-                        .status(req.status())
                         .name(req.name())
                         .phone(req.phone())
                         .email(req.email())
@@ -34,7 +35,7 @@ public class ResumeService {
 
 
     @Transactional(readOnly = true)
-    public ResumeResponse get(String id) {
+    public ResumeResponse get(UUID id) {
         Resume r = resumeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("이력서를 찾을 수 없습니다: " + id));
         return toResponse(r);
@@ -42,61 +43,37 @@ public class ResumeService {
 
 
     @Transactional
-    public ResumeResponse update(String id, ResumeUpdateRequest req) {
+    public ResumeResponse update(UUID id, ResumeUpdateRequest req) {
         Resume found = resumeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("이력서를 찾을 수 없습니다: " + id));
 
+        if (req.status() != null) found.changeStatus(req.status());
+        if (req.name() != null) found.changeName(req.name());
+        if (req.phone() != null) found.changePhone(req.phone());
+        if (req.email() != null) found.changeEmail(req.email());
+        if (req.templateId() != null) found.changeTemplateId(req.templateId());
+        if (req.passwordHash() != null) found.changePasswordHash(req.passwordHash());
 
-        Resume updated = Resume.builder()
-                .id(found.getId())
-                .templateId(found.getTemplateId())
-                .status(req.status() != null ? req.status() : found.getStatus())
-                .name(req.name() != null ? req.name() : found.getName())
-                .phone(req.phone() != null ? req.phone() : found.getPhone())
-                .email(req.email() != null ? req.email() : found.getEmail())
-                .passwordHash(found.getPasswordHash())
-                .build();
-
-        Resume saved = resumeRepository.save(updated);
-        return toResponse(saved);
+        return toResponse(found);
     }
 
 
 
-
-
     @Transactional
-    public ResumeResponse updateStatus(String id, ResumeStatusUpdateRequest req) {
-        if (req.status() == null) throw new IllegalArgumentException("status가 없습니다.");
+    public ResumeResponse updateStatus(UUID id, ResumeStatusUpdateRequest req) {
         Resume found = resumeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("이력서를 찾을 수 없습니다: " + id));
-        Resume updated = Resume.builder()
-                .id(found.getId())
-                .templateId(found.getTemplateId())
-                .status(req.status())
-                .name(found.getName())
-                .phone(found.getPhone())
-                .email(found.getEmail())
-                .passwordHash(found.getPasswordHash())
-                .build();
-        return toResponse(resumeRepository.save(updated));
+        found.changeStatus(req.status());
+        return toResponse(found);
     }
 
-
-
-
-
-
-
-
     @Transactional
-    public void delete(String id) {
+    public void delete(UUID id) {
         if (!resumeRepository.existsById(id)) {
             throw new IllegalArgumentException("이력서를 찾을 수 없습니다: " + id);
         }
         resumeRepository.deleteById(id);
     }
-
 
     private ResumeResponse toResponse(Resume r) {
         return new ResumeResponse(

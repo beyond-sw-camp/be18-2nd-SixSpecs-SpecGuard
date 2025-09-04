@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
 
 
 @RestController
@@ -26,31 +27,25 @@ public class ResumeController {
     }
 
     @GetMapping("/{id}")
-    public ResumeResponse get(@PathVariable String id) {
+    public ResumeResponse get(@PathVariable UUID id) {
         return resumeService.get(id);
     }
 
-
-
     @PatchMapping("/{id}")
-    public ResumeResponse update(
-            @PathVariable String id,
-            @Valid @RequestBody ResumeUpdateRequest req) {
+    public ResumeResponse update(@PathVariable UUID id,
+                                 @Valid @RequestBody ResumeUpdateRequest req) {
         return resumeService.update(id, req);
     }
 
-    @PatchMapping("{id}/status")
-    public ResumeResponse updateStatus(
-            @PathVariable String id,
-            @Valid @RequestBody ResumeStatusUpdateRequest req){
+    @PatchMapping("/{id}/status")
+    public ResumeResponse updateStatus(@PathVariable UUID id,
+                                       @Valid @RequestBody ResumeStatusUpdateRequest req) {
         return resumeService.updateStatus(id, req);
-
     }
-
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable String id) {
+    public void delete(@PathVariable UUID id) {
         resumeService.delete(id);
     }
 }
