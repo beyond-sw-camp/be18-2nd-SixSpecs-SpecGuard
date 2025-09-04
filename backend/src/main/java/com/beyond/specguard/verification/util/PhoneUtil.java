@@ -10,6 +10,5 @@ public final class PhoneUtil {
         // 휴대폰으로 볼 수 없는 길이면 빈값
         if (s.length() < 10 || s.length() > 11) return "";
         return s;
-//        return s.replaceAll("\\D", "");
     }
 }

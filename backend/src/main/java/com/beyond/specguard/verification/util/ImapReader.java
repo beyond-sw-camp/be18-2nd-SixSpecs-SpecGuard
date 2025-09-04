@@ -138,22 +138,6 @@ public class ImapReader {
                 .toArray(Message[]::new);
     }
 
-    // 미열람 전체(최근 N개로 슬라이스) — 필요시 사용
-    public Message[] fetchUnread() throws Exception {
-        ensureOpen();
-        // UNSEEN만 먼저 찾고, 그중 최근 N개만 슬라이스
-        Message[] unread = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
-        if (unread.length == 0) return unread;
-        int from = Math.max(0, unread.length - recentWindow);
-        Message[] slice = Arrays.copyOfRange(unread, from, unread.length);
-
-        FetchProfile fp = new FetchProfile();
-        fp.add(FetchProfile.Item.ENVELOPE);
-        fp.add(FetchProfile.Item.CONTENT_INFO);
-        inbox.fetch(slice, fp);
-        return slice;
-    }
-
     // 개별 메시지 UID (IMAPFolder 필요)
     public long uidOf(Message m) throws MessagingException {
         ensureOpen();

@@ -35,9 +35,6 @@ public class PhoneVerificationService {
     private static String phoneKey(String p)    { return "verif:phone:" + p; }
     private String norm(String raw) { return normalizePhone(raw); }
 
-    private static final long SUCCESS_GRACE_SECONDS = 60;
-    private Duration ttl() { return Duration.ofSeconds(ttlSeconds); }
-
     private static final String START_LUA = """
         -- KEYS[1] = verif:phone:{phone}
         -- KEYS[2] = verif:attempt:{phone}
@@ -145,7 +142,6 @@ public class PhoneVerificationService {
     }
 
     // Helpers
-
     private String generateToken() {
         return RandomStringUtils.randomNumeric(6);
     }

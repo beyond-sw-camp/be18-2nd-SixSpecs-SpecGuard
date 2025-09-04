@@ -56,9 +56,6 @@ public class PhoneVerificationController {
             @RequestBody @Valid InboundPayload p,
             @RequestHeader(value = "X-Verify-Secret", required = false) String secret
     ) {
-        // (선택) 웹훅 보안
-        // if (!"your-secret".equals(secret)) return ResponseEntity.status(403).build();
-
         final String body  = p.body();
         final String token = extractSixDigits(body);
 

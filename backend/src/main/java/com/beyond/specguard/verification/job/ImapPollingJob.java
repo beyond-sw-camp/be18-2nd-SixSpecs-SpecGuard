@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class ImapPollingJob {
 
-    private final ImapReader imapReader;                   // 이미 만든 유틸
+    private final ImapReader imapReader;
     private final PhoneVerificationService verifyService;
 
     // 최근 처리한 UID (재처리 방지; 필요하면 Redis/DB에 저장)
@@ -37,7 +37,6 @@ public class ImapPollingJob {
                 try {
                     imapReader.markSeen(m); // 처리 후 읽음 표시
                 } catch (Exception ignore) {
-                    // 읽음 표시 실패는 치명적이지 않음
                 }
                 if (uid > lastUid) lastUid = uid;
             }

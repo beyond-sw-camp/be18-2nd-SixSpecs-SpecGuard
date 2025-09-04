@@ -23,7 +23,6 @@ public class VerifyDto {
             long   expiresInSec  // TTL 초
     ) {}
 
-//    public record VerifyStatusResponse(
     public record VerifyPollResponse(
             String status, // PENDING | SUCCESS | FAIL | EXPIRED
             String token
