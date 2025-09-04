@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface CompanyTemplateResponseRepository extends JpaRepository<CompanyTemplateResponse, UUID> {
 
     List<CompanyTemplateResponse> findByResume_Id(UUID resumeId);
+    void deleteByResumeId(UUID resumeId);
+    long countByResumeId(UUID resumeId);
 }

@@ -8,5 +8,10 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ResumeEducationRepository extends JpaRepository<ResumeEducation, UUID> {
-    List<ResumeEducation> findByResume_Id(UUID resumeId);
+    List<ResumeEducation> findByResumeId(UUID resumeId);
+    List<ResumeEducation> findAllByResumeId(UUID resumeId, Sort sort);
+
+    void deleteByResumeId(UUID resumeId);
+
+    long countByResumeId(UUID resumeId);
 }

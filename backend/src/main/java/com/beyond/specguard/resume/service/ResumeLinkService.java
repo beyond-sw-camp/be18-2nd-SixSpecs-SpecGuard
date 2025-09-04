@@ -2,7 +2,7 @@ package com.beyond.specguard.resume.service;
 
 import com.beyond.specguard.resume.dto.request.ResumeLinkCreateRequest;
 import com.beyond.specguard.resume.dto.response.ResumeLinkResponse;
-import com.beyond.specguard.resume.dto.request.ResumeLinkUpdateRequest;
+import com.beyond.specguard.resume.dto.request.ResumeLinkUpsertRequest;
 import com.beyond.specguard.resume.entity.core.Resume;
 import com.beyond.specguard.resume.entity.core.ResumeLink;
 import com.beyond.specguard.resume.repository.ResumeLinkRepository;
@@ -59,7 +59,7 @@ public class ResumeLinkService {
 
     /** 수정(부분 업데이트) */
     @Transactional
-    public ResumeLinkResponse update(String resumeId, String linkId, ResumeLinkUpdateRequest req) {
+    public ResumeLinkResponse update(String resumeId, String linkId, ResumeLinkUpsertRequest req) {
         ResumeLink link = resumeLinkRepository.findByIdAndResumeId(linkId, resumeId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 링크가 존재하지 않습니다."));
 

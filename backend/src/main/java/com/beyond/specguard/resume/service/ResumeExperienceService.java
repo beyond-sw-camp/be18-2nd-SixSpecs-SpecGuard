@@ -2,7 +2,7 @@ package com.beyond.specguard.resume.service;
 
 import com.beyond.specguard.resume.dto.request.ResumeExperienceCreateRequest;
 import com.beyond.specguard.resume.dto.response.ResumeExperienceResponse;
-import com.beyond.specguard.resume.dto.request.ResumeExperienceUpdateRequest;
+import com.beyond.specguard.resume.dto.request.ResumeExperienceUpsertRequest;
 import com.beyond.specguard.resume.entity.core.Resume;
 import com.beyond.specguard.resume.entity.core.ResumeExperience;
 import com.beyond.specguard.resume.repository.ResumeExperienceRepository;
@@ -49,7 +49,7 @@ public class ResumeExperienceService {
 
     // Update: 경력 1건 수정 (부분 업데이트: null이면 기존값 유지)
     @Transactional
-    public ResumeExperienceResponse update(String experienceId, ResumeExperienceUpdateRequest req) {
+    public ResumeExperienceResponse update(String experienceId, ResumeExperienceUpsertRequest req) {
         ResumeExperience cur = experienceRepository.findById(experienceId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 experienceId: " + experienceId));
 

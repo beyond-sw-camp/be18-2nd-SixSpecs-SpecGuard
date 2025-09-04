@@ -7,5 +7,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ResumeBasicRepository extends JpaRepository<ResumeBasic, UUID> {
-    Optional<ResumeBasic> findByResume_Id(UUID resumeId);
+    Optional<ResumeBasic> findByResumeId(UUID resumeId);
+
+    void deleteByResumeId(UUID resumeId);
+
+    boolean existsByResumeId(UUID resumeId);
 }

@@ -25,7 +25,7 @@ public class ResumeBasic extends BaseEntity {
     //일대일
     //resume_id는 FK
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "CHAR(36)")
+    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "CHAR(36)", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Resume resume;
 
 

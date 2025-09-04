@@ -2,7 +2,7 @@ package com.beyond.specguard.resume.service;
 
 import com.beyond.specguard.resume.dto.request.ResumeCertificateCreateRequest;
 import com.beyond.specguard.resume.dto.response.ResumeCertificateResponse;
-import com.beyond.specguard.resume.dto.request.ResumeCertificateUpdateRequest;
+import com.beyond.specguard.resume.dto.request.ResumeCertificateUpsertRequest;
 import com.beyond.specguard.resume.entity.core.Resume;
 import com.beyond.specguard.resume.entity.core.ResumeCertificate;
 import com.beyond.specguard.resume.repository.ResumeCertificateRepository;
@@ -59,7 +59,7 @@ public class ResumeCertificateService {
 
     /** 수정 */
     @Transactional
-    public ResumeCertificateResponse update(String resumeId, String certId, ResumeCertificateUpdateRequest req) {
+    public ResumeCertificateResponse update(String resumeId, String certId, ResumeCertificateUpsertRequest req) {
         ResumeCertificate cert = resumeCertificateRepository.findByIdAndResumeId(certId, resumeId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 자격증이 존재하지 않습니다."));
 

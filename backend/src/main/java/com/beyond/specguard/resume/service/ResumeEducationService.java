@@ -2,7 +2,7 @@ package com.beyond.specguard.resume.service;
 
 import com.beyond.specguard.resume.dto.request.ResumeEducationCreateRequest;
 import com.beyond.specguard.resume.dto.response.ResumeEducationResponse;
-import com.beyond.specguard.resume.dto.request.ResumeEducationUpdateRequest;
+import com.beyond.specguard.resume.dto.request.ResumeEducationUpsertRequest;
 import com.beyond.specguard.resume.entity.core.Resume;
 import com.beyond.specguard.resume.entity.core.ResumeEducation;
 import com.beyond.specguard.resume.repository.ResumeEducationRepository;
@@ -56,7 +56,7 @@ public class ResumeEducationService {
 
 
     @Transactional
-    public ResumeEducationResponse update(String educationId, ResumeEducationUpdateRequest req) {
+    public ResumeEducationResponse update(String educationId, ResumeEducationUpsertRequest req) {
         ResumeEducation cur = resumeEducationRepository.findById(educationId)
                 .orElseThrow(() -> new IllegalArgumentException("EDUCATION_NOT_FOUND"));
 

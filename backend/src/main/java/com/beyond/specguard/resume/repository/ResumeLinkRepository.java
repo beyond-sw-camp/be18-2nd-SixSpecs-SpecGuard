@@ -10,7 +10,9 @@ import java.util.UUID;
 
 public interface ResumeLinkRepository extends JpaRepository<ResumeLink, UUID> {
 
-    List<ResumeLink> findByResume_Id(UUID resumeId);
+    List<ResumeLink> findAllByResumeId(UUID resumeId);
+    void deleteByResumeId(UUID resumeId);
+    long countByResumeId(UUID resumeId);
 
 
 }

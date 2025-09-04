@@ -25,7 +25,7 @@ public class ResumeEducation extends BaseEntity {
     //다대일
     //resume_id는 FK
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false,  columnDefinition = "CHAR(36)")
+    @JoinColumn(name = "resume_id", nullable = false,  columnDefinition = "CHAR(36)", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Resume resume;
 
     //학교명

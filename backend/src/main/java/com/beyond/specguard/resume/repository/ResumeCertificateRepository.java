@@ -9,7 +9,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ResumeCertificateRepository extends JpaRepository<ResumeCertificate, UUID> {
-    List<ResumeCertificate> findByResume_Id(UUID resumeId);
+    List<ResumeCertificate> findAllByResumeId(UUID resumeId);
+    Optional<ResumeCertificate> findByIdAndResumeId(UUID id, UUID resumeId);
 
+    void deleteByResumeId(UUID resumeId);
+
+    long countByResumeId(UUID resumeId);
 
 }
