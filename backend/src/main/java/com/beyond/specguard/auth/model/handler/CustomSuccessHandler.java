@@ -44,15 +44,13 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         redisTokenService.deleteUserSession(email);
         redisTokenService.deleteRefreshToken(email);
 
-        // 4. 새로운 Access 세션 저장
-        Date accessExpiration = jwtUtil.getExpiration(accessToken);
-        long accessTtl = (accessExpiration.getTime() - System.currentTimeMillis()) / 1000;
-        redisTokenService.saveUserSession(email, accessJti, accessTtl);
-
-        // 5. 새로운 Refresh 저장
+        // 4. 새로운 Refresh 저장
         Date refreshExpiration = jwtUtil.getExpiration(refreshToken);
         long refreshTtl = (refreshExpiration.getTime() - System.currentTimeMillis()) / 1000;
         redisTokenService.saveRefreshToken(email, refreshToken, refreshTtl);
+
+        // 5. 세션 생성
+        redisTokenService.saveUserSession(email, accessJti, refreshTtl);
 
         // 6. Access Token → Authorization 헤더
         response.setHeader("Authorization", "Bearer " + accessToken);

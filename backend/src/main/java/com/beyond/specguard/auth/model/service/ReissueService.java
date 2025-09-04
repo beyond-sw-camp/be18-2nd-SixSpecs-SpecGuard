@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -31,7 +33,7 @@ public class ReissueService {
 
         //  RefreshToken 만료 검사
         try {
-            jwtUtil.isExpired(refreshToken);
+            jwtUtil.validateToken(refreshToken); // ExpiredJwtException 던짐
         } catch (ExpiredJwtException e) {
             throw new CustomException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
         }
@@ -63,8 +65,12 @@ public class ReissueService {
 
         //  Redis 갱신
         redisTokenService.deleteRefreshToken(username);
-        long ttl = (jwtUtil.getExpiration(newRefresh).getTime() - System.currentTimeMillis()) / 1000;
-        redisTokenService.saveRefreshToken(username, newRefresh, ttl);
+        long refreshTtl = (jwtUtil.getExpiration(newRefresh).getTime() - System.currentTimeMillis()) / 1000;
+        redisTokenService.saveRefreshToken(username, newRefresh, refreshTtl);
+
+        //  세션 갱신 (새 AccessToken jti 기준, refresh TTL 유지)
+        String newAccessJti = jwtUtil.getJti(newAccess);
+        redisTokenService.saveUserSession(username, newAccessJti, refreshTtl);
 
         return ReissueResponseDto.builder()
                 .accessToken(newAccess)

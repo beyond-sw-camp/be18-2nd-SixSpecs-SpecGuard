@@ -12,6 +12,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,6 +21,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Slf4j
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
@@ -51,9 +53,9 @@ public class JwtFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-        System.out.println(">>> JwtFilter 진입, path=" + request.getRequestURI());
+
         String authorization = request.getHeader("Authorization");
-        System.out.println(">>> Authorization=" + authorization);
+        log.debug(">>> JwtFilter 진입: path={}, Authorization={}", request.getRequestURI(), authorization);
 
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -64,28 +66,36 @@ public class JwtFilter extends OncePerRequestFilter {
 
         try {
             // ✅ 만료 여부 검증
+            log.debug(">>> 토큰 만료 여부 검증 시작");
             jwtUtil.validateToken(token);
+            log.debug(">>> 토큰 만료 여부 검증 통과");
 
             // 블랙리스트 확인
             String jti = jwtUtil.getJti(token);
             if (redisTokenService.isBlacklisted(jti)) {
+                log.warn(">>> 블랙리스트 토큰 검출: jti={}", jti);
                 throw new AuthException(AuthErrorCode.BLACKLISTED_ACCESS_TOKEN);
             }
 
             // 카테고리 확인
             String category = jwtUtil.getCategory(token);
             if (!"access".equals(category)) {
+                log.warn(">>> 잘못된 토큰 카테고리 검출: category={}", category);
                 throw new AuthException(AuthErrorCode.INVALID_TOKEN_CATEGORY);
             }
 
             // 사용자 조회
             String email = jwtUtil.getUsername(token);
             ClientUser user = clientUserRepository.findByEmailWithCompany(email)
-                    .orElseThrow(() -> new AuthException(AuthErrorCode.USER_NOT_FOUND));
+                    .orElseThrow(() -> {
+                        log.warn(">>> 사용자 조회 실패: email={}", email);
+                        return new AuthException(AuthErrorCode.USER_NOT_FOUND);
+                    });
 
-            //  세션 조회
+            // 세션 검증
             String session = redisTokenService.getUserSession(email);
-            if(session == null || !session.equals(jti)) {
+            if (session == null || !session.equals(jti)) {
+                log.warn(">>> 세션 불일치: email={}, session={}, jti={}", email, session, jti);
                 throw new AuthException(AuthErrorCode.BLACKLISTED_ACCESS_TOKEN);
             }
 
@@ -99,22 +109,19 @@ public class JwtFilter extends OncePerRequestFilter {
 
         } catch (ExpiredJwtException e) {
             SecurityContextHolder.clearContext();
-            System.out.println(">>> ExpiredJwtException 잡힘, ACCESS_TOKEN_EXPIRED로 변환해서 EntryPoint 호출");
+            log.error(">>> ExpiredJwtException 잡힘: token 만료", e);
             entryPoint.commence(request, response,
                     new AuthException(AuthErrorCode.ACCESS_TOKEN_EXPIRED));
-            return;
         } catch (AuthException e) {
             SecurityContextHolder.clearContext();
-            System.out.println(">>> AuthException 잡힘, code=" + e.getErrorCode().getCode());
+            log.error(">>> AuthException 잡힘: code={}, message={}",
+                    e.getErrorCode().getCode(), e.getMessage(), e);
             entryPoint.commence(request, response, e);
-            return;
         } catch (Exception e) {
             SecurityContextHolder.clearContext();
-            System.out.println(">>> Exception 잡힘, UNAUTHORIZED로 변환: " + e.getClass());
+            log.error(">>> Exception 잡힘: {}", e.getClass().getName(), e);
             entryPoint.commence(request, response,
                     new AuthException(AuthErrorCode.UNAUTHORIZED));
-            return;
         }
-
     }
 }
