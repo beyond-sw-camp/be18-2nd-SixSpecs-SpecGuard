@@ -12,7 +12,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 @Getter
 @Entity
@@ -26,7 +25,7 @@ public class ResumeEducation extends BaseEntity {
     //다대일
     //resume_id는 FK
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false,  columnDefinition = "BINARY(16)")
+    @JoinColumn(name = "resume_id", nullable = false,  columnDefinition = "CHAR(36)")
     private Resume resume;
 
     //학교명
@@ -75,19 +74,10 @@ public class ResumeEducation extends BaseEntity {
     private SchoolType schoolType;
 
 
-    void linkResume(Resume resume) {
-        this.resume = resume;
-    }
-
-
-
 
     @Builder
     public ResumeEducation( Resume resume, SchoolType schoolType, String schoolName, String major, Degree degree, GraduationStatus graduationStatus, AdmissionType admissionType, Double gpa, Double maxGpa, LocalDate startDate, LocalDate endDate) {
         this.resume = resume;
-        if(resume != null) {
-            resume.addEducation(this);
-        }
         this.schoolType = schoolType;
         this.schoolName = schoolName;
         this.major = major;

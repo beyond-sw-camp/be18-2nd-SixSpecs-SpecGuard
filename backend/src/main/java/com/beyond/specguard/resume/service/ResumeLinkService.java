@@ -1,8 +1,8 @@
 package com.beyond.specguard.resume.service;
 
-import com.beyond.specguard.resume.dto.link.ResumeLinkCreateRequest;
-import com.beyond.specguard.resume.dto.link.ResumeLinkResponse;
-import com.beyond.specguard.resume.dto.link.ResumeLinkUpdateRequest;
+import com.beyond.specguard.resume.dto.request.ResumeLinkCreateRequest;
+import com.beyond.specguard.resume.dto.response.ResumeLinkResponse;
+import com.beyond.specguard.resume.dto.request.ResumeLinkUpdateRequest;
 import com.beyond.specguard.resume.entity.core.Resume;
 import com.beyond.specguard.resume.entity.core.ResumeLink;
 import com.beyond.specguard.resume.repository.ResumeLinkRepository;

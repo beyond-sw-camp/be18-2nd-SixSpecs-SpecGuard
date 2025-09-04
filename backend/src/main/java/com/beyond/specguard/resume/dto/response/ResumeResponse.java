@@ -1,13 +1,12 @@
-package com.beyond.specguard.resume.dto.resume.response;
+package com.beyond.specguard.resume.dto.response;
 
 import com.beyond.specguard.resume.entity.common.enums.ResumeStatus;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 public record ResumeResponse(
-        UUID id,
-        UUID templateId,
+        String id,
+        String templateId,
         ResumeStatus status,
         String name,
         String phone,

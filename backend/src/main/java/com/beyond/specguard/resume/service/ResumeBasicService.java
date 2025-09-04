@@ -1,8 +1,8 @@
 package com.beyond.specguard.resume.service;
 
-import com.beyond.specguard.resume.dto.basic.ResumeBasicCreateRequest;
-import com.beyond.specguard.resume.dto.basic.ResumeBasicResponse;
-import com.beyond.specguard.resume.dto.basic.ResumeBasicUpdateRequest;
+import com.beyond.specguard.resume.dto.request.ResumeBasicCreateRequest;
+import com.beyond.specguard.resume.dto.response.ResumeBasicResponse;
+import com.beyond.specguard.resume.dto.request.ResumeBasicUpdateRequest;
 import com.beyond.specguard.resume.entity.core.Resume;
 import com.beyond.specguard.resume.entity.core.ResumeBasic;
 import com.beyond.specguard.resume.repository.ResumeBasicRepository;

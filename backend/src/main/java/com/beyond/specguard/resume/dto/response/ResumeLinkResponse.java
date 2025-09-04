@@ -1,4 +1,4 @@
-package com.beyond.specguard.resume.dto.link;
+package com.beyond.specguard.resume.dto.response;
 
 import com.beyond.specguard.resume.entity.common.enums.LinkType;
 

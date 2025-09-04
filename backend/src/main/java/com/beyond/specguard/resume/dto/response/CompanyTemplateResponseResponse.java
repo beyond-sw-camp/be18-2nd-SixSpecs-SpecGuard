@@ -1,4 +1,4 @@
-package com.beyond.specguard.resume.dto.templateResponse;
+package com.beyond.specguard.resume.dto.response;
 
 public record CompanyTemplateResponseResponse(
         String id,

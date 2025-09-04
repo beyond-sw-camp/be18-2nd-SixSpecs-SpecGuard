@@ -1,4 +1,4 @@
-package com.beyond.specguard.resume.dto.resume.request;
+package com.beyond.specguard.resume.dto.request;
 
 import com.beyond.specguard.resume.entity.common.enums.ResumeStatus;
 import jakarta.validation.constraints.NotNull;

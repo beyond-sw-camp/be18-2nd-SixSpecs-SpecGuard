@@ -1,15 +1,13 @@
-package com.beyond.specguard.resume.dto.basic;
+package com.beyond.specguard.resume.dto.response;
 
 import com.beyond.specguard.resume.entity.common.enums.Gender;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-//생성
-public record ResumeBasicCreateRequest(
+//API 응답으로 내려줄 dto
+public record ResumeBasicResponse(
+        String id,
         String resumeId,
         String englishName,
         Gender gender,
@@ -19,6 +17,8 @@ public record ResumeBasicCreateRequest(
         String specialty,
         String hobbies,
         String applyField,
-        String profileImageUrl
+        String profileImageUrl,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
 }

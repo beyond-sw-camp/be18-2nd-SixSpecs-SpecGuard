@@ -1,8 +1,8 @@
 package com.beyond.specguard.resume.service;
 
-import com.beyond.specguard.resume.dto.education.ResumeEducationCreateRequest;
-import com.beyond.specguard.resume.dto.education.ResumeEducationResponse;
-import com.beyond.specguard.resume.dto.education.ResumeEducationUpdateRequest;
+import com.beyond.specguard.resume.dto.request.ResumeEducationCreateRequest;
+import com.beyond.specguard.resume.dto.response.ResumeEducationResponse;
+import com.beyond.specguard.resume.dto.request.ResumeEducationUpdateRequest;
 import com.beyond.specguard.resume.entity.core.Resume;
 import com.beyond.specguard.resume.entity.core.ResumeEducation;
 import com.beyond.specguard.resume.repository.ResumeEducationRepository;

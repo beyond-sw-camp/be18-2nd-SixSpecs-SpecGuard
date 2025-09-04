@@ -18,7 +18,7 @@ public class BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(name = "id", columnDefinition = "BINARY(16)", nullable = false)
+    @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false)
     private UUID id;
 
     @CreationTimestamp

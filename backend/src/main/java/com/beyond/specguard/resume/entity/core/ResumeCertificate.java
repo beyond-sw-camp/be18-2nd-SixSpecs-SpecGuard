@@ -2,6 +2,7 @@ package com.beyond.specguard.resume.entity.core;
 
 import com.beyond.specguard.resume.entity.common.BaseEntity;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,14 +15,14 @@ import java.time.LocalDate;
 @Table(
         name = "resume_certificate"
 )
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ResumeCertificate extends BaseEntity {
 
 
     //다대일
     //resume_id는 FK
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "BINARY(16)")
+    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "CHAR(36)")
     private Resume resume;
 
     //자격증 명
@@ -47,16 +48,10 @@ public class ResumeCertificate extends BaseEntity {
     @Column(name = "cert_url", nullable = true, columnDefinition = "TEXT")
     private String certUrl;
 
-    void linkResume(Resume resume) {
-        this.resume = resume;
-    }
 
     @Builder
     public ResumeCertificate( Resume resume, String certificateName, String certificateNumber, String issuer, LocalDate issuedDate, String certUrl) {
         this.resume = resume;
-        if(resume != null){
-            resume.addCertificate(this);
-        }
         this.certificateName = certificateName;
         this.certificateNumber = certificateNumber;
         this.issuer = issuer;

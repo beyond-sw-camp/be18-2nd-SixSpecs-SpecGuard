@@ -1,4 +1,4 @@
-package com.beyond.specguard.resume.dto.education;
+package com.beyond.specguard.resume.dto.request;
 
 import com.beyond.specguard.resume.entity.common.enums.AdmissionType;
 import com.beyond.specguard.resume.entity.common.enums.Degree;
@@ -6,22 +6,18 @@ import com.beyond.specguard.resume.entity.common.enums.GraduationStatus;
 import com.beyond.specguard.resume.entity.common.enums.SchoolType;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
-public record ResumeEducationResponse(
-        String id,
+public record ResumeEducationCreateRequest(
         String resumeId,
         SchoolType schoolType,
         String schoolName,
         String major,
         Degree degree,
-        GraduationStatus graduationStatus,
         AdmissionType admissionType,
+        GraduationStatus graduationStatus,
         Double gpa,
         Double maxGpa,
         LocalDate startDate,
-        LocalDate endDate,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDate endDate
 ) {
 }

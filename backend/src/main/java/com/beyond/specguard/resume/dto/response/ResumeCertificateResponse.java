@@ -1,4 +1,4 @@
-package com.beyond.specguard.resume.dto.certificate;
+package com.beyond.specguard.resume.dto.response;
 
 import java.time.LocalDate;
 

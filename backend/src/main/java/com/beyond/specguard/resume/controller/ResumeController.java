@@ -1,9 +1,9 @@
 package com.beyond.specguard.resume.controller;
 
-import com.beyond.specguard.resume.dto.resume.request.ResumeCreateRequest;
-import com.beyond.specguard.resume.dto.resume.request.ResumeStatusUpdateRequest;
-import com.beyond.specguard.resume.dto.resume.request.ResumeUpdateRequest;
-import com.beyond.specguard.resume.dto.resume.response.ResumeResponse;
+import com.beyond.specguard.resume.dto.request.ResumeCreateRequest;
+import com.beyond.specguard.resume.dto.request.ResumeStatusUpdateRequest;
+import com.beyond.specguard.resume.dto.request.ResumeUpdateRequest;
+import com.beyond.specguard.resume.dto.response.ResumeResponse;
 import com.beyond.specguard.resume.service.ResumeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

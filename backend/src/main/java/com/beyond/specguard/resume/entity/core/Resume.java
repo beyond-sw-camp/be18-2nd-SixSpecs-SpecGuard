@@ -9,8 +9,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -21,7 +19,7 @@ public class Resume extends BaseEntity {
 
 
     //template_id
-    @Column(name = "template_id", columnDefinition = "BINARY(16)", nullable = false)
+    @Column(name = "template_id", columnDefinition = "CHAR(36)", nullable = false)
     private UUID templateId;
 
     //status
@@ -51,67 +49,6 @@ public class Resume extends BaseEntity {
     //해쉬화된 패스워드
     @Column(name = "password_hash", columnDefinition = "CHAR(64)", nullable = false)
     private String passwordHash;
-
-    //ResumeBasic이랑 OneToOne
-    @OneToOne(mappedBy = "resume", fetch = FetchType.LAZY,
-    cascade = CascadeType.ALL, orphanRemoval = true)
-    private ResumeBasic basic;
-
-    void linkBasic(ResumeBasic basic){
-        this.basic = basic;
-    }
-
-    //ResumeEducation
-    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ResumeEducation> educations = new ArrayList<>();
-
-    public void addEducation(ResumeEducation education) {
-        this.educations.add(education);
-        if (education.getResume() != this) {
-            education.linkResume(this);
-        }
-    }
-
-    //ResumeExperience
-    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ResumeExperience> experiences = new ArrayList<>();
-
-    public void addExperience(ResumeExperience experience) {
-        this.experiences.add(experience);
-        if(experience.getResume() != this){
-            experience.linkResume(this);
-        }
-    }
-
-    //ResumeCertificate
-    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ResumeCertificate> certificates = new ArrayList<>();
-    public void addCertificate(ResumeCertificate certificate) {
-        this.certificates.add(certificate);
-        if(certificate.getResume() != this){
-            certificate.linkResume(this);
-        }
-    }
-
-    //ResumeLink
-    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ResumeLink> links = new ArrayList<>();
-    public void addLink(ResumeLink link) {
-        this.links.add(link);
-        if(link.getResume() != this){
-            link.linkResume(this);
-        }
-    }
-
-    //CompanyTemplateResponse
-    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CompanyTemplateResponse> companyTemplateResponses = new ArrayList<>();
-    public void addCompanyTemplateResponse(CompanyTemplateResponse companyTemplateResponse) {
-        this.companyTemplateResponses.add(companyTemplateResponse);
-        if(companyTemplateResponse.getResume() != this){
-            companyTemplateResponse.linkResume(this);
-        }
-    }
 
 
     @Builder

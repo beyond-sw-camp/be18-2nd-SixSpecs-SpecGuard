@@ -22,7 +22,7 @@ public class ResumeExperience extends BaseEntity {
     //다대일
     //resume_id는 FK
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "BINARY(16)")
+    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "CHAR(36)")
     private Resume resume;
 
     //회사명
@@ -54,16 +54,10 @@ public class ResumeExperience extends BaseEntity {
     @Column(name = "employment_status", nullable = false)
     private EmploymentStatus employmentStatus;
 
-    void linkResume(Resume resume) {
-        this.resume = resume;
-    }
 
     @Builder
     public ResumeExperience( Resume resume, String companyName, String department, String position, String responsibilities, LocalDate startDate, LocalDate endDate, EmploymentStatus employmentStatus) {
         this.resume = resume;
-        if(resume != null){
-            resume.addExperience(this);
-        }
         this.companyName = companyName;
         this.department = department;
         this.position = position;

@@ -1,4 +1,4 @@
-package com.beyond.specguard.resume.dto.education;
+package com.beyond.specguard.resume.dto.request;
 
 import com.beyond.specguard.resume.entity.common.enums.AdmissionType;
 import com.beyond.specguard.resume.entity.common.enums.Degree;
@@ -7,8 +7,7 @@ import com.beyond.specguard.resume.entity.common.enums.SchoolType;
 
 import java.time.LocalDate;
 
-public record ResumeEducationCreateRequest(
-        String resumeId,
+public record ResumeEducationUpdateRequest(
         SchoolType schoolType,
         String schoolName,
         String major,

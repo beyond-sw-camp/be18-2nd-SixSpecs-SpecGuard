@@ -1,8 +1,8 @@
 package com.beyond.specguard.resume.service;
 
-import com.beyond.specguard.resume.dto.templateResponse.CompanyTemplateResponseCreateRequest;
-import com.beyond.specguard.resume.dto.templateResponse.CompanyTemplateResponseResponse;
-import com.beyond.specguard.resume.dto.templateResponse.CompanyTemplateResponseUpdateRequest;
+import com.beyond.specguard.resume.dto.request.CompanyTemplateResponseCreateRequest;
+import com.beyond.specguard.resume.dto.response.CompanyTemplateResponseResponse;
+import com.beyond.specguard.resume.dto.request.CompanyTemplateResponseUpdateRequest;
 import com.beyond.specguard.resume.entity.core.CompanyTemplateResponse;
 import com.beyond.specguard.resume.entity.core.Resume;
 import com.beyond.specguard.resume.repository.CompanyTemplateResponseRepository;

@@ -1,10 +1,10 @@
-package com.beyond.specguard.resume.dto.experience;
+package com.beyond.specguard.resume.dto.request;
 
 import com.beyond.specguard.resume.entity.common.enums.EmploymentStatus;
 
 import java.time.LocalDate;
 
-public record ResumeExperienceCreateRequest(
+public record ResumeExperienceUpdateRequest(
         String companyName,
         String department,
         String position,

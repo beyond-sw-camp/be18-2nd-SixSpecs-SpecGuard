@@ -1,4 +1,4 @@
-package com.beyond.specguard.resume.dto.basic;
+package com.beyond.specguard.resume.dto.request;
 
 import com.beyond.specguard.resume.entity.common.enums.Gender;
 

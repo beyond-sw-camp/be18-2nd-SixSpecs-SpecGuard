@@ -1,8 +1,8 @@
 package com.beyond.specguard.resume.service;
 
-import com.beyond.specguard.resume.dto.certificate.ResumeCertificateCreateRequest;
-import com.beyond.specguard.resume.dto.certificate.ResumeCertificateResponse;
-import com.beyond.specguard.resume.dto.certificate.ResumeCertificateUpdateRequest;
+import com.beyond.specguard.resume.dto.request.ResumeCertificateCreateRequest;
+import com.beyond.specguard.resume.dto.response.ResumeCertificateResponse;
+import com.beyond.specguard.resume.dto.request.ResumeCertificateUpdateRequest;
 import com.beyond.specguard.resume.entity.core.Resume;
 import com.beyond.specguard.resume.entity.core.ResumeCertificate;
 import com.beyond.specguard.resume.repository.ResumeCertificateRepository;

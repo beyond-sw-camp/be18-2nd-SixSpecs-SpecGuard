@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.URL;
 
+
 @Getter
 @Entity
 @Table(
@@ -19,11 +20,10 @@ import org.hibernate.validator.constraints.URL;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ResumeLink extends BaseEntity {
 
-
     //다대일
     //resume_id는 FK
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "BINARY(16)")
+    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "CHAR(36)")
     private Resume resume;
 
     //url 링크
@@ -41,16 +41,10 @@ public class ResumeLink extends BaseEntity {
     @Column(name = "contents", columnDefinition = "TEXT")
     private String contents;
 
-    void linkResume(Resume resume) {
-        this.resume = resume;
-    }
 
     @Builder
     public ResumeLink( Resume resume, String url, LinkType linkType, String contents) {
         this.resume = resume;
-        if(resume != null){
-            resume.addLink(this);
-        }
         this.url = url;
         this.linkType = linkType;
         this.contents = contents;

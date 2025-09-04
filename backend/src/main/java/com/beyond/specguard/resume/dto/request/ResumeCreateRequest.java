@@ -1,16 +1,13 @@
-package com.beyond.specguard.resume.dto.resume.request;
+package com.beyond.specguard.resume.dto.request;
 
-import com.beyond.specguard.resume.entity.common.enums.ResumeStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-import java.util.UUID;
-
 public record ResumeCreateRequest(
 
         @NotNull
-        UUID templateId,
+        String templateId,
 
         @NotBlank
         String name,

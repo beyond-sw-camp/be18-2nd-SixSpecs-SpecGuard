@@ -1,13 +1,11 @@
-package com.beyond.specguard.resume.dto.basic;
+package com.beyond.specguard.resume.dto.request;
 
 import com.beyond.specguard.resume.entity.common.enums.Gender;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
-//API 응답으로 내려줄 dto
-public record ResumeBasicResponse(
-        String id,
+//생성
+public record ResumeBasicCreateRequest(
         String resumeId,
         String englishName,
         Gender gender,
@@ -17,8 +15,6 @@ public record ResumeBasicResponse(
         String specialty,
         String hobbies,
         String applyField,
-        String profileImageUrl,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        String profileImageUrl
 ) {
 }
