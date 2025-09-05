@@ -48,6 +48,10 @@ public class InviteService {
             throw new CustomException(InviteErrorCode.FORBIDDEN_INVITE);
         }
 
+        if(currentUser.getUser().getEmail().equalsIgnoreCase(request.getEmail())) {
+            throw new CustomException(InviteErrorCode.SELF_INVITE_NOT_ALLOWED);
+        }
+        // 4. 서비스 내부에 이미 존재하는 이메일에 초대코드를 보내려고 할때 예외처리
         if (userRepository.existsByEmailAndCompany_Id(request.getEmail(), company.getId())) {
             throw new CustomException(InviteErrorCode.ALREADY_REGISTERED);
         }

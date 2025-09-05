@@ -25,7 +25,8 @@ public enum InviteErrorCode implements ErrorCode {
     INVALID_TOKEN(HttpStatus.BAD_REQUEST, "INVALID_TOKEN", "유효하지 않은 초대 토큰입니다."),
     EXPIRED_TOKEN(HttpStatus.FORBIDDEN, "EXPIRED_TOKEN", "초대 토큰이 만료되었습니다."),
     ALREADY_ACCEPTED(HttpStatus.CONFLICT, "ALREADY_ACCEPTED", "이미 처리된 초대입니다."),
-    ALREADY_REGISTERED(HttpStatus.CONFLICT,"ALREADY_REGISTERED" ,"이미 가입된 이메일 입니다" );
+    ALREADY_REGISTERED(HttpStatus.CONFLICT,"ALREADY_REGISTERED" ,"이미 가입된 이메일 입니다" ),
+    SELF_INVITE_NOT_ALLOWED(HttpStatus.BAD_REQUEST,"SELF_INVITE_NOT_ALLOWED", "자기자신에게 초대메일을 보낼 수 없습니다" );
 
     private final HttpStatus status;  //  이름 맞춤
     private final String code;
