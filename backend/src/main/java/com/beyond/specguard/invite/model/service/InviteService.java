@@ -3,6 +3,7 @@ package com.beyond.specguard.invite.model.service;
 import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientCompanyRepository;
+import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.auth.model.service.CustomUserDetails;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.invite.exception.errorcode.InviteErrorCode;
@@ -26,6 +27,7 @@ public class InviteService {
     private final ClientCompanyRepository companyRepository;
     private final SendGridService sendGridService;
     private final JwtUtil jwtUtil;
+    private final ClientUserRepository userRepository;
 
     @Value("${invite.base-url}")
     private String inviteBaseUrl;
@@ -44,6 +46,10 @@ public class InviteService {
         // 3. 회사 소속 검증
         if (!currentUser.getCompany().getId().equals(company.getId())) {
             throw new CustomException(InviteErrorCode.FORBIDDEN_INVITE);
+        }
+
+        if (userRepository.existsByEmailAndCompany_Id(request.getEmail(), company.getId())) {
+            throw new CustomException(InviteErrorCode.ALREADY_REGISTERED);
         }
 
         // 4. 기존 PENDING 초대 → EXPIRED 처리

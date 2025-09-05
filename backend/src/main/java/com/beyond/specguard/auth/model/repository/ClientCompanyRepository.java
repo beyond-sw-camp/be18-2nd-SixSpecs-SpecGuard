@@ -17,4 +17,7 @@ public interface ClientCompanyRepository extends JpaRepository<ClientCompany, UU
     // 회사 조회
     Optional<ClientCompany> findByBusinessNumber(String businessNumber);
     Optional<ClientCompany> findBySlug(String slug);
+
+    boolean existsByName(String name);
+
 }

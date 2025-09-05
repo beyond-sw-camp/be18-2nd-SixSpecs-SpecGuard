@@ -2,6 +2,7 @@ package com.beyond.specguard.auth.model.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,9 +25,13 @@ public class InviteSignupRequestDto {
 
     @Schema(description = "비밀번호", example = "Test5678!")
     @NotBlank(message = "비밀번호는 필수입니다.")
+    @Pattern(
+            regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,20}$",
+            message = "비밀번호는 8~20자 영문, 숫자, 특수문자를 포함해야 합니다."
+    )
     private String password;
 
-    @Schema(description = "전화번호", example = "010-1234-5678")
+    @Schema(description = "전화번호", example = "01012345678")
     @NotBlank(message = "전화번호는 필수입니다.")
     private String phone;
 }

@@ -22,8 +22,12 @@ public class InviteEntity {
     @Column(columnDefinition = "CHAR(36)")
     private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "company_id", nullable = false, columnDefinition = "CHAR(36)")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "company_id",
+            nullable = false,
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT) // FK 제약 제거
+    )
     private ClientCompany company;
 
     @Column(nullable = false, length = 100)

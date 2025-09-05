@@ -33,7 +33,9 @@ public enum AuthErrorCode implements ErrorCode {
 
     // 기타
     DUPLICATE_SLUG(HttpStatus.CONFLICT, "DUPLICATE_SLUG", "이미 사용 중인 슬러그입니다."),
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다.");
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다."),
+    DUPLICATE_COMPANY_NAME(HttpStatus.CONFLICT,"DUPLICATE_COMPANY_NAME" ,"이미 사용중인 회사명입니다" ), 
+    DUPLICATE_EMAIL_IN_COMPANY(HttpStatus.CONFLICT,"DUPLICATE_EMAIL_IN_COMPANY","이미 내부에서 사용중인 이메일 입니다" );
 
     private final HttpStatus status;
     private final String code;

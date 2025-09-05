@@ -41,8 +41,16 @@ public class InviteSignupService {
             throw new InviteException(InviteErrorCode.EXPIRED_TOKEN);
         }
 
-        // 3. 회사 조회 (FK 매핑으로 단순화)
+        // 3. 회사 조회 (FK조건 빼버렸으니까 세부적으로 찾았음)
         ClientCompany company = invite.getCompany();
+        if (company == null) {
+            throw new InviteException(InviteErrorCode.COMPANY_NOT_FOUND);
+        }
+
+        // 4. 이미 가입된 이메일인지 검증(2차 방어선 만약 초대발송때 못막으면 여기서 막힘)
+        if (clientUserRepository.existsByEmailAndCompany_Id(invite.getEmail(), company.getId())) {
+            throw new InviteException(InviteErrorCode.ALREADY_REGISTERED);
+        }
 
         // 4. 유저 생성
         ClientUser newUser = ClientUser.builder()

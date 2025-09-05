@@ -76,7 +76,7 @@ public class SignupRequestDto {
         @Schema(description = "담당자 이메일", example = "manager@beyondsoft.com")
         private String contactEmail;
 
-        @Schema(description = "담당자 휴대전화번호", example = "010-1234-5678")
+        @Schema(description = "담당자 휴대전화번호", example = "01012345678")
         private String contactMobile;
     }
 
@@ -105,7 +105,7 @@ public class SignupRequestDto {
         @Schema(description = "사용자 이름", example = "최고관리자")
         private String name;
 
-        @Schema(description = "휴대전화번호", example = "010-9999-8888")
+        @Schema(description = "휴대전화번호", example = "01099998888")
         private String phone;
     }
 }

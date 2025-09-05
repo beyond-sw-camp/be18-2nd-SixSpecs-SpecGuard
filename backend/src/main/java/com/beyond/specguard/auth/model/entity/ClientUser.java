@@ -20,9 +20,13 @@ public class ClientUser {
     @Column(columnDefinition = "CHAR(36)")
     private UUID id;
 
-    // 회사와의 관계
+    // FK 조건 서비스단에서 검증하도록 수정
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id", nullable = false)
+    @JoinColumn(
+            name = "company_id",
+            nullable = false,
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT) // FK 제약 제거
+    )
     private ClientCompany company;
 
     // 사용자 이름 (nullable 허용 → 소셜 로그인 시 내려줄 수도 있음)
