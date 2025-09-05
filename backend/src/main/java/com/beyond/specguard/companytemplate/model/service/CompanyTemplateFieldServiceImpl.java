@@ -1,5 +1,6 @@
 package com.beyond.specguard.companytemplate.model.service;
 
+import com.beyond.specguard.companytemplate.model.dto.command.CreateCompanyTemplateFieldCommand;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateFieldRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,14 @@ public class CompanyTemplateFieldServiceImpl implements CompanyTemplateFieldServ
 
     @Override
     @Transactional
-    public List<CompanyTemplateField> createField(List<CompanyTemplateField> companyTemplateFields) {
+    public CompanyTemplateField createField(CreateCompanyTemplateFieldCommand command) {
+        CompanyTemplateField companyTemplateField = command.templateFieldRequestDto().toEntity(command.companyTemplate());
+        return companyTemplateFieldRepository.save(companyTemplateField);
+    }
+
+    @Override
+    @Transactional
+    public List<CompanyTemplateField> createFields(List<CompanyTemplateField> companyTemplateFields) {
         return companyTemplateFieldRepository.saveAll(companyTemplateFields);
     }
 
@@ -30,12 +38,17 @@ public class CompanyTemplateFieldServiceImpl implements CompanyTemplateFieldServ
 
     @Override
     @Transactional
-    public void deleteField(UUID templateId) {
-        companyTemplateFieldRepository.deleteByTemplate_Id(templateId);
+    public void deleteFields(UUID templateId) {
+        companyTemplateFieldRepository.deleteAllByTemplate_Id(templateId);
     }
 
     @Override
     public List<CompanyTemplateField> updateFields(List<CompanyTemplateField> companyTemplateFields) {
         return companyTemplateFieldRepository.saveAll(companyTemplateFields);
+    }
+
+    @Override
+    public void deleteFieldById(UUID id) {
+        companyTemplateFieldRepository.deleteById(id);
     }
 }

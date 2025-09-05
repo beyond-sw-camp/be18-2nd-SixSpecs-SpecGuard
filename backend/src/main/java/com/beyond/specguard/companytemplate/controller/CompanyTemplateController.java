@@ -1,7 +1,6 @@
 package com.beyond.specguard.companytemplate.controller;
 
-import com.beyond.specguard.common.exception.CustomException;
-import com.beyond.specguard.companytemplate.exception.ErrorCode.CompanyTemplateErrorCode;
+import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateDetailCommand;
 import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateBasicRequestDto;
 import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateDetailRequestDto;
 import com.beyond.specguard.companytemplate.model.dto.response.CompanyTemplateResponseDto;
@@ -113,7 +112,7 @@ public class CompanyTemplateController {
         CompanyTemplate saved = companyTemplateService.createTemplate(companyTemplate);
 
         List< CompanyTemplateField> companyTemplateFields =
-                companyTemplateFieldService.createField(
+                companyTemplateFieldService.createFields(
                         requestDto.getFields()
                                 .stream()
                                 .map(field -> field.toEntity(companyTemplate))
@@ -131,7 +130,7 @@ public class CompanyTemplateController {
             @PathVariable UUID templateId
     ) {
         companyTemplateService.deleteTemplate(templateId);
-        companyTemplateFieldService.deleteField(templateId);
+        companyTemplateFieldService.deleteFields(templateId);
         return ResponseEntity.ok().body(
                 new Message("기업 템플릿이 성공적으로 삭제되었습니다.")
         );
@@ -153,38 +152,20 @@ public class CompanyTemplateController {
 
     }
 
+
     @PatchMapping("/{templateId}/detail")
     public ResponseEntity<CompanyTemplateResponseDto.DetailDto> patchDetailTemplate(
             @PathVariable UUID templateId,
             @Validated(CompanyTemplateDetailRequestDto.Update.class)
             @RequestBody CompanyTemplateDetailRequestDto requestDto
     ) {
-        CompanyTemplate companyTemplate = companyTemplateService.getCompanyTemplate(templateId);
-        companyTemplate.update(requestDto);
-        CompanyTemplate updatedTemplate = companyTemplateService.updateTemplate(companyTemplate);
+        UpdateTemplateDetailCommand command = new UpdateTemplateDetailCommand(templateId, requestDto);
+        CompanyTemplate companyTemplate = companyTemplateService.updateDetail(command);
 
         List<CompanyTemplateField> companyTemplateFields = companyTemplateFieldService.getFields(templateId);
 
-
-        List<CompanyTemplateField> updatedFields = companyTemplateFields.stream()
-                .map(existingField -> {
-                    // requestDto에서 같은 id를 가진 field를 찾음
-                    return requestDto.getFields().stream()
-                            .filter(dtoField -> dtoField.getId().equals(existingField.getId()))
-                            .findFirst()
-                            .map(dtoField -> {
-                                // DTO 값으로 기존 엔티티 업데이트
-                                existingField.update(dtoField);
-                                return existingField;
-                            })
-                            .orElseThrow(() -> new CustomException(CompanyTemplateErrorCode.TEMPLATE_FIELD_NOT_FOUND)); // 요청에 없는 경우 그대로 둠
-                })
-                .toList();
-
-        List<CompanyTemplateField> resultFields = companyTemplateFieldService.updateFields(updatedFields);
-
         return ResponseEntity.ok(
-                CompanyTemplateResponseDto.DetailDto.toDto(updatedTemplate, resultFields)
+                CompanyTemplateResponseDto.DetailDto.toDto(companyTemplate, companyTemplateFields)
         );
     }
 

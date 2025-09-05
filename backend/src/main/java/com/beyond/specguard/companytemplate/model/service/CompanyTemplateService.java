@@ -1,5 +1,6 @@
 package com.beyond.specguard.companytemplate.model.service;
 
+import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateDetailCommand;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 
 import java.util.UUID;
@@ -12,4 +13,6 @@ public interface CompanyTemplateService {
     void deleteTemplate(UUID templateId);
 
     CompanyTemplate updateTemplate(CompanyTemplate companyTemplate);
+
+    CompanyTemplate updateDetail(UpdateTemplateDetailCommand command);
 }
