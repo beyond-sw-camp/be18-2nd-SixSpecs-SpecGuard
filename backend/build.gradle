@@ -32,13 +32,25 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
     // --- JPA & MariaDB ---
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
 
     // --- Validation (회원가입 시 유효성 검사) ---
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // --- jwt ---
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.7'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.12.7'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.12.7'
+
+    //oauth2 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    //sendgrid
+    implementation("com.sendgrid:sendgrid-java:4.10.3")
+    //redis의존성
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.12'
 }
 
 
