@@ -7,6 +7,7 @@ import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepo
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -23,6 +24,19 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
     }
 
     @Override
+    @Transactional
+    public void deleteTemplate(UUID templateId) {
+        companyTemplateRepository.deleteById(templateId);
+    }
+
+    @Override
+    @Transactional
+    public CompanyTemplate updateTemplate(CompanyTemplate companyTemplate) {
+        return companyTemplateRepository.save(companyTemplate);
+    }
+
+    @Override
+    @Transactional
     public CompanyTemplate createTemplate(CompanyTemplate template) {
         CompanyTemplate companyTemplate = template;
 
@@ -32,6 +46,7 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
         } else {
             // 업데이트 케이스: ID가 존재하는 경우
             if (companyTemplateRepository.existsById(template.getId())) {
+                template.setActive(true);
                 companyTemplate = companyTemplateRepository.save(template);
             } else {
                 // ID는 있는데 DB에 존재하지 않는 경우 → 예외 처리

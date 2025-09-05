@@ -37,6 +37,7 @@ public class CompanyTemplateResponseDto {
     public static class BasicDto {
         private UUID id;
         private String name;
+        private String description;
         private String department;
         private String category;
         private int yearsOfExperience;
@@ -46,6 +47,7 @@ public class CompanyTemplateResponseDto {
             return BasicDto.builder()
                     .id(template.getId())
                     .name(template.getName())
+                    .description(template.getDescription())
                     .yearsOfExperience(template.getYearsOfExperience())
                     .category(template.getCategory())
                     .department(template.getDepartment())

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +21,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class CompanyTemplateBasicRequestDto {
     @Schema(description = "공고명", example = "2025년 상반기 신입 개발자 채용")
-    @NotBlank(message = "공고명은 필수 입력값입니다.")
+    @NotBlank(groups = Create.class, message = "공고명은 필수 입력값입니다.")
     @Size(max = 50, message = "공고명은 최대 50자까지 입력 가능합니다.")
     private String name;
 
@@ -29,20 +30,20 @@ public class CompanyTemplateBasicRequestDto {
     private String description;
 
     @Schema(description = "부서명", example = "플랫폼개발팀")
-    @NotBlank(message = "부서는 필수 입력값입니다.")
+    @NotBlank(groups = Create.class, message = "부서는 필수 입력값입니다.")
     @Size(max = 100, message = "부서는 최대 100자까지 입력 가능합니다.")
     private String department;
 
     @Schema(description = "직무 카테고리", example = "백엔드 개발")
-    @NotBlank(message = "직무는 필수 입력값입니다.")
+    @NotBlank(groups = Create.class, message = "직무는 필수 입력값입니다.")
     @Size(max = 100, message = "직무는 최대 100자까지 입력 가능합니다.")
     private String category;
 
     @Schema(description = "필요 경력(년차)", example = "3")
+    @NotNull(groups = Create.class, message = "연차 정보는 필수 입력값입니다.")
     @Min(value = 0, message = "연차는 0 이상이어야 합니다.")
     @Max(value = 50, message = "연차는 50 이하여야 합니다.") // 현실적인 upper bound
-    private int yearsOfExperience;
-
+    private Integer yearsOfExperience;
 
     public CompanyTemplate toEntity() {
         return CompanyTemplate.builder()
@@ -55,4 +56,7 @@ public class CompanyTemplateBasicRequestDto {
                 .endDate(LocalDateTime.now().plusDays(7)) // NOT NULL 제약조건에 의한 임시값 저장
                 .build();
     }
+
+    public interface Create {}
+    public interface Update {}
 }

@@ -8,4 +8,8 @@ public interface CompanyTemplateService {
     CompanyTemplate createTemplate(CompanyTemplate template);
 
     CompanyTemplate getCompanyTemplate(UUID templateId);
+
+    void deleteTemplate(UUID templateId);
+
+    CompanyTemplate updateTemplate(CompanyTemplate companyTemplate);
 }

@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface CompanyTemplateFieldRepository extends JpaRepository<CompanyTemplateField, UUID> {
     List<CompanyTemplateField> findAllByTemplate_Id(UUID templateId);
+
+    void deleteByTemplate_Id(UUID templateId);
 }

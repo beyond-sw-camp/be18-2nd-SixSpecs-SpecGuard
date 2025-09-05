@@ -18,7 +18,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -51,7 +54,6 @@ public class CompanyTemplateController {
                 HttpStatus.OK
         );
     }
-
 
     @Operation(
             summary = "기본 회사 템플릿 생성",
@@ -99,7 +101,7 @@ public class CompanyTemplateController {
     @PostMapping("/detail")
     public ResponseEntity<CompanyTemplateResponseDto.DetailDto> createDetailTemplate(
         @Parameter(description = "상세 템플릿 생성 요청 DTO", required = true)
-        @Valid @RequestBody CompanyTemplateDetailRequestDto requestDto
+        @Validated(CompanyTemplateDetailRequestDto.Create.class) @RequestBody CompanyTemplateDetailRequestDto requestDto
     ) {
         CompanyTemplate companyTemplate = companyTemplateService.getCompanyTemplate(requestDto.getTemplateId());
 
@@ -121,6 +123,33 @@ public class CompanyTemplateController {
         );
     }
 
+    @DeleteMapping("/{templateId}")
+    public ResponseEntity<Message> deleteCompanyTemplate(
+            @PathVariable UUID templateId
+    ) {
+        companyTemplateService.deleteTemplate(templateId);
+        companyTemplateFieldService.deleteField(templateId);
+        return ResponseEntity.ok().body(
+                new Message("기업 템플릿이 성공적으로 삭제되었습니다.")
+        );
+    }
 
+    @PatchMapping("/{templateId}/basic")
+    public ResponseEntity<CompanyTemplateResponseDto.BasicDto> patchBasicTemplate(
+        @PathVariable UUID templateId,
+        @Validated(CompanyTemplateBasicRequestDto.Update.class)
+        @RequestBody CompanyTemplateBasicRequestDto requestDto
+    ) {
+        CompanyTemplate companyTemplate = companyTemplateService.getCompanyTemplate(templateId);
 
+        companyTemplate.update(requestDto);
+
+        CompanyTemplate updatedTemplate = companyTemplateService.updateTemplate(companyTemplate);
+
+        return ResponseEntity.ok(CompanyTemplateResponseDto.BasicDto.toDto(updatedTemplate));
+
+    }
+
+    public record Message(String message) {}
 }
+

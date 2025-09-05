@@ -1,5 +1,6 @@
 package com.beyond.specguard.companytemplate.model.entity;
 
+import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateBasicRequestDto;
 import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateDetailRequestDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,6 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
@@ -49,7 +51,7 @@ public class CompanyTemplate {
 
     @Column(name = "years_of_experience", nullable = false)
     @Builder.Default
-    private int yearsOfExperience = 0;
+    private Integer yearsOfExperience = 0;
 
     @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;
@@ -58,6 +60,7 @@ public class CompanyTemplate {
     private LocalDateTime endDate;
 
     @Column(name = "is_active", nullable = false)
+    @Setter
     private boolean isActive;
 
     @Column(name = "created_at", updatable = false)
@@ -78,6 +81,24 @@ public class CompanyTemplate {
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void update(CompanyTemplateBasicRequestDto requestDto) {
+        if (requestDto.getName() != null) {
+            this.name = requestDto.getName();
+        }
+        if (requestDto.getDepartment() != null) {
+            this.department = requestDto.getDepartment();
+        }
+        if (requestDto.getCategory() != null) {
+            this.category = requestDto.getCategory();
+        }
+        if (requestDto.getDescription() != null) {
+            this.description = requestDto.getDescription();
+        }
+        if (requestDto.getYearsOfExperience() != null) {
+            this.yearsOfExperience = requestDto.getYearsOfExperience();
+        }
     }
 
     public void update(CompanyTemplateDetailRequestDto requestDto) {
