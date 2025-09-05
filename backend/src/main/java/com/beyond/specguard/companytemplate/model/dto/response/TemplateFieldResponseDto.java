@@ -7,11 +7,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class TemplateFieldResponseDto {
+    private UUID id;
     private String fieldName;
     private CompanyTemplateField.FieldType fieldType;
     private boolean isRequired;
@@ -21,6 +24,7 @@ public class TemplateFieldResponseDto {
     private Integer maxLength;
 
     public TemplateFieldResponseDto (CompanyTemplateField template) {
+        this.id = template.getId();
         this.fieldName = template.getFieldName();
         this.fieldType = template.getFieldType();
         this.isRequired = template.isRequired();

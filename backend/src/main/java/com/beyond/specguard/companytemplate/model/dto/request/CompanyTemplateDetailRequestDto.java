@@ -6,13 +6,15 @@ import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@Data
+@Getter
+@NoArgsConstructor
 public class CompanyTemplateDetailRequestDto {
     @Schema(description = "1단계에서 생성된 공고 템플릿 ID")
     @NotNull(groups = Create.class, message = "템플릿 ID는 필수 입력값입니다.")

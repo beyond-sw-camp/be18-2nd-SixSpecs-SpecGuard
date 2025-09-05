@@ -1,5 +1,7 @@
 package com.beyond.specguard.companytemplate.controller;
 
+import com.beyond.specguard.common.exception.CustomException;
+import com.beyond.specguard.companytemplate.exception.ErrorCode.CompanyTemplateErrorCode;
 import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateBasicRequestDto;
 import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateDetailRequestDto;
 import com.beyond.specguard.companytemplate.model.dto.response.CompanyTemplateResponseDto;
@@ -101,7 +103,8 @@ public class CompanyTemplateController {
     @PostMapping("/detail")
     public ResponseEntity<CompanyTemplateResponseDto.DetailDto> createDetailTemplate(
         @Parameter(description = "상세 템플릿 생성 요청 DTO", required = true)
-        @Validated(CompanyTemplateDetailRequestDto.Create.class) @RequestBody CompanyTemplateDetailRequestDto requestDto
+        @Validated(CompanyTemplateDetailRequestDto.Create.class)
+        @RequestBody CompanyTemplateDetailRequestDto requestDto
     ) {
         CompanyTemplate companyTemplate = companyTemplateService.getCompanyTemplate(requestDto.getTemplateId());
 
@@ -148,6 +151,41 @@ public class CompanyTemplateController {
 
         return ResponseEntity.ok(CompanyTemplateResponseDto.BasicDto.toDto(updatedTemplate));
 
+    }
+
+    @PatchMapping("/{templateId}/detail")
+    public ResponseEntity<CompanyTemplateResponseDto.DetailDto> patchDetailTemplate(
+            @PathVariable UUID templateId,
+            @Validated(CompanyTemplateDetailRequestDto.Update.class)
+            @RequestBody CompanyTemplateDetailRequestDto requestDto
+    ) {
+        CompanyTemplate companyTemplate = companyTemplateService.getCompanyTemplate(templateId);
+        companyTemplate.update(requestDto);
+        CompanyTemplate updatedTemplate = companyTemplateService.updateTemplate(companyTemplate);
+
+        List<CompanyTemplateField> companyTemplateFields = companyTemplateFieldService.getFields(templateId);
+
+
+        List<CompanyTemplateField> updatedFields = companyTemplateFields.stream()
+                .map(existingField -> {
+                    // requestDto에서 같은 id를 가진 field를 찾음
+                    return requestDto.getFields().stream()
+                            .filter(dtoField -> dtoField.getId().equals(existingField.getId()))
+                            .findFirst()
+                            .map(dtoField -> {
+                                // DTO 값으로 기존 엔티티 업데이트
+                                existingField.update(dtoField);
+                                return existingField;
+                            })
+                            .orElseThrow(() -> new CustomException(CompanyTemplateErrorCode.TEMPLATE_FIELD_NOT_FOUND)); // 요청에 없는 경우 그대로 둠
+                })
+                .toList();
+
+        List<CompanyTemplateField> resultFields = companyTemplateFieldService.updateFields(updatedFields);
+
+        return ResponseEntity.ok(
+                CompanyTemplateResponseDto.DetailDto.toDto(updatedTemplate, resultFields)
+        );
     }
 
     public record Message(String message) {}

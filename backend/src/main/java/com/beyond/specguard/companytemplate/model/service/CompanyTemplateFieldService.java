@@ -10,4 +10,6 @@ public interface CompanyTemplateFieldService {
     List<CompanyTemplateField> getFields(UUID templateId);
 
     void deleteField(UUID templateId);
+
+    List<CompanyTemplateField> updateFields(List<CompanyTemplateField> companyTemplateFields);
 }

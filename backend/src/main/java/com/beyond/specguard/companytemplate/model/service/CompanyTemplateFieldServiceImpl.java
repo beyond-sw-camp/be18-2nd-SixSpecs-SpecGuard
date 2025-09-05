@@ -33,4 +33,9 @@ public class CompanyTemplateFieldServiceImpl implements CompanyTemplateFieldServ
     public void deleteField(UUID templateId) {
         companyTemplateFieldRepository.deleteByTemplate_Id(templateId);
     }
+
+    @Override
+    public List<CompanyTemplateField> updateFields(List<CompanyTemplateField> companyTemplateFields) {
+        return companyTemplateFieldRepository.saveAll(companyTemplateFields);
+    }
 }

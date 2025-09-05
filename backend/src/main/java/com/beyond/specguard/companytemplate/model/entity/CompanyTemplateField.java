@@ -1,5 +1,6 @@
 package com.beyond.specguard.companytemplate.model.entity;
 
+import com.beyond.specguard.companytemplate.model.dto.request.TemplateFieldRequestDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
@@ -76,5 +77,29 @@ public class CompanyTemplateField {
         NUMBER,
         DATE,
         SELECT
+    }
+
+    public void update(TemplateFieldRequestDto requestDto) {
+        if (requestDto.getFieldName() != null) {
+            this.fieldName = requestDto.getFieldName();
+        }
+        if (requestDto.getFieldType() != null) {
+            this.fieldType = requestDto.getFieldType();
+        }
+        if (requestDto.getOptions() != null) {
+            this.options = requestDto.getOptionsByString();
+        }
+        if (requestDto.getIsRequired() != null) {
+            this.isRequired = requestDto.getIsRequired();
+        }
+        if (requestDto.getFieldOrder() != null) {
+            this.fieldOrder = requestDto.getFieldOrder();
+        }
+        if (requestDto.getMinLength() != null) {
+            this.minLength = requestDto.getMinLength();
+        }
+        if (requestDto.getMaxLength() != null) {
+            this.maxLength = requestDto.getMaxLength();
+        }
     }
 }
