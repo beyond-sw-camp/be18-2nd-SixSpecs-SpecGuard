@@ -12,7 +12,7 @@ public record CompanyTemplateResponseCreateRequest(
         @Schema(description = "문항 답변 리스트")
         @NotEmpty
         @Valid
-        List<AbstractReadWriteAccess.Item> responses
+        List<Item> responses
 ) {
     public record Item(
             @Schema(description = "문항 필드 ID (UUID 문자열)")
