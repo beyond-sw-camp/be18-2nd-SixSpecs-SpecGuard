@@ -4,6 +4,8 @@ import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateBas
 import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateDetailRequestDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -15,7 +17,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
@@ -59,9 +60,10 @@ public class CompanyTemplate {
     @Column(name = "end_date", nullable = false)
     private LocalDateTime endDate;
 
-    @Column(name = "is_active", nullable = false)
-    @Setter
-    private boolean isActive;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private TemplateStatus status = TemplateStatus.DRAFT;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -102,7 +104,23 @@ public class CompanyTemplate {
     }
 
     public void update(CompanyTemplateDetailRequestDto requestDto) {
-        this.startDate = requestDto.getStartDate();
-        this.endDate = requestDto.getEndDate();
+        this.startDate = requestDto.detailDto().getStartDate();
+        this.endDate = requestDto.detailDto().getEndDate();
+    }
+
+    public void setStatusActive() {
+        this.status = TemplateStatus.ACTIVE;
+    }
+
+    public void setStatusExpired() {
+        this.status = TemplateStatus.EXPIRED;
+    }
+
+    public void setStatusInactive() {}
+    public enum TemplateStatus {
+        DRAFT,        // 작성 중
+        ACTIVE,       // 진행 중
+        EXPIRED,      // 마감됨
+        DELETED       // 삭제됨
     }
 }

@@ -8,7 +8,6 @@ import java.util.UUID;
 
 public interface CompanyTemplateFieldService {
     CompanyTemplateField createField(CreateCompanyTemplateFieldCommand companyTemplateFieldCommand);
-    List<CompanyTemplateField> createFields(List<CompanyTemplateField> companyTemplateFields);
     List<CompanyTemplateField> getFields(UUID templateId);
 
     void deleteFields(UUID templateId);
@@ -17,4 +16,5 @@ public interface CompanyTemplateFieldService {
 
     void deleteFieldById(UUID id);
 
+    void createFields(List<CreateCompanyTemplateFieldCommand> fields);
 }

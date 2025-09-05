@@ -1,5 +1,6 @@
 package com.beyond.specguard.companytemplate.controller;
 
+import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateBasicCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateDetailCommand;
 import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateBasicRequestDto;
 import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateDetailRequestDto;
@@ -75,9 +76,7 @@ public class CompanyTemplateController {
             @Parameter(description = "기본 템플릿 생성 요청 DTO", required = true)
             @Valid @RequestBody CompanyTemplateBasicRequestDto basicRequestDto
     ) {
-        CompanyTemplate companyTemplate = basicRequestDto.toEntity();
-
-        CompanyTemplate saved = companyTemplateService.createTemplate(companyTemplate);
+        CompanyTemplate saved = companyTemplateService.createBasicTemplate(basicRequestDto);
 
         return new ResponseEntity<>(
                 CompanyTemplateResponseDto.BasicDto.toDto(saved),
@@ -105,22 +104,14 @@ public class CompanyTemplateController {
         @Validated(CompanyTemplateDetailRequestDto.Create.class)
         @RequestBody CompanyTemplateDetailRequestDto requestDto
     ) {
-        CompanyTemplate companyTemplate = companyTemplateService.getCompanyTemplate(requestDto.getTemplateId());
+        // Template, Field 생성
+        CompanyTemplate companyTemplate = companyTemplateService.createDetailTemplate(requestDto);
 
-        companyTemplate.update(requestDto);
-
-        CompanyTemplate saved = companyTemplateService.createTemplate(companyTemplate);
-
-        List< CompanyTemplateField> companyTemplateFields =
-                companyTemplateFieldService.createFields(
-                        requestDto.getFields()
-                                .stream()
-                                .map(field -> field.toEntity(companyTemplate))
-                                .toList()
-                );
+        // Field 조회
+        List<CompanyTemplateField> companyTemplateFields = companyTemplateFieldService.getFields(requestDto.detailDto().getTemplateId());
 
         return new ResponseEntity<>(
-                CompanyTemplateResponseDto.DetailDto.toDto(saved, companyTemplateFields),
+                CompanyTemplateResponseDto.DetailDto.toDto(companyTemplate, companyTemplateFields),
                 HttpStatus.CREATED
         );
     }
@@ -130,7 +121,6 @@ public class CompanyTemplateController {
             @PathVariable UUID templateId
     ) {
         companyTemplateService.deleteTemplate(templateId);
-        companyTemplateFieldService.deleteFields(templateId);
         return ResponseEntity.ok().body(
                 new Message("기업 템플릿이 성공적으로 삭제되었습니다.")
         );
@@ -142,14 +132,11 @@ public class CompanyTemplateController {
         @Validated(CompanyTemplateBasicRequestDto.Update.class)
         @RequestBody CompanyTemplateBasicRequestDto requestDto
     ) {
-        CompanyTemplate companyTemplate = companyTemplateService.getCompanyTemplate(templateId);
+        UpdateTemplateBasicCommand updateTemplateBasicCommand = new UpdateTemplateBasicCommand(templateId, requestDto);
 
-        companyTemplate.update(requestDto);
-
-        CompanyTemplate updatedTemplate = companyTemplateService.updateTemplate(companyTemplate);
+        CompanyTemplate updatedTemplate = companyTemplateService.updateBasic(updateTemplateBasicCommand);
 
         return ResponseEntity.ok(CompanyTemplateResponseDto.BasicDto.toDto(updatedTemplate));
-
     }
 
 

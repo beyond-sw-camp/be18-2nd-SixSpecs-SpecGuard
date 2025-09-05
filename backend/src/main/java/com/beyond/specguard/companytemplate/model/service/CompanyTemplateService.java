@@ -1,18 +1,23 @@
 package com.beyond.specguard.companytemplate.model.service;
 
+import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateBasicCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateDetailCommand;
+import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateBasicRequestDto;
+import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateDetailRequestDto;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 
 import java.util.UUID;
 
 public interface CompanyTemplateService {
-    CompanyTemplate createTemplate(CompanyTemplate template);
-
     CompanyTemplate getCompanyTemplate(UUID templateId);
 
     void deleteTemplate(UUID templateId);
 
-    CompanyTemplate updateTemplate(CompanyTemplate companyTemplate);
+    CompanyTemplate updateBasic(UpdateTemplateBasicCommand command);
 
     CompanyTemplate updateDetail(UpdateTemplateDetailCommand command);
+
+    CompanyTemplate createDetailTemplate(CompanyTemplateDetailRequestDto requestDto);
+
+    CompanyTemplate createBasicTemplate(CompanyTemplateBasicRequestDto basicRequestDto);
 }

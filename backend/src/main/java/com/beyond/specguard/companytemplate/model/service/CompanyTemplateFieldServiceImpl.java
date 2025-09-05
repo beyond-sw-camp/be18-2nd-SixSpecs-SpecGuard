@@ -26,12 +26,6 @@ public class CompanyTemplateFieldServiceImpl implements CompanyTemplateFieldServ
     }
 
     @Override
-    @Transactional
-    public List<CompanyTemplateField> createFields(List<CompanyTemplateField> companyTemplateFields) {
-        return companyTemplateFieldRepository.saveAll(companyTemplateFields);
-    }
-
-    @Override
     public List<CompanyTemplateField> getFields(UUID templateId) {
         return companyTemplateFieldRepository.findAllByTemplate_Id(templateId);
     }
@@ -50,5 +44,17 @@ public class CompanyTemplateFieldServiceImpl implements CompanyTemplateFieldServ
     @Override
     public void deleteFieldById(UUID id) {
         companyTemplateFieldRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public void createFields(List<CreateCompanyTemplateFieldCommand> commands) {
+        List<CompanyTemplateField> companyTemplateFields =
+                        commands
+                                .stream()
+                                .map(field -> field.templateFieldRequestDto().toEntity(field.companyTemplate()))
+                                .toList();
+
+        companyTemplateFieldRepository.saveAll(companyTemplateFields);
     }
 }
