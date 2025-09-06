@@ -5,10 +5,8 @@ import com.beyond.specguard.auth.model.dto.request.SignupRequestDto;
 import com.beyond.specguard.auth.model.dto.response.InviteCheckResponseDto;
 import com.beyond.specguard.auth.model.dto.response.ReissueResponseDto;
 import com.beyond.specguard.auth.model.dto.response.SignupResponseDto;
-import com.beyond.specguard.auth.model.service.InviteSignupService;
-import com.beyond.specguard.auth.model.service.LogoutService;
-import com.beyond.specguard.auth.model.service.ReissueService;
-import com.beyond.specguard.auth.model.service.SignupService;
+import com.beyond.specguard.auth.model.dto.response.TokenResponseDto;
+import com.beyond.specguard.auth.model.service.*;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;
 import com.beyond.specguard.common.util.TokenResponseWriter;
@@ -35,7 +33,7 @@ public class AuthController {
     private final LogoutService logoutService;
     private final InviteSignupService inviteSignupService;
     private final TokenResponseWriter tokenResponseWriter;
-
+    private final TokenService tokenService;
 
     @PostMapping("/signup/company")
     public ResponseEntity<SignupResponseDto> signup(@Valid @RequestBody SignupRequestDto request) {
@@ -82,5 +80,13 @@ public class AuthController {
     ) {
         InviteCheckResponseDto response = inviteSignupService.checkInvite(token);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/token")
+    public ResponseEntity<TokenResponseDto> issueAccessToken(HttpServletRequest request) {
+        TokenResponseDto responseDto = tokenService.issueAccessToken(request);
+        return ResponseEntity.ok()
+                .header("Authorization", "Bearer " + responseDto.getAccessToken())
+                .body(responseDto);
     }
 }
