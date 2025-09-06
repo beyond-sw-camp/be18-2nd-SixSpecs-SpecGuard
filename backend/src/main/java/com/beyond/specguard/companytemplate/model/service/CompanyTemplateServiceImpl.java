@@ -3,6 +3,7 @@ package com.beyond.specguard.companytemplate.model.service;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.companytemplate.exception.ErrorCode.CompanyTemplateErrorCode;
 import com.beyond.specguard.companytemplate.model.dto.command.CreateCompanyTemplateFieldCommand;
+import com.beyond.specguard.companytemplate.model.dto.command.SearchTemplateCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateBasicCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateDetailCommand;
 import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateBasicRequestDto;
@@ -11,12 +12,16 @@ import com.beyond.specguard.companytemplate.model.dto.request.TemplateFieldReque
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository;
+import com.beyond.specguard.companytemplate.model.spec.CompanyTemplateSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,8 +35,8 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
     private final CompanyTemplateFieldService companyTemplateFieldService;
 
     @Override
-    // 부모 Transaction에 참여하지 않음
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    // 부모 트랜잭션에 참여하지 않음
+    @Transactional(propagation = Propagation.NOT_SUPPORTED, readOnly = true)
     public CompanyTemplate getCompanyTemplate(UUID templateId) {
         return companyTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new CustomException(CompanyTemplateErrorCode.TEMPLATE_NOT_FOUND));
@@ -48,7 +53,7 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
         // template 삭제
         companyTemplateRepository.deleteById(templateId);
 
-        // fk 제약이 없으므로  templateField 수동 삭제
+        // 템플릿에 관련된 templateField 도 삭제
         companyTemplateFieldService.deleteFields(templateId);
     }
 
@@ -130,11 +135,27 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
     }
 
     @Override
+    @Transactional
     public CompanyTemplate createBasicTemplate(CompanyTemplateBasicRequestDto basicRequestDto) {
         // BasicRequestDto 에서 받은 정보를 토대로 entity 생성
-        // 그런데, not null 제약조건 있는 것은 기본 값 삽입하기.
+        // not null 제약조건 필드에는 기본 값 삽입하기.
         CompanyTemplate companyTemplate = basicRequestDto.toEntity();
 
         return companyTemplateRepository.save(companyTemplate);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<CompanyTemplate> getTemplates(SearchTemplateCommand c) {
+        Specification<CompanyTemplate> spec = Specification.allOf(
+                CompanyTemplateSpecification.hasDepartment(c.department()),
+                CompanyTemplateSpecification.hasCategory(c.category()),
+                CompanyTemplateSpecification.startDateAfter(c.startDate().atStartOfDay()),
+                CompanyTemplateSpecification.endDateBefore(c.endDate().atTime(LocalTime.MAX)),
+                CompanyTemplateSpecification.hasStatus(c.status()),
+                CompanyTemplateSpecification.hasYearsOfExperience(c.yearsOfExperience())
+        );
+
+        return companyTemplateRepository.findAll(spec, c.pageable());
     }
 }

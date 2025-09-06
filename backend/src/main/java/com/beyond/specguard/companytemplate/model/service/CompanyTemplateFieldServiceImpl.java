@@ -26,6 +26,7 @@ public class CompanyTemplateFieldServiceImpl implements CompanyTemplateFieldServ
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CompanyTemplateField> getFields(UUID templateId) {
         return companyTemplateFieldRepository.findAllByTemplate_Id(templateId);
     }
@@ -37,11 +38,13 @@ public class CompanyTemplateFieldServiceImpl implements CompanyTemplateFieldServ
     }
 
     @Override
+    @Transactional
     public List<CompanyTemplateField> updateFields(List<CompanyTemplateField> companyTemplateFields) {
         return companyTemplateFieldRepository.saveAll(companyTemplateFields);
     }
 
     @Override
+    @Transactional
     public void deleteFieldById(UUID id) {
         companyTemplateFieldRepository.deleteById(id);
     }

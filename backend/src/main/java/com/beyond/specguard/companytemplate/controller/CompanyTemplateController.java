@@ -1,9 +1,11 @@
 package com.beyond.specguard.companytemplate.controller;
 
+import com.beyond.specguard.companytemplate.model.dto.command.SearchTemplateCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateBasicCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateDetailCommand;
 import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateBasicRequestDto;
 import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateDetailRequestDto;
+import com.beyond.specguard.companytemplate.model.dto.response.CompanyTemplateListResponseDto;
 import com.beyond.specguard.companytemplate.model.dto.response.CompanyTemplateResponseDto;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
@@ -18,18 +20,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,6 +44,16 @@ public class CompanyTemplateController {
     private final CompanyTemplateService companyTemplateService;
     private final CompanyTemplateFieldService companyTemplateFieldService;
 
+    @Operation(
+            summary = "단일 회사 템플릿 조회",
+            description = "템플릿 ID를 기반으로 상세 정보를 조회합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "조회 성공",
+                            content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CompanyTemplateResponseDto.class))),
+                    @ApiResponse(responseCode = "404", description = "템플릿을 찾을 수 없음")
+            }
+    )
     @GetMapping("/{templateId}")
     public ResponseEntity<CompanyTemplateResponseDto> getCompanyTemplate(
             @PathVariable UUID templateId
@@ -58,6 +69,44 @@ public class CompanyTemplateController {
     }
 
     @Operation(
+            summary = "회사 템플릿 목록 조회",
+            description = "부서, 직무, 기간, 상태, 연차 조건으로 회사 템플릿 목록을 조회합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "조회 성공",
+                            content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CompanyTemplateListResponseDto.class)))
+            }
+    )
+    @GetMapping
+    public ResponseEntity<Page<CompanyTemplateListResponseDto>> getTemplates(
+            @Parameter(description = "부서 필터") @RequestParam(required = false) String department,
+            @Parameter(description = "직무 필터") @RequestParam(required = false) String category,
+            @Parameter(description = "시작일 필터") @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "마감일 필터") @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @Parameter(description = "템플릿 상태 필터") @RequestParam(required = false) CompanyTemplate.TemplateStatus status,
+            @Parameter(description = "연차 필터") @RequestParam(required = false) Integer yearsOfExperience,
+            @Parameter(description = "페이지 정보") @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        SearchTemplateCommand templateCommand = SearchTemplateCommand.builder()
+                .department(department)
+                .category(category)
+                .startDate(startDate)
+                .endDate(endDate)
+                .status(status)
+                .yearsOfExperience(yearsOfExperience)
+                .pageable(pageable)
+                .build();
+
+        Page<CompanyTemplate> result = companyTemplateService.getTemplates(templateCommand);
+
+        return ResponseEntity.ok(
+                result.map(CompanyTemplateListResponseDto::fromEntity)
+        );
+    }
+
+    @Operation(
             summary = "기본 회사 템플릿 생성",
             description = "기본 정보만으로 회사 템플릿을 생성합니다.",
             responses = {
@@ -68,7 +117,8 @@ public class CompanyTemplateController {
                                 mediaType = "application/json",
                                 schema = @Schema(implementation = CompanyTemplateResponseDto.BasicDto.class)
                         )
-                )
+                ),
+                @ApiResponse(responseCode = "400", description = "잘못된 요청")
             }
     )
     @PostMapping("/basic")
@@ -96,6 +146,7 @@ public class CompanyTemplateController {
                                     schema = @Schema(implementation = CompanyTemplateResponseDto.DetailDto.class)
                             )
                     ),
+                    @ApiResponse(responseCode = "400", description = "잘못된 요청")
             }
     )
     @PostMapping("/detail")
@@ -116,6 +167,14 @@ public class CompanyTemplateController {
         );
     }
 
+    @Operation(
+            summary = "회사 템플릿 삭제",
+            description = "템플릿 ID를 기반으로 회사 템플릿을 삭제합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "삭제 성공"),
+                    @ApiResponse(responseCode = "404", description = "템플릿을 찾을 수 없음")
+            }
+    )
     @DeleteMapping("/{templateId}")
     public ResponseEntity<Message> deleteCompanyTemplate(
             @PathVariable UUID templateId
@@ -126,6 +185,17 @@ public class CompanyTemplateController {
         );
     }
 
+    @Operation(
+            summary = "기본 템플릿 정보 수정",
+            description = "기본 템플릿 정보를 부분 수정합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "수정 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = CompanyTemplateResponseDto.BasicDto.class))),
+                    @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+                    @ApiResponse(responseCode = "404", description = "템플릿을 찾을 수 없음")
+            }
+    )
     @PatchMapping("/{templateId}/basic")
     public ResponseEntity<CompanyTemplateResponseDto.BasicDto> patchBasicTemplate(
         @PathVariable UUID templateId,
@@ -140,6 +210,17 @@ public class CompanyTemplateController {
     }
 
 
+    @Operation(
+            summary = "상세 템플릿 정보 수정",
+            description = "상세 템플릿 정보를 부분 수정합니다.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "수정 성공",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = CompanyTemplateResponseDto.DetailDto.class))),
+                    @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+                    @ApiResponse(responseCode = "404", description = "템플릿을 찾을 수 없음")
+            }
+    )
     @PatchMapping("/{templateId}/detail")
     public ResponseEntity<CompanyTemplateResponseDto.DetailDto> patchDetailTemplate(
             @PathVariable UUID templateId,
