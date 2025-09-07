@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 @RequiredArgsConstructor
-public class CustomOAuth2User implements OAuth2User {
+public class CustomOAuth2UserDetails implements OAuth2User {
 
     private final ClientUser user;
     private final Map<String, Object> attributes;

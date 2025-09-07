@@ -7,7 +7,7 @@ import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.auth.model.service.CustomUserDetails;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.invite.exception.errorcode.InviteErrorCode;
-import com.beyond.specguard.common.jwt.JwtUtil;
+import com.beyond.specguard.common.util.JwtUtil;
 import com.beyond.specguard.invite.model.dto.request.InviteRequestDto;
 import com.beyond.specguard.invite.model.dto.response.InviteResponseDto;
 import com.beyond.specguard.invite.model.entity.InviteEntity;

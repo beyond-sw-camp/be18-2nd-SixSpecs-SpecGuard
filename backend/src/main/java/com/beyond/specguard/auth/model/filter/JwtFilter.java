@@ -6,7 +6,7 @@ import com.beyond.specguard.auth.model.service.CustomUserDetails;
 import com.beyond.specguard.auth.model.service.RedisTokenService;
 import com.beyond.specguard.auth.exception.AuthException;
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
-import com.beyond.specguard.common.jwt.JwtUtil;
+import com.beyond.specguard.common.util.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

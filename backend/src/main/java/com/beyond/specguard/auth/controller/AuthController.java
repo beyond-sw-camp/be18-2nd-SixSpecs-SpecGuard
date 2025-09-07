@@ -7,7 +7,7 @@ import com.beyond.specguard.auth.model.dto.response.ReissueResponseDto;
 import com.beyond.specguard.auth.model.dto.response.SignupResponseDto;
 import com.beyond.specguard.auth.model.dto.response.TokenResponseDto;
 import com.beyond.specguard.auth.model.service.*;
-import com.beyond.specguard.common.jwt.JwtUtil;
+import com.beyond.specguard.common.util.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;
 import com.beyond.specguard.common.util.TokenResponseWriter;
 import io.swagger.v3.oas.annotations.Operation;

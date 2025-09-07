@@ -1,4 +1,4 @@
-package com.beyond.specguard.auth.model.service;
+package com.beyond.specguard.auth.model.resolver;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -39,10 +39,10 @@ public class CustomOAuth2AuthorizationRequestResolver implements OAuth2Authoriza
             return req;
         }
 
-        // ✅ 파이프(|) 대신 "__" 사용 (URL-safe)
+        //  파이프(|) 대신 "__" 사용 (URL-safe)
         String state = req.getState() + "__" + inviteToken;
 
-        log.info("➡️ OAuth2 요청에 state 값 세팅: {}", state);
+        log.info(" OAuth2 요청에 state 값 세팅: {}", state);
 
         return OAuth2AuthorizationRequest.from(req)
                 .state(state)

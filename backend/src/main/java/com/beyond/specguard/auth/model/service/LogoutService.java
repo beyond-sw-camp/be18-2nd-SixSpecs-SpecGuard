@@ -1,6 +1,6 @@
 package com.beyond.specguard.auth.model.service;
 
-import com.beyond.specguard.common.jwt.JwtUtil;
+import com.beyond.specguard.common.util.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;

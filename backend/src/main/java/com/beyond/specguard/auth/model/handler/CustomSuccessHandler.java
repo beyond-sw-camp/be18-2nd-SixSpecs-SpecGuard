@@ -2,7 +2,7 @@ package com.beyond.specguard.auth.model.handler;
 
 import com.beyond.specguard.auth.model.service.CustomUserDetails;
 import com.beyond.specguard.auth.model.service.RedisTokenService;
-import com.beyond.specguard.common.jwt.JwtUtil;
+import com.beyond.specguard.common.util.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;
 import jakarta.servlet.ServletException;
 import lombok.RequiredArgsConstructor;

@@ -10,7 +10,7 @@ import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.auth.model.service.RedisTokenService;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
-import com.beyond.specguard.common.jwt.JwtUtil;
+import com.beyond.specguard.common.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
