@@ -2,7 +2,7 @@ package com.beyond.specguard.verification.controller;
 
 import static com.beyond.specguard.verification.util.PhoneUtil.normalizePhone;
 import com.beyond.specguard.common.exception.CustomException;
-import com.beyond.specguard.common.exception.errorcode.VerifyErrorCode;
+import com.beyond.specguard.verification.exception.errorcode.VerifyErrorCode;
 import com.beyond.specguard.verification.dto.VerifyDto;
 import com.beyond.specguard.verification.service.PhoneVerificationService;
 import jakarta.validation.Valid;
