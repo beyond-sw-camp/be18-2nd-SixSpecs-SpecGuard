@@ -7,14 +7,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Getter
 @Entity
 @Table(name = "company_template_response",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_ctresp_resume_field",
-                columnNames = {"resume_id", "field_id"}
-        )
-        )
+        uniqueConstraints = @UniqueConstraint(name = "uk_ctresp_resume_field",
+                columnNames = {"resume_id", "field_id"}))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CompanyTemplateResponse extends BaseEntity {
 
@@ -26,15 +25,20 @@ public class CompanyTemplateResponse extends BaseEntity {
 
     //field_id
     @Column(name = "field_id", nullable = false, columnDefinition = "CHAR(36)")
-    private String fieldId;
+    private UUID fieldId;
 
     //지원자의 답변
     @Lob
     @Column(name = "answer", columnDefinition = "TEXT")
     private String answer;
 
+    // 엔티티 클래스 안에 추가
+    public void changeAnswer(String answer) {
+        this.answer = answer;
+    }
+
     @Builder
-    public CompanyTemplateResponse( Resume resume, String fieldId, String answer) {
+    public CompanyTemplateResponse(Resume resume, UUID fieldId, String answer) {
         this.resume = resume;
         this.fieldId = fieldId;
         this.answer = answer;

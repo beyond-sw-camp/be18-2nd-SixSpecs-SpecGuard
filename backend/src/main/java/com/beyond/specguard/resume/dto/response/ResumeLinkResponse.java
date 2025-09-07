@@ -7,6 +7,7 @@ import java.util.UUID;
 public record ResumeLinkResponse(
         UUID id,
         String url,
+        String linkType,
         String label
 ) {
 }

@@ -10,19 +10,19 @@ public record ResumeAggregateUpdateRequest(
         @Valid
         ResumeCorePatch core,
 
-        @Schema(description = "학력 목록(선택)")
+        @Schema(description = "학력 목록")
         @Valid
         List<ResumeEducationUpsertRequest> educations,
 
-        @Schema(description = "경력 목록(선택)")
+        @Schema(description = "경력 목록")
         @Valid
         List<ResumeExperienceUpsertRequest> experiences,
 
-        @Schema(description = "자격증 목록(선택)")
+        @Schema(description = "자격증 목록")
         @Valid
         List<ResumeCertificateUpsertRequest> certificates,
 
-        @Schema(description = "링크 목록(선택)")
+        @Schema(description = "링크 목록")
         @Valid
         List<ResumeLinkUpsertRequest> links
 ) {

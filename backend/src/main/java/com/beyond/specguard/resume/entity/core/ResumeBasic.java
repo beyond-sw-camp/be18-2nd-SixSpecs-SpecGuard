@@ -68,7 +68,7 @@ public class ResumeBasic extends BaseEntity {
 
 
     @Builder
-    public ResumeBasic(String id, Resume resume, String englishName, Gender gender, LocalDate birthDate, String nationality, String applyField, String profileImageUrl, String address, String specialty, String hobbies) {
+    public ResumeBasic(Resume resume, String englishName, Gender gender, LocalDate birthDate, String nationality, String applyField, String profileImageUrl, String address, String specialty, String hobbies) {
         this.resume = resume;
         this.englishName = englishName;
         this.gender = gender;

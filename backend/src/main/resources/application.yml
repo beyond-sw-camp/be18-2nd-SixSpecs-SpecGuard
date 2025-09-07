@@ -9,7 +9,7 @@ spring:
     driver-class-name: org.mariadb.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: update      # 초기 개발은 update, 운영은 validate/Flyway 권장
+      ddl-auto: create-drop       # 초기 개발은 update, 운영은 validate/Flyway 권장
     show-sql: true
     properties:
       hibernate.format_sql: true

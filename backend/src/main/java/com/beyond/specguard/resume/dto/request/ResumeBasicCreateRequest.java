@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
-//생성
 public record ResumeBasicCreateRequest(
         @Schema(description = "영문 이름", example = "John Doe")
         @NotNull

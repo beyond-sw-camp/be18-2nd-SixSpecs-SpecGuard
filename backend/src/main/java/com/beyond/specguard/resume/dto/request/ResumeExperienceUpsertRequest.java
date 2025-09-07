@@ -16,6 +16,9 @@ public record ResumeExperienceUpsertRequest(
         @NotBlank
         String companyName,
 
+        @Schema(description = "부서명", example = "플랫폼개발팀")
+        @NotBlank String department,
+
         @Schema(description = "직급/직책", example = "백엔드 개발자")
         @NotBlank
         String position,

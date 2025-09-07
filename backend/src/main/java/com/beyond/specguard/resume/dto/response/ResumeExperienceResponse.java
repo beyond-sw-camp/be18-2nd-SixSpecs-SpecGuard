@@ -12,6 +12,8 @@ public record ResumeExperienceResponse(
 
         String companyName,
 
+        String department,
+
         String position,
 
         String responsibilities,

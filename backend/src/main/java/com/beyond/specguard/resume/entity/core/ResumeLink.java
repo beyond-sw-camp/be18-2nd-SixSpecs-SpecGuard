@@ -28,7 +28,7 @@ public class ResumeLink extends BaseEntity {
 
     //url 링크
     @URL
-    @Column(name="url", columnDefinition = "TEXT")
+    @Column(name="url", columnDefinition = "TEXT", nullable = false)
     private String url;
 
     //url 종류
@@ -41,12 +41,16 @@ public class ResumeLink extends BaseEntity {
     @Column(name = "contents", columnDefinition = "TEXT")
     private String contents;
 
+    @Column(name = "label", length = 255)
+    private String label;
+
 
     @Builder
-    public ResumeLink( Resume resume, String url, LinkType linkType, String contents) {
+    public ResumeLink( Resume resume, String url, LinkType linkType, String contents, String label) {
         this.resume = resume;
         this.url = url;
         this.linkType = linkType;
         this.contents = contents;
+        this.label = label;
     }
 }

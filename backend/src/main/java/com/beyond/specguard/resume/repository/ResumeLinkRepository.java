@@ -1,18 +1,15 @@
 package com.beyond.specguard.resume.repository;
 
 import com.beyond.specguard.resume.entity.core.ResumeLink;
-import org.springdoc.core.converters.models.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface ResumeLinkRepository extends JpaRepository<ResumeLink, UUID> {
 
-    List<ResumeLink> findAllByResumeId(UUID resumeId);
-    void deleteByResumeId(UUID resumeId);
-    long countByResumeId(UUID resumeId);
-
+    List<ResumeLink> findByResume_Id(UUID resumeId);
+    void deleteByResume_Id(UUID resumeId);
+    long countByResume_Id(UUID resumeId);
 
 }

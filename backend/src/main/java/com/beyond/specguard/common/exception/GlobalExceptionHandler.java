@@ -1,6 +1,7 @@
 package com.beyond.specguard.common.exception;
 
 import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -10,38 +11,38 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    //  커스텀 예외 처리 (서비스 레벨에서 던진 CustomException)
     @ExceptionHandler(CustomException.class)
     public ResponseEntity<ErrorResponse> handleCustomException(CustomException ex) {
-        return ResponseEntity
-                .status(ex.getErrorCode().getStatus())
-                .body(ErrorResponse.of(ex.getErrorCode()));
+        var code = ex.getErrorCode();
+        return ResponseEntity.status(code.getStatus())
+                .body(new ErrorResponse(code.getStatus().value(), code.getCode(), code.getMessage()));
     }
 
-    //  DTO 검증 실패 (ex: @Valid)
+    // Bean Validation(@Valid) 예외 처리
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
-        // 필드 단위 오류 메시지 추출
-        String errorMessage = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getDefaultMessage()) // 👉 "이메일 형식이 올바르지 않습니다."
+        String errorMessage = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
                 .findFirst()
-                .orElse("잘못된 요청입니다.");
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                .orElse("유효성 검사 실패");
 
-        // CommonErrorCode.INVALID_REQUEST 사용
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(new ErrorResponse(
-                        HttpStatus.BAD_REQUEST.value(),
-                        CommonErrorCode.INVALID_REQUEST.getCode(),  // "INVALID_REQUEST"
+                        HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                        "VALIDATION_ERROR",
                         errorMessage
                 ));
     }
 
-    //  예상 못한 모든 예외 (서버 내부 오류)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex) {
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ErrorResponse.of(CommonErrorCode.UNEXPECTED_ERROR));
+        return ResponseEntity.status(CommonErrorCode.INTERNAL_SERVER_ERROR.getStatus())
+                .body(new ErrorResponse(
+                        CommonErrorCode.INTERNAL_SERVER_ERROR.getStatus().value(),
+                        CommonErrorCode.INTERNAL_SERVER_ERROR.getCode(),
+                        CommonErrorCode.INTERNAL_SERVER_ERROR.getMessage()
+                ));
     }
 }
