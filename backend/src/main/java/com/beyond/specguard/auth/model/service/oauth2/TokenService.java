@@ -1,9 +1,10 @@
-package com.beyond.specguard.auth.model.service;
+package com.beyond.specguard.auth.model.service.oauth2;
 
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import com.beyond.specguard.auth.model.dto.response.TokenResponseDto;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
+import com.beyond.specguard.auth.model.service.common.RedisTokenService;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.util.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;

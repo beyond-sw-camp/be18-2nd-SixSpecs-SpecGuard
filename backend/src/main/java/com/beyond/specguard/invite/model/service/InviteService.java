@@ -4,7 +4,7 @@ import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientCompanyRepository;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
+import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.invite.exception.errorcode.InviteErrorCode;
 import com.beyond.specguard.common.util.JwtUtil;

@@ -2,12 +2,12 @@ package com.beyond.specguard.common.config;
 
 import com.beyond.specguard.auth.model.filter.JwtFilter;
 import com.beyond.specguard.auth.model.filter.LoginFilter;
-import com.beyond.specguard.auth.model.handler.CustomFailureHandler;
-import com.beyond.specguard.auth.model.handler.CustomSuccessHandler;
-import com.beyond.specguard.auth.model.handler.OAuth2FailureHandler;
-import com.beyond.specguard.auth.model.handler.OAuth2SuccessHandler;
+import com.beyond.specguard.auth.model.handler.local.CustomFailureHandler;
+import com.beyond.specguard.auth.model.handler.local.CustomSuccessHandler;
+import com.beyond.specguard.auth.model.handler.oauth2.OAuth2FailureHandler;
+import com.beyond.specguard.auth.model.handler.oauth2.OAuth2SuccessHandler;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
-import com.beyond.specguard.auth.model.service.RedisTokenService;
+import com.beyond.specguard.auth.model.service.common.RedisTokenService;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
 import com.beyond.specguard.common.util.JwtUtil;

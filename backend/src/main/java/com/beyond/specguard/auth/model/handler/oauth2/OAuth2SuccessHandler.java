@@ -1,7 +1,7 @@
-package com.beyond.specguard.auth.model.handler;
+package com.beyond.specguard.auth.model.handler.oauth2;
 
-import com.beyond.specguard.auth.model.service.CustomOAuth2UserDetails;
-import com.beyond.specguard.auth.model.service.RedisTokenService;
+import com.beyond.specguard.auth.model.service.oauth2.CustomOAuth2UserDetails;
+import com.beyond.specguard.auth.model.service.common.RedisTokenService;
 import com.beyond.specguard.common.util.JwtUtil;
 import com.beyond.specguard.common.properties.AppProperties;
 import com.beyond.specguard.common.util.CookieUtil;

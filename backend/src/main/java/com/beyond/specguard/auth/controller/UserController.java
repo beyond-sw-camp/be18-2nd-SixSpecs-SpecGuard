@@ -1,7 +1,7 @@
 package com.beyond.specguard.auth.controller;
 
 import com.beyond.specguard.auth.model.dto.response.SignupResponseDto;
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
+import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import org.springframework.http.ResponseEntity;

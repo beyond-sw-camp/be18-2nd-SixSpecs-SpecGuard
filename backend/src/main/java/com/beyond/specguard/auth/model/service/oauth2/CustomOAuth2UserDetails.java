@@ -1,4 +1,4 @@
-package com.beyond.specguard.auth.model.service;
+package com.beyond.specguard.auth.model.service.oauth2;
 
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import lombok.RequiredArgsConstructor;

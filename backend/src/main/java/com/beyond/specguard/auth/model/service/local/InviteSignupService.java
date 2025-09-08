@@ -1,4 +1,4 @@
-package com.beyond.specguard.auth.model.service;
+package com.beyond.specguard.auth.model.service.local;
 
 import com.beyond.specguard.auth.model.dto.response.InviteCheckResponseDto;
 import com.beyond.specguard.auth.model.dto.request.InviteSignupRequestDto;

@@ -1,6 +1,6 @@
-package com.beyond.specguard.auth.model.handler;
+package com.beyond.specguard.auth.model.handler.oauth2;
 
-import com.beyond.specguard.common.exception.errorcode.ErrorCode;
+import com.beyond.specguard.common.util.OAuth2StateUtil;
 import com.beyond.specguard.invite.exception.InviteException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
@@ -32,14 +32,11 @@ public class OAuth2FailureHandler implements AuthenticationFailureHandler {
             message = inviteEx.getErrorCode().getMessage();
         }
 
-        // ✅ state 값에서 inviteToken 추출
+        // state 값에서 inviteToken 추출
         String state = request.getParameter("state");
-        String inviteToken = null;
-        if (state != null && state.contains("__")) {
-            inviteToken = state.split("__")[1];
-        }
+        String inviteToken = OAuth2StateUtil.extractInviteToken(state);
 
-        // ✅ 프론트 실패 페이지로 Redirect (token 포함)
+        // 프론트 실패 페이지로 Redirect (token 포함)
         String redirectUrl = String.format(
                 "http://localhost:5173/oauth2/failure?code=%s&message=%s&token=%s",
                 code,

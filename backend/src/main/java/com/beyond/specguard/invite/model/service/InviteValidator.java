@@ -7,6 +7,8 @@ import com.beyond.specguard.invite.model.entity.InviteEntity;
 import com.beyond.specguard.invite.model.repository.InviteRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -31,27 +33,38 @@ public class InviteValidator {
             jwtUtil.validateToken(inviteToken);
         } catch (Exception e) {
             log.error(" InviteToken 유효하지 않음", e);
-            throw new InviteException(InviteErrorCode.INVALID_TOKEN);
+            throw toAuthException(InviteErrorCode.INVALID_TOKEN);
         }
 
         // 2. DB 조회
         InviteEntity invite = inviteRepository.findByInviteTokenAndStatus(
                 inviteToken, InviteEntity.InviteStatus.PENDING
-        ).orElseThrow(() -> new InviteException(InviteErrorCode.INVALID_TOKEN));
+        ).orElseThrow(() -> toAuthException(InviteErrorCode.INVALID_TOKEN));
 
         // 3. 만료 여부 확인
         if (invite.getExpiresAt().isBefore(LocalDateTime.now())) {
             invite.inviteExpired();
             log.error(" 초대 토큰 만료: {}", inviteToken);
-            throw new InviteException(InviteErrorCode.EXPIRED_TOKEN);
+            throw toAuthException(InviteErrorCode.EXPIRED_TOKEN);
         }
 
         // 4. 이메일 일치 여부 확인
         if (!invite.getEmail().equalsIgnoreCase(oauthEmail)) {
             log.error(" 초대 이메일 불일치: invite={}, oauth2={}", invite.getEmail(), oauthEmail);
-            throw new InviteException(InviteErrorCode.EMAIL_MISMATCH);
+            throw toAuthException(InviteErrorCode.EMAIL_MISMATCH);
         }
 
         return invite;
+    }
+
+    /**
+     * InviteErrorCode → OAuth2AuthenticationException 변환
+     */
+    private OAuth2AuthenticationException toAuthException(InviteErrorCode errorCode) {
+        return new OAuth2AuthenticationException(
+                new OAuth2Error(errorCode.getCode(), errorCode.getMessage(), null),
+                errorCode.getMessage(),
+                new InviteException(errorCode) // cause 로 원본 예외 포함
+        );
     }
 }

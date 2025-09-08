@@ -1,4 +1,4 @@
-package com.beyond.specguard.auth.model.handler;
+package com.beyond.specguard.auth.model.handler.local;
 
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import com.beyond.specguard.common.exception.ErrorResponse;
