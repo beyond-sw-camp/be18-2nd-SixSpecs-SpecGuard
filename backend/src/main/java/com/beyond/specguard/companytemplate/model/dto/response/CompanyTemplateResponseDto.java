@@ -26,7 +26,7 @@ public class CompanyTemplateResponseDto {
 
     public CompanyTemplateResponseDto(CompanyTemplate companyTemplate, List<CompanyTemplateField> companyTemplateFields) {
         this.basicDto = BasicDto.toDto(companyTemplate);
-        this.detailDto = DetailDto.toDto(companyTemplate, companyTemplateFields);
+        this.detailDto = DetailDto.toDto(companyTemplate);
     }
 
 
@@ -66,12 +66,12 @@ public class CompanyTemplateResponseDto {
         private LocalDateTime endDate;
         private List<TemplateFieldResponseDto> fields;
 
-        public static DetailDto toDto(CompanyTemplate template, List<CompanyTemplateField> fields) {
+        public static DetailDto toDto(CompanyTemplate template) {
             return DetailDto.builder()
                     .templateId(template.getId())
                     .endDate(template.getEndDate())
                     .startDate(template.getStartDate())
-                    .fields(fields.stream().map(TemplateFieldResponseDto::new).toList())
+                    .fields(template.getFields().stream().map(TemplateFieldResponseDto::new).toList())
                     .build();
 
         }

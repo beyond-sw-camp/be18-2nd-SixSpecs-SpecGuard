@@ -39,7 +39,11 @@ public class CompanyTemplateField {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "template_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(
+            name = "template_id",
+            nullable = false,
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+    )
     private CompanyTemplate template;
 
     @Column(name = "field_name", nullable = false, length = 100)
@@ -70,6 +74,11 @@ public class CompanyTemplateField {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    protected void setTemplate(CompanyTemplate companyTemplate) {
+        this.template = companyTemplate;
+    }
+
 
     // FieldType ENUM 정의
     public enum FieldType {

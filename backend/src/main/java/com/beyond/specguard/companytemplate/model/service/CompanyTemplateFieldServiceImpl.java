@@ -19,13 +19,6 @@ public class CompanyTemplateFieldServiceImpl implements CompanyTemplateFieldServ
     private final CompanyTemplateFieldRepository companyTemplateFieldRepository;
 
     @Override
-    @Transactional
-    public CompanyTemplateField createField(CreateCompanyTemplateFieldCommand command) {
-        CompanyTemplateField companyTemplateField = command.templateFieldRequestDto().toEntity(command.companyTemplate());
-        return companyTemplateFieldRepository.save(companyTemplateField);
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public List<CompanyTemplateField> getFields(UUID templateId) {
         return companyTemplateFieldRepository.findAllByTemplate_Id(templateId);
@@ -51,13 +44,14 @@ public class CompanyTemplateFieldServiceImpl implements CompanyTemplateFieldServ
 
     @Override
     @Transactional
-    public void createFields(List<CreateCompanyTemplateFieldCommand> commands) {
+    public List<CompanyTemplateField> createFields(CreateCompanyTemplateFieldCommand commands) {
         List<CompanyTemplateField> companyTemplateFields =
-                        commands
+                        commands.templateFieldRequestDto()
                                 .stream()
-                                .map(field -> field.templateFieldRequestDto().toEntity(field.companyTemplate()))
+                                .map(field -> field.toEntity(commands.companyTemplate()))
                                 .toList();
 
         companyTemplateFieldRepository.saveAll(companyTemplateFields);
+        return null;
     }
 }

@@ -4,6 +4,7 @@ import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateBas
 
 import java.util.UUID;
 
-public record UpdateTemplateBasicCommand(UUID templateId, CompanyTemplateBasicRequestDto requestDto) {
+public record UpdateTemplateBasicCommand(UUID templateId, CompanyTemplateBasicRequestDto requestDto,
+                                         com.beyond.specguard.auth.model.entity.ClientUser clientUser) {
 
 }

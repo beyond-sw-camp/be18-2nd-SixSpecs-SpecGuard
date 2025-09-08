@@ -1,5 +1,8 @@
 package com.beyond.specguard.companytemplate.controller;
 
+import com.beyond.specguard.auth.model.entity.ClientUser;
+import com.beyond.specguard.companytemplate.model.dto.command.CreateBasicCompanyTemplateCommand;
+import com.beyond.specguard.companytemplate.model.dto.command.CreateDetailCompanyTemplateCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.SearchTemplateCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateBasicCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateDetailCommand;
@@ -20,6 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -27,8 +31,17 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -36,7 +49,7 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/company-template")
+@RequestMapping("/api/v1/companyTemplates")
 @RequiredArgsConstructor
 @Tag(name = "CompanyTemplate", description = "회사 템플릿 관련 API")
 public class CompanyTemplateController {
@@ -87,7 +100,7 @@ public class CompanyTemplateController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @Parameter(description = "템플릿 상태 필터") @RequestParam(required = false) CompanyTemplate.TemplateStatus status,
             @Parameter(description = "연차 필터") @RequestParam(required = false) Integer yearsOfExperience,
-            @Parameter(description = "페이지 정보") @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @ParameterObject @Parameter(description = "페이지 정보") @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         SearchTemplateCommand templateCommand = SearchTemplateCommand.builder()
                 .department(department)
@@ -124,14 +137,22 @@ public class CompanyTemplateController {
     @PostMapping("/basic")
     public ResponseEntity<CompanyTemplateResponseDto.BasicDto> createTemplate(
             @Parameter(description = "기본 템플릿 생성 요청 DTO", required = true)
-            @Valid @RequestBody CompanyTemplateBasicRequestDto basicRequestDto
+            @Valid @RequestBody CompanyTemplateBasicRequestDto basicRequestDto,
+            Authentication authentication
     ) {
-        CompanyTemplate saved = companyTemplateService.createBasicTemplate(basicRequestDto);
+        ClientUser clientUser = getClientUser(authentication);
+        CompanyTemplateResponseDto.BasicDto saved = companyTemplateService.createBasicTemplate(
+                new CreateBasicCompanyTemplateCommand(clientUser, basicRequestDto)
+        );
 
         return new ResponseEntity<>(
-                CompanyTemplateResponseDto.BasicDto.toDto(saved),
+                saved,
                 HttpStatus.CREATED
         );
+    }
+
+    private ClientUser getClientUser(Authentication authentication) {
+        return (ClientUser) authentication.getPrincipal();
     }
 
     @Operation(
@@ -153,18 +174,17 @@ public class CompanyTemplateController {
     public ResponseEntity<CompanyTemplateResponseDto.DetailDto> createDetailTemplate(
         @Parameter(description = "상세 템플릿 생성 요청 DTO", required = true)
         @Validated(CompanyTemplateDetailRequestDto.Create.class)
-        @RequestBody CompanyTemplateDetailRequestDto requestDto
+        @RequestBody CompanyTemplateDetailRequestDto requestDto,
+        Authentication authentication
     ) {
+        ClientUser clientUser = getClientUser(authentication);
+
         // Template, Field 생성
-        CompanyTemplate companyTemplate = companyTemplateService.createDetailTemplate(requestDto);
-
-        // Field 조회
-        List<CompanyTemplateField> companyTemplateFields = companyTemplateFieldService.getFields(requestDto.detailDto().getTemplateId());
-
-        return new ResponseEntity<>(
-                CompanyTemplateResponseDto.DetailDto.toDto(companyTemplate, companyTemplateFields),
-                HttpStatus.CREATED
+        CompanyTemplateResponseDto.DetailDto companyTemplate = companyTemplateService.createDetailTemplate(
+                new CreateDetailCompanyTemplateCommand(clientUser, requestDto)
         );
+
+        return new ResponseEntity<>(companyTemplate, HttpStatus.CREATED);
     }
 
     @Operation(
@@ -176,13 +196,14 @@ public class CompanyTemplateController {
             }
     )
     @DeleteMapping("/{templateId}")
-    public ResponseEntity<Message> deleteCompanyTemplate(
-            @PathVariable UUID templateId
+    public ResponseEntity<Void> deleteCompanyTemplate(
+            @PathVariable UUID templateId,
+            Authentication authentication
     ) {
-        companyTemplateService.deleteTemplate(templateId);
-        return ResponseEntity.ok().body(
-                new Message("기업 템플릿이 성공적으로 삭제되었습니다.")
-        );
+        ClientUser clientUser = getClientUser(authentication);
+
+        companyTemplateService.deleteTemplate(templateId, clientUser);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(
@@ -200,13 +221,16 @@ public class CompanyTemplateController {
     public ResponseEntity<CompanyTemplateResponseDto.BasicDto> patchBasicTemplate(
         @PathVariable UUID templateId,
         @Validated(CompanyTemplateBasicRequestDto.Update.class)
-        @RequestBody CompanyTemplateBasicRequestDto requestDto
+        @RequestBody CompanyTemplateBasicRequestDto requestDto,
+        Authentication authentication
     ) {
-        UpdateTemplateBasicCommand updateTemplateBasicCommand = new UpdateTemplateBasicCommand(templateId, requestDto);
+        ClientUser clientUser = getClientUser(authentication);
 
-        CompanyTemplate updatedTemplate = companyTemplateService.updateBasic(updateTemplateBasicCommand);
+        UpdateTemplateBasicCommand updateTemplateBasicCommand = new UpdateTemplateBasicCommand(templateId, requestDto, clientUser);
 
-        return ResponseEntity.ok(CompanyTemplateResponseDto.BasicDto.toDto(updatedTemplate));
+        CompanyTemplateResponseDto.BasicDto updatedTemplate = companyTemplateService.updateBasic(updateTemplateBasicCommand);
+
+        return ResponseEntity.ok(updatedTemplate);
     }
 
 
@@ -225,18 +249,15 @@ public class CompanyTemplateController {
     public ResponseEntity<CompanyTemplateResponseDto.DetailDto> patchDetailTemplate(
             @PathVariable UUID templateId,
             @Validated(CompanyTemplateDetailRequestDto.Update.class)
-            @RequestBody CompanyTemplateDetailRequestDto requestDto
+            @RequestBody CompanyTemplateDetailRequestDto requestDto,
+            Authentication authentication
     ) {
-        UpdateTemplateDetailCommand command = new UpdateTemplateDetailCommand(templateId, requestDto);
-        CompanyTemplate companyTemplate = companyTemplateService.updateDetail(command);
+        ClientUser clientUser = getClientUser(authentication);
 
-        List<CompanyTemplateField> companyTemplateFields = companyTemplateFieldService.getFields(templateId);
+        UpdateTemplateDetailCommand command = new UpdateTemplateDetailCommand(templateId, requestDto, clientUser);
+        CompanyTemplateResponseDto.DetailDto responseDto = companyTemplateService.updateDetail(command);
 
-        return ResponseEntity.ok(
-                CompanyTemplateResponseDto.DetailDto.toDto(companyTemplate, companyTemplateFields)
-        );
+        return ResponseEntity.ok(responseDto);
     }
-
-    public record Message(String message) {}
 }
 

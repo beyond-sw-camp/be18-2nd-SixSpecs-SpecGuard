@@ -1,5 +1,6 @@
 package com.beyond.specguard.companytemplate.model.dto.request;
 
+import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
@@ -41,15 +42,15 @@ public class CompanyTemplateBasicRequestDto {
     @Max(value = 50, message = "연차는 50 이하여야 합니다.") // 현실적인 upper bound
     private Integer yearsOfExperience;
 
-    public CompanyTemplate toEntity() {
+    public CompanyTemplate toEntity(ClientCompany company) {
         return CompanyTemplate.builder()
-                .companyId("WIP") // TODO: CompanyID를 JWT에서 추출하여 삽입
+                .clientCompany(company)
                 .name(name)
                 .description(description)
                 .department(department)
                 .category(category)
                 .yearsOfExperience(yearsOfExperience)
-                .endDate(LocalDateTime.now().plusDays(7)) // NOT NULL 제약조건에 의한 임시값 저장
+                .endDate(LocalDateTime.now().plusDays(30)) // NOT NULL 제약조건에 의한 임시값 저장
                 .build();
     }
 
