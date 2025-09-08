@@ -61,13 +61,6 @@ public class Resume extends BaseEntity {
         this.passwordHash = passwordHash;
     }
 
-
-    // 세터 없이 변경용
     public void changeStatus(ResumeStatus status) { this.status = status; }
-    public void changeName(String name) { this.name = name; }
-    public void changePhone(String phone) { this.phone = phone; }
-    public void changeEmail(String email) { this.email = email; }
-    public void changeTemplateId(UUID templateId) { this.templateId = templateId; }
-    public void changePasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
 }

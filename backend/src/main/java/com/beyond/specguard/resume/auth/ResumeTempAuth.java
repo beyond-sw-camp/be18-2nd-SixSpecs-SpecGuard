@@ -19,12 +19,12 @@ public class ResumeTempAuth {
     /** X-Resume-Id + X-Resume-Secret 로 후보자 인증 */
     public Resume authenticate(UUID resumeId, String rawSecret) {
         if (rawSecret == null || rawSecret.isBlank()) {
-            throw new IllegalArgumentException("요청 헤더 'X-Resume-Secret' 가 필요합니다.");
+            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
         Resume r = resumeRepository.findById(resumeId)
-                .orElseThrow(() -> new IllegalArgumentException("이력서를 찾을 수 없습니다: " + resumeId));
+                .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
         if (!passwordEncoder.matches(rawSecret, r.getPasswordHash())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+            throw new CustomException(ResumeErrorCode.INVALID_RESUME_CREDENTIAL);
         }
         return r;
     }

@@ -118,23 +118,12 @@ public class ResumeService {
     //이력서 학력/경력/포트폴리오 링크 정보 UPDATE/INSERT
     @Transactional
     public void upsertAggregate(UUID resumeId, String secret, ResumeAggregateUpdateRequest req) {
-        Resume resume = tempAuth.authenticate(resumeId, secret);
+        tempAuth.authenticate(resumeId, secret);
 
-        //1) 코어 변경
-        if(req.core() != null){
-            ResumeCorePatch c = req.core();
-            if(c.templateId() != null){
-                resume.changeTemplateId(c.templateId());
-            }
-            if(c.name() != null){
-                resume.changeName(c.name());
-            }
-            if(c.phone() != null){
-                resume.changePhone(c.phone());
-            }
-            if(c.email() != null){
-                resume.changeEmail(c.email());
-            }
+        if (req.core() != null) {
+            var c = req.core();
+            boolean hasAny = (c.templateId() != null) || (c.name() != null) || (c.phone() != null) || (c.email() != null);
+            if (hasAny) throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
 
         Resume ref = resumeRepository.getReferenceById(resumeId);
@@ -156,7 +145,6 @@ public class ResumeService {
             for (var d : req.links()) linkRepository.save(mapLink(ref, d));
         }
     }
-
 
     //이력서 자격증 정보 UPDATE/INSERT upsertCertificates
     @Transactional
