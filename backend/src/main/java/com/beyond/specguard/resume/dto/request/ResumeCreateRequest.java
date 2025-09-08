@@ -26,7 +26,7 @@ public record ResumeCreateRequest(
         @NotBlank
         String email,
 
-        @Schema(description = "비밀번호 해시")
+        @Schema(description = "원문 비밀번호(서버에서 해시 저장)")
         @NotBlank
         String passwordHash
 ) {

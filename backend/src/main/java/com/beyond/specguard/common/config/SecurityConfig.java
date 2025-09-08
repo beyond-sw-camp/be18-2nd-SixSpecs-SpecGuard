@@ -46,7 +46,11 @@ public class SecurityConfig {
             "/api/v1/auth/login",
             "/api/v1/auth/token/refresh",
             "/api/v1/invite/accept/**",
-            "/api/v1/auth/invite/**"
+            "/api/v1/auth/invite/**",
+
+
+            // ✅ 임시 인증으로 테스트: 로그인 없이 허용
+            "/api/v1/resumes/**"
     };
 
     @Bean

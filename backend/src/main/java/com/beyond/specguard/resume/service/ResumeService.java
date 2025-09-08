@@ -1,15 +1,20 @@
 package com.beyond.specguard.resume.service;
 
+import com.beyond.specguard.common.exception.CustomException;
+import com.beyond.specguard.resume.auth.ResumeTempAuth;
 import com.beyond.specguard.resume.dto.request.*;
 import com.beyond.specguard.resume.dto.response.CompanyTemplateResponseResponse;
 import com.beyond.specguard.resume.dto.response.ResumeBasicResponse;
+import com.beyond.specguard.resume.dto.response.ResumeCertificateResponse;
 import com.beyond.specguard.resume.dto.response.ResumeResponse;
 import com.beyond.specguard.resume.entity.common.enums.ResumeStatus;
 import com.beyond.specguard.resume.entity.core.*;
+import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ReflectionUtils;
@@ -33,9 +38,19 @@ public class ResumeService {
     private final CompanyTemplateResponseRepository templateResponseRepository;
 
 
+    private final PasswordEncoder passwordEncoder;
+    private final ResumeTempAuth tempAuth;
+
+
+
     //이력서 생성에서 create
     @Transactional
     public ResumeResponse create(ResumeCreateRequest req) {
+        if (req.passwordHash() == null || req.passwordHash().isBlank()) {
+            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
+        }
+        String encoded = passwordEncoder.encode(req.passwordHash().trim());
+
         Resume saved = resumeRepository.save(
                 Resume.builder()
                         .templateId(req.templateId())
@@ -43,7 +58,7 @@ public class ResumeService {
                         .name(req.name())
                         .phone(req.phone())
                         .email(req.email())
-                        .passwordHash(req.passwordHash())
+                        .passwordHash(encoded)
                         .build()
         );
         return toResumeResponse(saved);
@@ -51,9 +66,8 @@ public class ResumeService {
 
     //지원서 단건 조회에서 get
     @Transactional(readOnly = true)
-    public ResumeResponse get(UUID resumeId) {
-        Resume r = resumeRepository.findById(resumeId)
-                .orElseThrow(() -> new IllegalArgumentException("이력서를 찾을 수 없습니다"));
+    public ResumeResponse get(UUID resumeId, String secret) {
+        Resume r = tempAuth.authenticate(resumeId, secret);
         return toResumeResponse(r);
     }
 
@@ -63,11 +77,11 @@ public class ResumeService {
         return resumeRepository.findAll(pageable).map(this::toResumeResponse);
     }
 
+
     //이력서 기본 정보 UPDATE/INSERT에서 upsertBasic
     @Transactional
-    public ResumeBasicResponse upsertBasic(UUID resumeId, ResumeBasicCreateRequest req) {
-        Resume resume = resumeRepository.findById(resumeId)
-                .orElseThrow(() -> new IllegalArgumentException("이력서를 찾을 수 없습니다:" + resumeId));
+    public ResumeBasicResponse upsertBasic(UUID resumeId, String secret, ResumeBasicCreateRequest req) {
+        Resume resume = tempAuth.authenticate(resumeId, secret);
 
         Optional<ResumeBasic> opt = basicRepository.findByResume_Id(resumeId);
         ResumeBasic basic = opt.orElseGet(() -> basicRepository.save(
@@ -78,7 +92,7 @@ public class ResumeService {
                         .birthDate(req.birthDate())
                         .nationality(req.nationality())
                         .applyField(req.applyField())
-                        .profileImageUrl(req.profileImage()) // 현재는 URL 문자열
+                        .profileImageUrl(req.profileImage())
                         .address(req.address())
                         .specialty(req.specialty())
                         .hobbies(req.hobbies())
@@ -87,24 +101,24 @@ public class ResumeService {
 
         // 수정 경로: null = 변경 없음
         if (opt.isPresent()) {
-            if (req.englishName() != null) basicChangeEnglishName(basic, req.englishName());
-            if (req.gender() != null)      basicChangeGender(basic, req.gender());
-            if (req.birthDate() != null)   basicChangeBirthDate(basic, req.birthDate());
-            if (req.nationality() != null) basicChangeNationality(basic, req.nationality());
-            if (req.applyField() != null)  basicChangeApplyField(basic, req.applyField());
-            if (req.address() != null)     basicChangeAddress(basic, req.address());
-            if (req.specialty() != null)   basicChangeSpecialty(basic, req.specialty());
-            if (req.hobbies() != null)     basicChangeHobbies(basic, req.hobbies());
-            if (req.profileImage() != null) basicChangeProfileImageUrl(basic, req.profileImage());
+            if (req.englishName() != null) basic.changeEnglishName(req.englishName());
+            if (req.gender() != null)      basic.changeGender(req.gender());
+            if (req.birthDate() != null)   basic.changeBirthDate(req.birthDate());
+            if (req.nationality() != null) basic.changeNationality(req.nationality());
+            if (req.applyField() != null)  basic.changeApplyField(req.applyField());
+            if (req.address() != null)     basic.changeAddress(req.address());
+            if (req.specialty() != null)   basic.changeSpecialty(req.specialty());
+            if (req.hobbies() != null)     basic.changeHobbies(req.hobbies());
+            if (req.profileImage() != null) basic.changeProfileImageUrl(req.profileImage());
         }
         return toBasicResponse(basic, resumeId);
     }
 
+
     //이력서 학력/경력/포트폴리오 링크 정보 UPDATE/INSERT
     @Transactional
-    public void upsertAggregate(UUID resumeId, ResumeAggregateUpdateRequest req) {
-        Resume resume = resumeRepository.findById(resumeId)
-                .orElseThrow(() ->new IllegalArgumentException("이력서를 찾을 수 없습니다: "+ resumeId));
+    public void upsertAggregate(UUID resumeId, String secret, ResumeAggregateUpdateRequest req) {
+        Resume resume = tempAuth.authenticate(resumeId, secret);
 
         //1) 코어 변경
         if(req.core() != null){
@@ -129,17 +143,14 @@ public class ResumeService {
             educationRepository.deleteByResume_Id(resumeId);
             for (var d : req.educations()) educationRepository.save(mapEducation(ref, d));
         }
-
         if (req.experiences() != null) {
             experienceRepository.deleteByResume_Id(resumeId);
             for (var d : req.experiences()) experienceRepository.save(mapExperience(ref, d));
         }
-
         if (req.certificates() != null) {
             certificateRepository.deleteByResume_Id(resumeId);
             for (var d : req.certificates()) certificateRepository.save(mapCertificate(ref, d));
         }
-
         if (req.links() != null) {
             linkRepository.deleteByResume_Id(resumeId);
             for (var d : req.links()) linkRepository.save(mapLink(ref, d));
@@ -149,40 +160,34 @@ public class ResumeService {
 
     //이력서 자격증 정보 UPDATE/INSERT upsertCertificates
     @Transactional
-    public void upsertCertificates(UUID resumeId, List<ResumeCertificateUpsertRequest> certs) {
-        Resume resume = resumeRepository.findById(resumeId)
-                .orElseThrow(() -> new IllegalArgumentException("이력서를 찾을 수 없습니다 : "+ resumeId));
+    public void upsertCertificates(UUID resumeId, String secret, List<ResumeCertificateUpsertRequest> certs) {
+        tempAuth.authenticate(resumeId, secret);
         certificateRepository.deleteByResume_Id(resumeId);
         if(certs == null || certs.isEmpty()) return;
 
         Resume ref = resumeRepository.getReferenceById(resumeId);
-        for (var d : certs) {
-            certificateRepository.save(mapCertificate(ref, d));
-        }
+        for (var d : certs) certificateRepository.save(mapCertificate(ref, d));
     }
 
     //이력서 자기소개서 답변 UPDATE/INSERT saveTemplateResponses
     @Transactional
-    public CompanyTemplateResponseResponse saveTemplateResponses(UUID resumeId,  CompanyTemplateResponseCreateRequest ctr){
-        Resume resume = resumeRepository.findById(resumeId)
-                .orElseThrow(()-> new IllegalArgumentException("이력서를 찾을 수 없습니다 : "+resumeId));
+    public CompanyTemplateResponseResponse saveTemplateResponses(UUID resumeId, String secret, CompanyTemplateResponseCreateRequest ctr){
+        Resume resume = tempAuth.authenticate(resumeId, secret);
 
         List<CompanyTemplateResponse> saved = new ArrayList<>();
         for (var i : ctr.responses()) {
             var opt = templateResponseRepository.findByResume_IdAndFieldId(resumeId, i.fieldId());
-            CompanyTemplateResponse e;
-            if (opt.isPresent()) {
-                e = opt.get();
-                e.changeAnswer(i.answer());
-            } else {
-                e = CompanyTemplateResponse.builder()
-                        .resume(resume)
-                        .fieldId(i.fieldId())
-                        .answer(i.answer())
-                        .build();
-            }
+            CompanyTemplateResponse e = opt.orElseGet(() ->
+                    CompanyTemplateResponse.builder()
+                            .resume(resume)
+                            .fieldId(i.fieldId())
+                            .answer(i.answer())
+                            .build()
+            );
+            if (opt.isPresent()) e.changeAnswer(i.answer());
             saved.add(templateResponseRepository.save(e));
         }
+
 
         var items = saved.stream().map(e ->
                 new CompanyTemplateResponseResponse.Item(
@@ -195,29 +200,12 @@ public class ResumeService {
 
     //자격증 진위 여부 검증 요청 -> 지금은 자격증 존재하면 true
     @Transactional(readOnly = true)
-    public boolean verifyCertificate(UUID resumeId, UUID certificateId) {
+    public boolean verifyCertificate(UUID resumeId, String secret, UUID certificateId) {
+        tempAuth.authenticate(resumeId, secret);
         return certificateRepository.findByIdAndResume_Id(certificateId, resumeId).isPresent();
     }
 
 
-    //내부 유틸
-    private static void set(Object target, String fieldName, Object value) {
-        Field f = ReflectionUtils.findField(target.getClass(), fieldName);
-        if (f == null) throw new IllegalStateException("필드 없음: " + fieldName);
-        ReflectionUtils.makeAccessible(f);
-        ReflectionUtils.setField(f, target, value);
-    }
-
-    // 목적형 변경(엔티티에 메서드가 없다면 서비스에서 래핑)
-    private void basicChangeEnglishName(ResumeBasic b, String v) { set(b, "englishName", v); }
-    private void basicChangeGender(ResumeBasic b, Object v)      { set(b, "gender", v); }
-    private void basicChangeBirthDate(ResumeBasic b, Object v)   { set(b, "birthDate", v); }
-    private void basicChangeNationality(ResumeBasic b, String v) { set(b, "nationality", v); }
-    private void basicChangeApplyField(ResumeBasic b, String v)  { set(b, "applyField", v); }
-    private void basicChangeAddress(ResumeBasic b, String v)     { set(b, "address", v); }
-    private void basicChangeSpecialty(ResumeBasic b, String v)   { set(b, "specialty", v); }
-    private void basicChangeHobbies(ResumeBasic b, String v)     { set(b, "hobbies", v); }
-    private void basicChangeProfileImageUrl(ResumeBasic b, String v) { set(b, "profileImageUrl", v); }
 
 
 
@@ -241,7 +229,6 @@ public class ResumeService {
                 .endDate(d.endDate())
                 .build();
     }
-
     private ResumeExperience mapExperience(Resume r, ResumeExperienceUpsertRequest d){
         return ResumeExperience.builder()
                 .resume(r)
@@ -254,7 +241,6 @@ public class ResumeService {
                 .endDate(d.endDate())
                 .build();
     }
-
     private ResumeCertificate mapCertificate(Resume r, ResumeCertificateUpsertRequest d){
         return ResumeCertificate.builder()
                 .resume(r)
@@ -265,7 +251,6 @@ public class ResumeService {
                 .certUrl(d.certUrl())
                 .build();
     }
-
     private ResumeLink mapLink(Resume r, ResumeLinkUpsertRequest d){
         return ResumeLink.builder()
                 .resume(r)
@@ -275,9 +260,6 @@ public class ResumeService {
                 .contents(null)
                 .build();
     }
-
-
-
 
     //Entity -> Dto
     private ResumeResponse toResumeResponse(Resume r) {
@@ -292,7 +274,6 @@ public class ResumeService {
                 r.getUpdatedAt()
         );
     }
-
     private ResumeBasicResponse toBasicResponse(ResumeBasic b, UUID resumeId) {
         return new ResumeBasicResponse(
                 b.getId(),
@@ -309,7 +290,9 @@ public class ResumeService {
                 b.getCreatedAt()
         );
     }
+
+
+
+
+
 }
-
-
-

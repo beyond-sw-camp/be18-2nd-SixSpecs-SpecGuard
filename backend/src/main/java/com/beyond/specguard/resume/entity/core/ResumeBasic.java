@@ -67,6 +67,16 @@ public class ResumeBasic extends BaseEntity {
     private String hobbies;
 
 
+    public void changeEnglishName(String v) { this.englishName = v; }
+    public void changeGender(Gender v)      { this.gender = v; }
+    public void changeBirthDate(LocalDate v){ this.birthDate = v; }
+    public void changeNationality(String v) { this.nationality = v; }
+    public void changeApplyField(String v)  { this.applyField = v; }
+    public void changeProfileImageUrl(String v) { this.profileImageUrl = v; }
+    public void changeAddress(String v)     { this.address = v; }
+    public void changeSpecialty(String v)   { this.specialty = v; }
+    public void changeHobbies(String v)     { this.hobbies = v; }
+
     @Builder
     public ResumeBasic(Resume resume, String englishName, Gender gender, LocalDate birthDate, String nationality, String applyField, String profileImageUrl, String address, String specialty, String hobbies) {
         this.resume = resume;
