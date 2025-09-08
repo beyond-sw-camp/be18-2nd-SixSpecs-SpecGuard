@@ -1,6 +1,7 @@
 package com.beyond.specguard.evaluationprofile.model.entity;
 
 import com.beyond.specguard.auth.model.entity.ClientCompany;
+import com.beyond.specguard.evaluationprofile.model.dto.request.EvaluationProfileRequestDto;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.ConstraintMode;
@@ -76,17 +77,17 @@ public class EvaluationProfile {
     @Builder.Default
     private List<EvaluationWeight> weights = new ArrayList<>();
 
-    // 상태 변경용 메서드
-    public void activate() {
-        this.isActive = true;
-    }
-
-    public void deactivate() {
-        this.isActive = false;
-    }
-
     public void addWeight(EvaluationWeight evaluationWeight) {
         this.weights.add(evaluationWeight);
         evaluationWeight.setProfile(this);
+    }
+
+    public void update(EvaluationProfileRequestDto dto) {
+        if (dto.getName() != null) {
+            this.name = dto.getName();
+        }
+        if (dto.getDescription() != null) {
+            this.description = dto.getDescription();
+        }
     }
 }

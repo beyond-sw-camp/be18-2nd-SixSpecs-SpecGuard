@@ -4,6 +4,7 @@ import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.evaluationprofile.model.dto.command.CreateEvaluationProfileCommand;
 import com.beyond.specguard.evaluationprofile.model.dto.command.GetEvaluationProfileCommand;
 import com.beyond.specguard.evaluationprofile.model.dto.command.SearchEvaluationProfileCommand;
+import com.beyond.specguard.evaluationprofile.model.dto.command.UpdateEvaluationProfileCommand;
 import com.beyond.specguard.evaluationprofile.model.dto.response.EvaluationProfileListResponseDto;
 import com.beyond.specguard.evaluationprofile.model.dto.response.EvaluationProfileResponseDto;
 
@@ -18,4 +19,6 @@ public interface EvaluationProfileService {
     EvaluationProfileListResponseDto getProfiles(SearchEvaluationProfileCommand searchEvaluationProfileCommand);
 
     void deleteProfile(ClientUser user, UUID profileId);
+
+    EvaluationProfileResponseDto updateProfile(UpdateEvaluationProfileCommand updateEvaluationProfileCommand);
 }
