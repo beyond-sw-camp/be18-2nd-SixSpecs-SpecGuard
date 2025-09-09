@@ -12,6 +12,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -22,6 +23,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Slf4j
+@RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
@@ -29,15 +31,6 @@ public class JwtFilter extends OncePerRequestFilter {
     private final RedisTokenService redisTokenService;
     private final AuthenticationEntryPoint entryPoint;
 
-    public JwtFilter(JwtUtil jwtUtil,
-                     ClientUserRepository clientUserRepository,
-                     RedisTokenService redisTokenService,
-                     AuthenticationEntryPoint entryPoint) {
-        this.jwtUtil = jwtUtil;
-        this.clientUserRepository = clientUserRepository;
-        this.redisTokenService = redisTokenService;
-        this.entryPoint = entryPoint;
-    }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -66,7 +59,7 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = authorization.substring(7);
 
         try {
-            // ✅ 만료 여부 검증
+            //  만료 여부 검증
             log.debug(">>> 토큰 만료 여부 검증 시작");
             jwtUtil.validateToken(token);
             log.debug(">>> 토큰 만료 여부 검증 통과");
@@ -97,7 +90,7 @@ public class JwtFilter extends OncePerRequestFilter {
             String session = redisTokenService.getUserSession(email);
             if (session == null || !session.equals(jti)) {
                 log.warn(">>> 세션 불일치: email={}, session={}, jti={}", email, session, jti);
-                throw new AuthException(AuthErrorCode.BLACKLISTED_ACCESS_TOKEN);
+                throw new AuthException(AuthErrorCode.SESSION_CONFLICT);
             }
 
             CustomUserDetails userDetails = new CustomUserDetails(user);

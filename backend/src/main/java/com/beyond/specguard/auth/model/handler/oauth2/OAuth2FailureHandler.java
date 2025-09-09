@@ -1,7 +1,7 @@
 package com.beyond.specguard.auth.model.handler.oauth2;
 
 import com.beyond.specguard.common.util.OAuth2StateUtil;
-import com.beyond.specguard.invite.exception.InviteException;
+import com.beyond.specguard.common.exception.CustomException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
@@ -27,7 +27,7 @@ public class OAuth2FailureHandler implements AuthenticationFailureHandler {
         String message = "OAuth2 로그인 중 오류가 발생했습니다.";
 
         Throwable cause = exception.getCause() != null ? exception.getCause() : exception;
-        if (cause instanceof InviteException inviteEx) {
+        if (cause instanceof CustomException inviteEx) {
             code = inviteEx.getErrorCode().getCode();
             message = inviteEx.getErrorCode().getMessage();
         }
@@ -44,7 +44,7 @@ public class OAuth2FailureHandler implements AuthenticationFailureHandler {
                 inviteToken != null ? inviteToken : ""
         );
 
-        log.info("🔄 OAuth2 실패 → Redirect: {}", redirectUrl);
+        log.info(" OAuth2 실패 → Redirect: {}", redirectUrl);
         response.sendRedirect(redirectUrl);
     }
 }
