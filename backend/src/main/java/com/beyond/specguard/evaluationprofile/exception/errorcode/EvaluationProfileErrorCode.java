@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 public enum EvaluationProfileErrorCode implements ErrorCode{
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "서버 내부 에러"),
     EVALUATION_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "EVALUATION_PROFILE_NOT_FOUND", "해당 EvaluationProfile을 찾을 수 없습니다."),
-    ACCESS_DENIED(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "해당 프로필에 접근할 권한이 없습니다.");
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "프로필 관련 접근할 권한이 없습니다.");
 
     private final HttpStatus status;
     private final String code;

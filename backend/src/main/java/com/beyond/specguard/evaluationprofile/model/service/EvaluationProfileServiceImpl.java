@@ -15,6 +15,7 @@ import com.beyond.specguard.evaluationprofile.model.entity.EvaluationProfile;
 import com.beyond.specguard.evaluationprofile.model.entity.EvaluationWeight;
 import com.beyond.specguard.evaluationprofile.model.repository.EvaluationProfileRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EvaluationProfileServiceImpl implements EvaluationProfileService {
@@ -30,13 +32,22 @@ public class EvaluationProfileServiceImpl implements EvaluationProfileService {
     private final EvaluationProfileRepository evaluationProfileRepository;
     private final EvaluationWeightService evaluationWeightService;
 
+    private void validateWriteRole(ClientUser.Role role) {
+        if (!EnumSet.of(ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role))
+            throw new  CustomException(EvaluationProfileErrorCode.ACCESS_DENIED);
+    }
+
+    private void validateCompanyEquals(ClientUser user, EvaluationProfile profile) {
+        if (!profile.getCompany().getId().equals(user.getCompany().getId())) {
+            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
+        }
+    }
+
     @Override
     @Transactional
     public EvaluationProfileResponseDto createProfile(CreateEvaluationProfileCommand command) {
         // 권한 OWNER, MANAGER 체크
-        if (hasNoWriteRole(command.user().getRole())) {
-            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
-        }
+        validateWriteRole(command.user().getRole());
 
         // EvaluationProfile 생성
         EvaluationProfile profile = evaluationProfileRepository.save(command.evaluationProfileRequestDto().toEntity(command.user().getCompany()));
@@ -44,7 +55,6 @@ public class EvaluationProfileServiceImpl implements EvaluationProfileService {
         // EvaluationWeight 들 생성
         List<EvaluationWeight> weights = evaluationWeightService.createWeights(
                 new CreateEvaluationWeightCommand(profile, command.evaluationProfileRequestDto().getWeights()));
-
 
         weights.forEach(profile::addWeight);
 
@@ -60,9 +70,7 @@ public class EvaluationProfileServiceImpl implements EvaluationProfileService {
                 .orElseThrow(() -> new CustomException(EvaluationProfileErrorCode.EVALUATION_PROFILE_NOT_FOUND));
 
         // 2. 회사 소속 확인
-        if (!profile.getCompany().getId().equals(command.user().getCompany().getId())) {
-            throw new CustomException(EvaluationProfileErrorCode.ACCESS_DENIED);
-        }
+        validateCompanyEquals(command.user(), profile);
 
         return EvaluationProfileResponseDto.fromEntity(profile);
     }
@@ -96,36 +104,29 @@ public class EvaluationProfileServiceImpl implements EvaluationProfileService {
                 .orElseThrow(() -> new CustomException(EvaluationProfileErrorCode.EVALUATION_PROFILE_NOT_FOUND));
 
         // 2. 권한 체크
-        if (hasNoWriteRole(user.getRole())) {
-            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
-        }
+        validateWriteRole(user.getRole());
 
         // 3. 회사 일치 체크
-        if (!profile.getCompany().getId().equals(user.getCompany().getId())) {
-            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
-        }
+        validateCompanyEquals(user, profile);
 
         // 4. 삭제 (하위 항목들도 삭제 필요)
         evaluationProfileRepository.delete(profile);
         evaluationWeightService.delete(profile);
     }
 
+
     @Override
     @Transactional
     public EvaluationProfileResponseDto updateProfile(UpdateEvaluationProfileCommand command) {
-        // 1. 프로필 조회
+        // 1. 권한 체크
+        validateWriteRole(command.user().getRole());
+
+        // 2. 프로필 조회
         EvaluationProfile profile = evaluationProfileRepository.findById(command.profileId())
                 .orElseThrow(() -> new CustomException(EvaluationProfileErrorCode.EVALUATION_PROFILE_NOT_FOUND));
 
-        // 2. 회사 일치 체크
-        if (!profile.getCompany().getId().equals(command.user().getCompany().getId())) {
-            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
-        }
-
-        // 3. 권한 체크
-        if (hasNoWriteRole(command.user().getRole())) {
-            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
-        }
+        // 3. 회사 일치 체크
+        validateCompanyEquals(command.user(), profile);
 
         // 4. 프로필 기본 정보 업데이트
         profile.update(command.request());
@@ -143,9 +144,5 @@ public class EvaluationProfileServiceImpl implements EvaluationProfileService {
         }
 
         return EvaluationProfileResponseDto.fromEntity(evaluationProfileRepository.save(profile));
-    }
-
-    private boolean hasNoWriteRole(ClientUser.Role role) {
-        return !EnumSet.of(ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role);
     }
 }
