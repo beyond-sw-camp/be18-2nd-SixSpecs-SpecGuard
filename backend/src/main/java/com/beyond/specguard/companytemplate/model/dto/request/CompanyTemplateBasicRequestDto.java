@@ -1,6 +1,7 @@
 package com.beyond.specguard.companytemplate.model.dto.request;
 
 import com.beyond.specguard.auth.model.entity.ClientCompany;
+import com.beyond.specguard.common.validation.Create;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
@@ -10,8 +11,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 
 @Getter
@@ -50,10 +49,6 @@ public class CompanyTemplateBasicRequestDto {
                 .department(department)
                 .category(category)
                 .yearsOfExperience(yearsOfExperience)
-                .endDate(LocalDateTime.now().plusDays(30)) // NOT NULL 제약조건에 의한 임시값 저장
                 .build();
     }
-
-    public interface Create {}
-    public interface Update {}
 }

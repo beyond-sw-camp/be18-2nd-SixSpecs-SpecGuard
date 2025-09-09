@@ -1,6 +1,9 @@
 package com.beyond.specguard.companytemplate.controller;
 
 import com.beyond.specguard.auth.model.entity.ClientUser;
+import com.beyond.specguard.auth.model.service.CustomUserDetails;
+import com.beyond.specguard.common.validation.Create;
+import com.beyond.specguard.common.validation.Update;
 import com.beyond.specguard.companytemplate.model.dto.command.CreateBasicCompanyTemplateCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.CreateDetailCompanyTemplateCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.SearchTemplateCommand;
@@ -11,8 +14,6 @@ import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateDet
 import com.beyond.specguard.companytemplate.model.dto.response.CompanyTemplateListResponseDto;
 import com.beyond.specguard.companytemplate.model.dto.response.CompanyTemplateResponseDto;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
-import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
-import com.beyond.specguard.companytemplate.model.service.CompanyTemplateFieldService;
 import com.beyond.specguard.companytemplate.model.service.CompanyTemplateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,11 +21,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -44,7 +43,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -55,43 +53,31 @@ import java.util.UUID;
 public class CompanyTemplateController {
 
     private final CompanyTemplateService companyTemplateService;
-    private final CompanyTemplateFieldService companyTemplateFieldService;
 
     @Operation(
             summary = "단일 회사 템플릿 조회",
-            description = "템플릿 ID를 기반으로 상세 정보를 조회합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "조회 성공",
-                            content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = CompanyTemplateResponseDto.class))),
-                    @ApiResponse(responseCode = "404", description = "템플릿을 찾을 수 없음")
-            }
+            description = "템플릿 ID를 기반으로 상세 정보를 조회합니다."
     )
     @GetMapping("/{templateId}")
     public ResponseEntity<CompanyTemplateResponseDto> getCompanyTemplate(
-            @PathVariable UUID templateId
+            @PathVariable UUID templateId,
+            Authentication authentication
     ) {
-        CompanyTemplate companyTemplate = companyTemplateService.getCompanyTemplate(templateId);
-
-        List<CompanyTemplateField> companyTemplateFields = companyTemplateFieldService.getFields(templateId);
+        ClientUser clientUser = getClientUser(authentication);
+        CompanyTemplate companyTemplate = companyTemplateService.getCompanyTemplate(clientUser, templateId);
 
         return new ResponseEntity<>(
-                new CompanyTemplateResponseDto(companyTemplate, companyTemplateFields),
+                new CompanyTemplateResponseDto(companyTemplate),
                 HttpStatus.OK
         );
     }
 
     @Operation(
             summary = "회사 템플릿 목록 조회",
-            description = "부서, 직무, 기간, 상태, 연차 조건으로 회사 템플릿 목록을 조회합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "조회 성공",
-                            content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = CompanyTemplateListResponseDto.class)))
-            }
+            description = "부서, 직무, 기간, 상태, 연차 조건으로 회사 템플릿 목록을 조회합니다."
     )
     @GetMapping
-    public ResponseEntity<Page<CompanyTemplateListResponseDto>> getTemplates(
+    public ResponseEntity<CompanyTemplateListResponseDto> getTemplates(
             @Parameter(description = "부서 필터") @RequestParam(required = false) String department,
             @Parameter(description = "직무 필터") @RequestParam(required = false) String category,
             @Parameter(description = "시작일 필터") @RequestParam(required = false)
@@ -100,9 +86,13 @@ public class CompanyTemplateController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @Parameter(description = "템플릿 상태 필터") @RequestParam(required = false) CompanyTemplate.TemplateStatus status,
             @Parameter(description = "연차 필터") @RequestParam(required = false) Integer yearsOfExperience,
-            @ParameterObject @Parameter(description = "페이지 정보") @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @ParameterObject @Parameter(description = "페이지 정보") @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            Authentication authentication
     ) {
+        ClientUser clientUser =  getClientUser(authentication);
+
         SearchTemplateCommand templateCommand = SearchTemplateCommand.builder()
+                .clientUser(clientUser)
                 .department(department)
                 .category(category)
                 .startDate(startDate)
@@ -112,11 +102,8 @@ public class CompanyTemplateController {
                 .pageable(pageable)
                 .build();
 
-        Page<CompanyTemplate> result = companyTemplateService.getTemplates(templateCommand);
-
-        return ResponseEntity.ok(
-                result.map(CompanyTemplateListResponseDto::fromEntity)
-        );
+        CompanyTemplateListResponseDto response = companyTemplateService.getTemplates(templateCommand);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(
@@ -135,9 +122,10 @@ public class CompanyTemplateController {
             }
     )
     @PostMapping("/basic")
-    public ResponseEntity<CompanyTemplateResponseDto.BasicDto> createTemplate(
+    public ResponseEntity<CompanyTemplateResponseDto.BasicDto> createBasicTemplate(
             @Parameter(description = "기본 템플릿 생성 요청 DTO", required = true)
-            @Valid @RequestBody CompanyTemplateBasicRequestDto basicRequestDto,
+            @Validated(Create.class) @RequestBody
+            CompanyTemplateBasicRequestDto basicRequestDto,
             Authentication authentication
     ) {
         ClientUser clientUser = getClientUser(authentication);
@@ -152,7 +140,7 @@ public class CompanyTemplateController {
     }
 
     private ClientUser getClientUser(Authentication authentication) {
-        return (ClientUser) authentication.getPrincipal();
+        return ((CustomUserDetails) authentication.getPrincipal()).getUser();
     }
 
     @Operation(
@@ -173,7 +161,7 @@ public class CompanyTemplateController {
     @PostMapping("/detail")
     public ResponseEntity<CompanyTemplateResponseDto.DetailDto> createDetailTemplate(
         @Parameter(description = "상세 템플릿 생성 요청 DTO", required = true)
-        @Validated(CompanyTemplateDetailRequestDto.Create.class)
+        @Validated(Create.class)
         @RequestBody CompanyTemplateDetailRequestDto requestDto,
         Authentication authentication
     ) {
@@ -220,7 +208,7 @@ public class CompanyTemplateController {
     @PatchMapping("/{templateId}/basic")
     public ResponseEntity<CompanyTemplateResponseDto.BasicDto> patchBasicTemplate(
         @PathVariable UUID templateId,
-        @Validated(CompanyTemplateBasicRequestDto.Update.class)
+        @Validated(Update.class)
         @RequestBody CompanyTemplateBasicRequestDto requestDto,
         Authentication authentication
     ) {
@@ -248,7 +236,7 @@ public class CompanyTemplateController {
     @PatchMapping("/{templateId}/detail")
     public ResponseEntity<CompanyTemplateResponseDto.DetailDto> patchDetailTemplate(
             @PathVariable UUID templateId,
-            @Validated(CompanyTemplateDetailRequestDto.Update.class)
+            @Validated(Update.class)
             @RequestBody CompanyTemplateDetailRequestDto requestDto,
             Authentication authentication
     ) {

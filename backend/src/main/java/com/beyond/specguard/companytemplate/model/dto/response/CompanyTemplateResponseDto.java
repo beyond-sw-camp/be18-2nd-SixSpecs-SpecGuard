@@ -1,7 +1,6 @@
 package com.beyond.specguard.companytemplate.model.dto.response;
 
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
-import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,11 +23,10 @@ public class CompanyTemplateResponseDto {
     @JsonProperty("detail")
     private DetailDto detailDto;
 
-    public CompanyTemplateResponseDto(CompanyTemplate companyTemplate, List<CompanyTemplateField> companyTemplateFields) {
+    public CompanyTemplateResponseDto(CompanyTemplate companyTemplate) {
         this.basicDto = BasicDto.toDto(companyTemplate);
         this.detailDto = DetailDto.toDto(companyTemplate);
     }
-
 
     @Getter
     @Builder

@@ -1,5 +1,6 @@
 package com.beyond.specguard.companytemplate.model.dto.request;
 
+import com.beyond.specguard.common.validation.Create;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -20,7 +21,6 @@ import java.util.UUID;
 @NoArgsConstructor
 public class TemplateFieldRequestDto {
 
-    @NotNull(groups = Update.class, message = "업데이트 시 id 값은 필수 입력값입니다.")
     private UUID id;
 
     @Schema(description = "필드 이름", example = "지원 동기")
@@ -52,9 +52,10 @@ public class TemplateFieldRequestDto {
     @Max(value = 2000, message = "최대 길이는 2000 이하여야 합니다.")
     private Integer maxLength;
 
+    // List를 Json 으로 저장
     public String getOptionsByString() {
         try {
-            return new ObjectMapper().writeValueAsString(this.options);
+            return this.options == null ? null : new ObjectMapper().writeValueAsString(this.options);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -73,7 +74,4 @@ public class TemplateFieldRequestDto {
                 .build();
 
     }
-
-    public interface Create {}
-    public interface Update {}
 }

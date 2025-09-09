@@ -11,6 +11,7 @@ import com.beyond.specguard.companytemplate.model.dto.command.SearchTemplateComm
 import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateBasicCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateDetailCommand;
 import com.beyond.specguard.companytemplate.model.dto.request.TemplateFieldRequestDto;
+import com.beyond.specguard.companytemplate.model.dto.response.CompanyTemplateListResponseDto;
 import com.beyond.specguard.companytemplate.model.dto.response.CompanyTemplateResponseDto;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
@@ -38,11 +39,54 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
     private final CompanyTemplateRepository companyTemplateRepository;
     private final CompanyTemplateFieldService companyTemplateFieldService;
 
+    private void validateWriteRole(ClientUser.Role role) {
+        if (!EnumSet.of(ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role)) {
+            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
+        }
+    }
+
+    private void validateReadRole(ClientUser.Role role) {
+        if (!EnumSet.of(ClientUser.Role.VIEWER, ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role)) {
+            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
+        }
+    }
+
+    private void validateCompany(UUID company, UUID id) {
+        if (!company.equals(id))
+            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
+    }
+
     @Override
     @Transactional(readOnly = true)
-    public CompanyTemplate getCompanyTemplate(UUID templateId) {
+    public CompanyTemplate getCompanyTemplate(ClientUser clientUser, UUID templateId) {
+        validateReadRole(clientUser.getRole());
+
         return companyTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new CustomException(CompanyTemplateErrorCode.TEMPLATE_NOT_FOUND));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CompanyTemplateListResponseDto getTemplates(SearchTemplateCommand c) {
+        Specification<CompanyTemplate> spec = Specification.allOf(
+                CompanyTemplateSpecification.hasDepartment(c.department()),
+                CompanyTemplateSpecification.hasCategory(c.category()),
+                CompanyTemplateSpecification.startDateAfter(c.startDate() == null ? null : c.startDate().atStartOfDay()),
+                CompanyTemplateSpecification.endDateBefore(c.endDate() == null ? null : c.endDate().atTime(LocalTime.MAX)),
+                CompanyTemplateSpecification.hasStatus(c.status()),
+                CompanyTemplateSpecification.hasYearsOfExperience(c.yearsOfExperience())
+        );
+
+        long totalElements = companyTemplateRepository.count(spec);
+        Page<CompanyTemplate> response = companyTemplateRepository.findAll(spec, c.pageable());
+
+        return CompanyTemplateListResponseDto.builder()
+                .companyTemplateResponse(response.getContent().stream().map(CompanyTemplateResponseDto.BasicDto::toDto).toList())
+                .totalElements(totalElements)
+                .totalPages(response.getTotalPages())
+                .pageNumber(response.getNumber())
+                .pageSize(response.getSize())
+                .build();
     }
 
     @Override
@@ -52,9 +96,11 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
         validateWriteRole(clientUser.getRole());
 
         // templateId가 존재하지 않으면 예외 던지기
-        if (!companyTemplateRepository.existsById(templateId)) {
-            throw new CustomException(CompanyTemplateErrorCode.TEMPLATE_NOT_FOUND);
-        }
+        CompanyTemplate template = companyTemplateRepository.findById(templateId)
+                .orElseThrow(() -> new CustomException(CompanyTemplateErrorCode.TEMPLATE_NOT_FOUND));
+
+        // 조회된 template과 유저의 company 값이 같은지 확인
+        validateCompany(clientUser.getCompany().getId(), template.getClientCompany().getId());
 
         // template 삭제
         companyTemplateRepository.deleteById(templateId);
@@ -63,23 +109,22 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
         companyTemplateFieldService.deleteFields(templateId);
     }
 
-    private void validateWriteRole(ClientUser.Role role) {
-        if (!EnumSet.of(ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role)) {
-            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
-        }
-    }
-
     @Override
     @Transactional
     public CompanyTemplateResponseDto.BasicDto updateBasic(UpdateTemplateBasicCommand command) {
         // Write 권한 검증
         validateWriteRole(command.clientUser().getRole());
 
-        CompanyTemplate companyTemplate = getCompanyTemplate(command.templateId());
+        // template 존재하는지 확인 및 조회
+        CompanyTemplate companyTemplate = companyTemplateRepository.findById(command.templateId())
+                .orElseThrow(() -> new CustomException(CompanyTemplateErrorCode.TEMPLATE_NOT_FOUND));
+
+        // 조회된 template과 유저의 company 값이 같은지 확인
+        validateCompany(command.clientUser().getCompany().getId(), companyTemplate.getClientCompany().getId());
 
         companyTemplate.update(command.requestDto());
 
-        return CompanyTemplateResponseDto.BasicDto.toDto(companyTemplateRepository.save(companyTemplate));
+        return CompanyTemplateResponseDto.BasicDto.toDto(companyTemplateRepository.saveAndFlush(companyTemplate));
     }
 
     @Override
@@ -88,7 +133,7 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
         // 1. 쓰기 권한 검증
         validateWriteRole(command.clientUser().getRole());
 
-        // 2. template 조회 후 detail 업데이트
+        // 2. template 조회. 없으면 예외
         CompanyTemplate template = companyTemplateRepository.findById(command.templateId())
                 .orElseThrow(()-> new CustomException(CompanyTemplateErrorCode.TEMPLATE_NOT_FOUND));
 
@@ -102,7 +147,7 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
         List<CompanyTemplateField> updatedFields = new ArrayList<>();
 
         // 5. 요청 필드 id → dto 매핑
-        Map<UUID, TemplateFieldRequestDto> dtoMap = command.requestDto().fields().stream()
+        Map<UUID, TemplateFieldRequestDto> dtoMap = command.requestDto().getFields().stream()
                 .filter(f -> f.getId() != null)
                 .collect(Collectors.toMap(TemplateFieldRequestDto::getId, f -> f));
 
@@ -118,10 +163,9 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
             }
         }
 
-
         CreateCompanyTemplateFieldCommand companyTemplateFieldCommand = new CreateCompanyTemplateFieldCommand(
                 template,
-                command.requestDto().fields().stream()
+                command.requestDto().getFields().stream()
                         .filter(f -> f.getId() == null)
                         .toList());
 
@@ -135,10 +179,6 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
         return CompanyTemplateResponseDto.DetailDto.toDto(companyTemplateRepository.save(template));
     }
 
-    private void validateCompany(UUID company, UUID id) {
-        if (!company.equals(id))
-            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
-    }
 
     @Override
     @Transactional
@@ -147,24 +187,27 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
         // 권한 검증
         validateWriteRole(command.clientUser().getRole());
 
-        UUID templateId = command.requestDto().detailDto().getTemplateId();
+        UUID templateId = command.requestDto().getDetailDto().getTemplateId();
 
-        // 1. CompanyTemplate Detail 부분 반영해서 업데이트
+        // 1. 기존 템플릿 조회
         CompanyTemplate template = companyTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new CustomException(CompanyTemplateErrorCode.TEMPLATE_NOT_FOUND));
 
+        if (template.getStatus() !=  CompanyTemplate.TemplateStatus.DRAFT) {
+            throw new CustomException(CompanyTemplateErrorCode.NOT_DRAFT_TEMPLATE);
+        }
         // 2. 생성 완료 상태로 하기
         template.setStatusActive();
 
         // 3. Field 저장
         List<CompanyTemplateField> fields = companyTemplateFieldService.createFields(
-                new CreateCompanyTemplateFieldCommand(template, command.requestDto().fields())
+                new CreateCompanyTemplateFieldCommand(template, command.requestDto().getFields())
         );
 
         fields.forEach(template::addField);
 
         // 4. CompanyTemplate 저장
-        CompanyTemplate companyTemplate  = companyTemplateRepository.save(template);
+        CompanyTemplate companyTemplate  = companyTemplateRepository.saveAndFlush(template);
 
         return CompanyTemplateResponseDto.DetailDto.toDto(companyTemplate);
     }
@@ -177,24 +220,11 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
 
         // BasicRequestDto 에서 받은 정보를 토대로 entity 생성
         // not null 제약조건 필드에는 기본 값 삽입하기.
-        CompanyTemplate companyTemplate = command.basicRequestDto().toEntity(command.clientUser().getCompany());
+        CompanyTemplate companyTemplate =
+                companyTemplateRepository.saveAndFlush(
+                    command.basicRequestDto().toEntity(command.clientUser().getCompany())
+                );
 
         return CompanyTemplateResponseDto.BasicDto.toDto(companyTemplate);
     }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<CompanyTemplate> getTemplates(SearchTemplateCommand c) {
-        Specification<CompanyTemplate> spec = Specification.allOf(
-                CompanyTemplateSpecification.hasDepartment(c.department()),
-                CompanyTemplateSpecification.hasCategory(c.category()),
-                CompanyTemplateSpecification.startDateAfter(c.startDate().atStartOfDay()),
-                CompanyTemplateSpecification.endDateBefore(c.endDate().atTime(LocalTime.MAX)),
-                CompanyTemplateSpecification.hasStatus(c.status()),
-                CompanyTemplateSpecification.hasYearsOfExperience(c.yearsOfExperience())
-        );
-
-        return companyTemplateRepository.findAll(spec, c.pageable());
-    }
-
 }

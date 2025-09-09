@@ -71,10 +71,14 @@ public class CompanyTemplate {
     private Integer yearsOfExperience = 0;
 
     @Column(name = "start_date", nullable = false)
-    private LocalDateTime startDate;
+    @Builder.Default
+    // not null 제약조건에 의한 임시값
+    private LocalDateTime startDate = LocalDateTime.now();
 
     @Column(name = "end_date", nullable = false)
-    private LocalDateTime endDate;
+    @Builder.Default
+    // not null 제약조건에 의한 임시값
+    private LocalDateTime endDate = LocalDateTime.now().plusDays(7);
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -118,16 +122,12 @@ public class CompanyTemplate {
     }
 
     public void update(CompanyTemplateDetailRequestDto requestDto) {
-        this.startDate = requestDto.detailDto().getStartDate();
-        this.endDate = requestDto.detailDto().getEndDate();
+        this.startDate = requestDto.getDetailDto().getStartDate();
+        this.endDate = requestDto.getDetailDto().getEndDate();
     }
 
     public void setStatusActive() {
         this.status = TemplateStatus.ACTIVE;
-    }
-
-    public void setStatusExpired() {
-        this.status = TemplateStatus.EXPIRED;
     }
 
     public void addField(CompanyTemplateField field) {

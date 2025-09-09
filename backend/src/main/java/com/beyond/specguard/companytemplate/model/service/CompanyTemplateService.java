@@ -6,14 +6,14 @@ import com.beyond.specguard.companytemplate.model.dto.command.CreateDetailCompan
 import com.beyond.specguard.companytemplate.model.dto.command.SearchTemplateCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateBasicCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.UpdateTemplateDetailCommand;
+import com.beyond.specguard.companytemplate.model.dto.response.CompanyTemplateListResponseDto;
 import com.beyond.specguard.companytemplate.model.dto.response.CompanyTemplateResponseDto;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
-import org.springframework.data.domain.Page;
 
 import java.util.UUID;
 
 public interface CompanyTemplateService {
-    CompanyTemplate getCompanyTemplate(UUID templateId);
+    CompanyTemplate getCompanyTemplate(ClientUser clientUser, UUID templateId);
 
     void deleteTemplate(UUID templateId, ClientUser clientUser);
 
@@ -25,5 +25,5 @@ public interface CompanyTemplateService {
 
     CompanyTemplateResponseDto.BasicDto createBasicTemplate(CreateBasicCompanyTemplateCommand basicRequestDto);
 
-    Page<CompanyTemplate> getTemplates(SearchTemplateCommand templateCommand);
+    CompanyTemplateListResponseDto getTemplates(SearchTemplateCommand templateCommand);
 }

@@ -51,7 +51,6 @@ public class CompanyTemplateFieldServiceImpl implements CompanyTemplateFieldServ
                                 .map(field -> field.toEntity(commands.companyTemplate()))
                                 .toList();
 
-        companyTemplateFieldRepository.saveAll(companyTemplateFields);
-        return null;
+        return companyTemplateFieldRepository.saveAllAndFlush(companyTemplateFields);
     }
 }

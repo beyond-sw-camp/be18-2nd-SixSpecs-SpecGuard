@@ -21,6 +21,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -63,11 +64,11 @@ public class CompanyTemplateField {
     @Column(columnDefinition = "JSON")
     private String options;
 
-    @Column(name = "min_length", nullable = false)
+    @Column(name = "min_length")
     @Builder.Default
     private Integer minLength = 0;
 
-    @Column(name = "max_length", nullable = false)
+    @Column(name = "max_length")
     @Builder.Default
     private Integer maxLength = 500;
 
@@ -75,10 +76,13 @@ public class CompanyTemplateField {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     protected void setTemplate(CompanyTemplate companyTemplate) {
         this.template = companyTemplate;
     }
-
 
     // FieldType ENUM 정의
     public enum FieldType {

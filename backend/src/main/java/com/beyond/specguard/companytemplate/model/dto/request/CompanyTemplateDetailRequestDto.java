@@ -1,5 +1,7 @@
 package com.beyond.specguard.companytemplate.model.dto.request;
 
+import com.beyond.specguard.common.validation.Create;
+import com.beyond.specguard.common.validation.Update;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -14,16 +16,16 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-public record CompanyTemplateDetailRequestDto(
+@Getter
+@NoArgsConstructor
+public class CompanyTemplateDetailRequestDto {
     @JsonProperty("detail")
-    DetailDto detailDto,
+    private DetailDto detailDto;
 
     @Schema(description = "공고에 포함될 자기소개서/추가 문항 리스트")
     @NotEmpty(groups = Create.class, message = "최소 하나 이상의 필드가 필요합니다.")
     @Valid
-    List<TemplateFieldRequestDto> fields
-
-) {
+    private List<TemplateFieldRequestDto> fields;
 
     @NoArgsConstructor
     @Getter
@@ -42,8 +44,4 @@ public record CompanyTemplateDetailRequestDto(
         @Future(groups = {Create.class, Update.class}, message = "공고 마감일은 미래 시점이어야 합니다.")
         private LocalDateTime endDate;
     }
-
-    public interface Create {}
-    public interface Update {}
-
 }
