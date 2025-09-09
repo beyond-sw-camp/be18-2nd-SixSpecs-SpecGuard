@@ -51,6 +51,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.12'
+
+    // --- codef (자격증 검증) ---
+    implementation 'io.codef.api:easycodef-java:1.0.6'
 }
 
 
