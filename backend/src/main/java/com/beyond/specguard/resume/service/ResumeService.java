@@ -199,30 +199,44 @@ public class ResumeService {
 
     //최종 제출
     @Transactional
-    public ResumeSubmitResponse submit(UUID resumeId, String secret, ResumeSubmitRequest req) {
+    public ResumeSubmitResponse submit(UUID resumeId, String secret, UUID companyId) {
+        // 1) 임시 인증
         Resume resume = tempAuth.authenticate(resumeId, secret);
 
-        CompanyFormSubmission saved = submissionRepository.save(
+        // 2) 요청 값 체크
+        if (companyId == null) {
+            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
+        }
+        // (선택) 제출 전 필수 섹션 점검
+        if (!basicRepository.existsByResume_Id(resumeId)) {
+            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
+        }
+
+        // 3) 중복 제출 방지
+        if (submissionRepository.existsByResume_IdAndCompanyId(resumeId, companyId)) {
+            throw new CustomException(ResumeErrorCode.ALREADY_SUBMITTED); // 409
+        }
+
+        // 4) 제출 이력 저장
+        CompanyFormSubmission submission = submissionRepository.save(
                 CompanyFormSubmission.builder()
-                        .companyId(req.companyId())
                         .resume(resume)
+                        .companyId(companyId)
                         .build()
         );
 
-        if (resume.getStatus() == ResumeStatus.DRAFT) {
-            resume.changeStatus(ResumeStatus.PENDING);
-        }
+        // 5) 상태 전환
+        resume.changeStatus(ResumeStatus.PENDING);
 
+        // 6) 응답
         return new ResumeSubmitResponse(
-                saved.getId(),
+                submission.getId(),
                 resume.getId(),
-                saved.getCompanyId(),
-                saved.getSubmittedAt(),
+                companyId,
+                submission.getSubmittedAt(),
                 resume.getStatus()
         );
     }
-
-
 
 
 

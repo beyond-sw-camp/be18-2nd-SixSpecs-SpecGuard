@@ -24,15 +24,25 @@ import java.util.UUID;
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CompanyFormSubmission extends BaseEntity {
+public class CompanyFormSubmission {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false)
+    private UUID id;
 
     @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "company_id", columnDefinition = "CHAR(36)", nullable = false)
     private UUID companyId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "CHAR(36)",
-            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(
+            name = "resume_id",
+            nullable = false,
+            columnDefinition = "CHAR(36)",
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+    )
     private Resume resume;
 
     @CreationTimestamp

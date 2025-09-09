@@ -13,6 +13,7 @@ public enum ResumeErrorCode implements ErrorCode {
             "CORE_FIELDS_IMMUTABLE", "이력서 기본 정보는 생성 후 수정할 수 없습니다."),
     DUPLICATED_SUBMISSION(org.springframework.http.HttpStatus.CONFLICT,
             "DUPLICATED_SUBMISSION", "이미 해당 회사에 제출된 이력서입니다."),
+    ALREADY_SUBMITTED(HttpStatus.CONFLICT, "ALREADY_SUBMITTED", "이미 해당 회사로 제출한 이력서입니다."),
     MISSING_REQUIRED_SECTIONS(org.springframework.http.HttpStatus.BAD_REQUEST,
             "MISSING_REQUIRED_SECTIONS", "제출 요건이 충족되지 않았습니다.");
 

@@ -7,6 +7,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface CompanyFormSubmissionRepository extends JpaRepository<CompanyFormSubmission, UUID> {
-    boolean existsByResume_Id(UUID resumeId);
+    boolean existsByResume_IdAndCompanyId(UUID resumeId, UUID companyId);
     Optional<CompanyFormSubmission> findTopByResume_IdOrderBySubmittedAtDesc(UUID resumeId);
 }
