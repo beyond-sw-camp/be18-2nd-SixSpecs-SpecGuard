@@ -1,11 +1,14 @@
 package com.beyond.specguard.auth.model.filter;
 
+import com.beyond.specguard.admin.model.entity.InternalAdmin;
+import com.beyond.specguard.admin.model.repository.InternalAdminRepository;
+import com.beyond.specguard.admin.model.service.InternalAdminDetails;
+import com.beyond.specguard.auth.exception.AuthException;
+import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.auth.model.service.CustomUserDetails;
 import com.beyond.specguard.auth.model.service.RedisTokenService;
-import com.beyond.specguard.auth.exception.AuthException;
-import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -20,6 +23,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Slf4j
 public class JwtFilter extends OncePerRequestFilter {
@@ -28,15 +32,18 @@ public class JwtFilter extends OncePerRequestFilter {
     private final ClientUserRepository clientUserRepository;
     private final RedisTokenService redisTokenService;
     private final AuthenticationEntryPoint entryPoint;
+    private final InternalAdminRepository internalAdminRepository;
 
     public JwtFilter(JwtUtil jwtUtil,
                      ClientUserRepository clientUserRepository,
                      RedisTokenService redisTokenService,
-                     AuthenticationEntryPoint entryPoint) {
+                     AuthenticationEntryPoint entryPoint,
+                     InternalAdminRepository internalAdminRepository) {
         this.jwtUtil = jwtUtil;
         this.clientUserRepository = clientUserRepository;
         this.redisTokenService = redisTokenService;
         this.entryPoint = entryPoint;
+        this.internalAdminRepository = internalAdminRepository;
     }
 
     @Override
@@ -86,23 +93,39 @@ public class JwtFilter extends OncePerRequestFilter {
 
             // 사용자 조회
             String email = jwtUtil.getUsername(token);
-            ClientUser user = clientUserRepository.findByEmailWithCompany(email)
-                    .orElseThrow(() -> {
-                        log.warn(">>> 사용자 조회 실패: email={}", email);
-                        return new AuthException(AuthErrorCode.USER_NOT_FOUND);
-                    });
 
-            // 세션 검증
-            String session = redisTokenService.getUserSession(email);
-            if (session == null || !session.equals(jti)) {
-                log.warn(">>> 세션 불일치: email={}, session={}, jti={}", email, session, jti);
-                throw new AuthException(AuthErrorCode.BLACKLISTED_ACCESS_TOKEN);
+            Authentication auth;
+
+            // Admin 유저인지 Repository 조회로 확인
+            Optional<InternalAdmin> adminOpt = internalAdminRepository.findByEmail(email);
+
+            if (adminOpt.isPresent()) {
+                InternalAdmin admin = adminOpt.get();
+
+                InternalAdminDetails adminDetails = new InternalAdminDetails(admin);
+
+                auth = new UsernamePasswordAuthenticationToken(
+                        adminDetails, null, adminDetails.getAuthorities());
+            } else {
+                ClientUser user = clientUserRepository.findByEmailWithCompany(email)
+                        .orElseThrow(() -> {
+                            log.warn(">>> 사용자 조회 실패: email={}", email);
+                            return new AuthException(AuthErrorCode.USER_NOT_FOUND);
+                        });
+
+                // 세션 검증
+                String session = redisTokenService.getUserSession(email);
+                if (session == null || !session.equals(jti)) {
+                    log.warn(">>> 세션 불일치: email={}, session={}, jti={}", email, session, jti);
+                    throw new AuthException(AuthErrorCode.BLACKLISTED_ACCESS_TOKEN);
+                }
+
+                CustomUserDetails userDetails = new CustomUserDetails(user);
+                auth = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities()
+                );
             }
 
-            CustomUserDetails userDetails = new CustomUserDetails(user);
-            Authentication auth = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities()
-            );
             SecurityContextHolder.getContext().setAuthentication(auth);
 
             filterChain.doFilter(request, response);

@@ -1,19 +1,25 @@
 package com.beyond.specguard.common.config;
 
+import com.beyond.specguard.admin.model.repository.InternalAdminRepository;
+import com.beyond.specguard.admin.model.service.InternalAdminDetailService;
 import com.beyond.specguard.auth.model.filter.JwtFilter;
 import com.beyond.specguard.auth.model.filter.LoginFilter;
 import com.beyond.specguard.auth.model.handler.CustomFailureHandler;
 import com.beyond.specguard.auth.model.handler.CustomSuccessHandler;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
+import com.beyond.specguard.auth.model.service.CustomUserDetailsService;
 import com.beyond.specguard.auth.model.service.RedisTokenService;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -26,13 +32,14 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final AuthenticationConfiguration authenticationConfiguration;
     private final JwtUtil jwtUtil;
     private final ClientUserRepository clientUserRepository;
+    private final InternalAdminRepository internalAdminRepository;
     private final CustomSuccessHandler customSuccessHandler;
     private final CustomFailureHandler customFailureHandler;
     private final RedisTokenService redisTokenService;
@@ -50,8 +57,32 @@ public class SecurityConfig {
     };
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager();
+    public AuthenticationProvider adminAuthenticationProvider(InternalAdminDetailService adminUserDetailsService,
+                                                              PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(adminUserDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        return provider;
+    }
+
+    @Bean
+    public AuthenticationProvider clientAuthenticationProvider(CustomUserDetailsService clientUserDetailsService,
+                                                               PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(clientUserDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        return provider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(
+            HttpSecurity http,
+            AuthenticationProvider adminAuthenticationProvider,
+            AuthenticationProvider clientAuthenticationProvider
+            ) throws Exception {
+
+        return http.getSharedObject(AuthenticationManagerBuilder.class)
+                .authenticationProvider(adminAuthenticationProvider)
+                .authenticationProvider(clientAuthenticationProvider)
+                .build();
     }
 
     @Bean
@@ -60,7 +91,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, InternalAdminDetailService adminUserDetailsService, CustomUserDetailsService customUserDetailsService) throws Exception {
 
         http.csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
@@ -71,7 +102,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(AUTH_WHITE_LIST).permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/**").hasAnyRole("OWNER", "MANAGER", "VIEWER")
+                .requestMatchers("/api/**").hasAnyRole("OWNER", "MANAGER", "VIEWER", "ADMIN")
                 .requestMatchers("/api/v1/invite/**").hasRole("OWNER")
                 .anyRequest().permitAll()
         );
@@ -83,11 +114,13 @@ public class SecurityConfig {
         );
 
         http.addFilterBefore(
-                new JwtFilter(jwtUtil, clientUserRepository, redisTokenService, restAuthenticationEntryPoint),
+                new JwtFilter(jwtUtil, clientUserRepository, redisTokenService, restAuthenticationEntryPoint, internalAdminRepository),
                 UsernamePasswordAuthenticationFilter.class
         );
 
-        LoginFilter loginFilter = new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil);
+        LoginFilter loginFilter = new LoginFilter(authenticationManager(http, adminAuthenticationProvider(adminUserDetailsService, passwordEncoder()), clientAuthenticationProvider(customUserDetailsService, passwordEncoder())
+        ),
+                jwtUtil);
         loginFilter.setAuthenticationSuccessHandler(customSuccessHandler);
         loginFilter.setAuthenticationFailureHandler(customFailureHandler);
         http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
