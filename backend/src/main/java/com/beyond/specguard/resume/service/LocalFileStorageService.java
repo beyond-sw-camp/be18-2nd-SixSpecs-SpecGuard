@@ -24,13 +24,9 @@ public class LocalFileStorageService {
     private String publicBaseUrl;
 
     public String saveProfileImage(UUID resumeId, MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
-        }
+        if (file == null || file.isEmpty()) throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         String ct = Optional.ofNullable(file.getContentType()).orElse("");
-        if (!ct.startsWith("image/")) {
-            throw new CustomException(ResumeErrorCode.UNSUPPORTED_MEDIA_TYPE);
-        }
+        if (!ct.startsWith("image/")) throw new CustomException(ResumeErrorCode.UNSUPPORTED_MEDIA_TYPE);
 
         try {
             Path dir = Paths.get(basePath, "profile", resumeId.toString());

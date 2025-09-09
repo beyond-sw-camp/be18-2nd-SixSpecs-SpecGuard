@@ -24,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -82,6 +83,8 @@ public class ResumeService {
             }
             Resume r = tempAuth.authenticate(resumeId, secret);
             return toResumeResponse(r);
+        } catch (CustomException e) {
+            throw e;
         }catch (Exception e) {
             throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
         }
@@ -201,6 +204,8 @@ public class ResumeService {
                     linkRepository.save(mapLink(ref, d));
                 }
             }
+        }catch (CustomException e) {
+            throw e;
         }catch (Exception e) {
             throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
         }
@@ -365,34 +370,42 @@ public class ResumeService {
     }
 
 
-    // 커스텀 질문 임시 저장
+    // 커스텀 문항 임시저장 (answer: null/빈 허용)
     @Transactional
     public CompanyTemplateResponseResponse saveTemplateResponsesDraft(
             UUID resumeId, String secret, CompanyTemplateResponseDraftUpsertRequest dr
     ) {
         Resume resume = tempAuth.authenticate(resumeId, secret);
-
         if (dr == null || dr.responses() == null || dr.responses().isEmpty()) {
             throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
 
+        Set<UUID> uniq = new HashSet<>();
+        for (var item : dr.responses()) {
+            if (item == null || item.fieldId() == null) throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
+            if (!uniq.add(item.fieldId())) throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
+        }
+
+
+        Map<UUID, String> answerMap = dr.responses().stream()
+                .collect(Collectors.toMap(
+                        CompanyTemplateResponseDraftUpsertRequest.Item::fieldId,
+                        CompanyTemplateResponseDraftUpsertRequest.Item::answer
+                ));
+
         List<CompanyTemplateResponse> saved = new ArrayList<>();
         try {
-            for (var i : dr.responses()) {
-                if (i == null || i.fieldId() == null) {
-                    throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
-                }
-                var opt = templateResponseRepository.findByResume_IdAndFieldId(resumeId, i.fieldId());
+            for (UUID fieldId : uniq) {
+                String ans = answerMap.get(fieldId);
+                var opt = templateResponseRepository.findByResume_IdAndFieldId(resumeId, fieldId);
                 CompanyTemplateResponse e = opt.orElseGet(() ->
                         CompanyTemplateResponse.builder()
                                 .resume(resume)
-                                .fieldId(i.fieldId())
-                                .answer(i.answer())
+                                .fieldId(fieldId)
+                                .answer(ans)   // null/빈 허용
                                 .build()
                 );
-                if (opt.isPresent()) {
-                    e.changeAnswer(i.answer());
-                }
+                if (opt.isPresent()) e.changeAnswer(ans);
                 saved.add(templateResponseRepository.save(e));
             }
         } catch (CustomException ce) {
@@ -403,31 +416,24 @@ public class ResumeService {
 
         var items = saved.stream().map(ent ->
                 new CompanyTemplateResponseResponse.Item(
-                        ent.getId(),
-                        resumeId,
-                        ent.getFieldId(),
-                        ent.getAnswer(),
-                        ent.getCreatedAt(),
-                        ent.getUpdatedAt()
+                        ent.getId(), resumeId, ent.getFieldId(),
+                        ent.getAnswer(), ent.getCreatedAt(), ent.getUpdatedAt()
                 )
         ).toList();
 
         return new CompanyTemplateResponseResponse(items.size(), items);
     }
 
-    // 프로필 이미지 업로드: 로컬 저장 후 URL만 DB 저장
+
+
+    // 프로필 이미지 업로드 -> 로컬 저장 & URL DB 저장/갱신
     @Transactional
     public ResumeBasicResponse uploadProfileImage(UUID resumeId, String secret, MultipartFile file) {
-        // 임시 인증
         Resume resume = tempAuth.authenticate(resumeId, secret);
-
-        if (file == null) {
-            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
-        }
+        if (file == null) throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
 
         String url = storageService.saveProfileImage(resumeId, file);
 
-        // 기본정보 없으면 테스트 모드에서는 최소값으로 생성 허용
         ResumeBasic basic = basicRepository.findByResume_Id(resumeId)
                 .orElseGet(() -> basicRepository.save(
                         ResumeBasic.builder()
@@ -438,28 +444,18 @@ public class ResumeService {
                                 .nationality(" ")
                                 .applyField(" ")
                                 .address(" ")
-                                .profileImageUrl(url)
+                                .profileImageUrl(url) // 최초 생성 시에도 URL 저장
                                 .build()
                 ));
-
-        basic.changeProfileImageUrl(url);
+        basic.changeProfileImageUrl(url); // 기존 행이 있으면 갱신
 
         return new ResumeBasicResponse(
-                basic.getId(),
-                resumeId,
-                basic.getEnglishName(),
-                basic.getGender().name(),
-                basic.getBirthDate(),
-                basic.getNationality(),
-                basic.getAddress(),
-                basic.getApplyField(),
-                basic.getSpecialty(),
-                basic.getHobbies(),
-                basic.getProfileImageUrl(),
-                basic.getCreatedAt()
+                basic.getId(), resumeId, basic.getEnglishName(), basic.getGender().name(),
+                basic.getBirthDate(), basic.getNationality(), basic.getAddress(),
+                basic.getApplyField(), basic.getSpecialty(), basic.getHobbies(),
+                basic.getProfileImageUrl(), basic.getCreatedAt()
         );
     }
-
 
 
 
