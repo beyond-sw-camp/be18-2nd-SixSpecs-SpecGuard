@@ -1,9 +1,13 @@
 package com.beyond.specguard.resume.service;
 
 import com.beyond.specguard.common.exception.CustomException;
+import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
 import com.beyond.specguard.resume.auth.ResumeTempAuth;
 import com.beyond.specguard.resume.dto.request.*;
-import com.beyond.specguard.resume.dto.response.*;
+import com.beyond.specguard.resume.dto.response.CompanyTemplateResponseResponse;
+import com.beyond.specguard.resume.dto.response.ResumeBasicResponse;
+import com.beyond.specguard.resume.dto.response.ResumeResponse;
+import com.beyond.specguard.resume.dto.response.ResumeSubmitResponse;
 import com.beyond.specguard.resume.entity.common.enums.ResumeStatus;
 import com.beyond.specguard.resume.entity.core.*;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
@@ -14,13 +18,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.ReflectionUtils;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
-import java.lang.reflect.Field;
 import java.util.*;
-import java.util.stream.Collectors;
-
-
 
 
 @Service
@@ -46,118 +46,239 @@ public class ResumeService {
         if (req.passwordHash() == null || req.passwordHash().isBlank()) {
             throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
+        if (resumeRepository.existsByEmail(req.email())) {
+            throw new CustomException(ResumeErrorCode.DUPLICATE_EMAIL);
+        }
+
         String encoded = passwordEncoder.encode(req.passwordHash().trim());
 
-        Resume saved = resumeRepository.save(
-                Resume.builder()
-                        .templateId(req.templateId())
-                        .status(ResumeStatus.DRAFT)
-                        .name(req.name())
-                        .phone(req.phone())
-                        .email(req.email())
-                        .passwordHash(encoded)
-                        .build()
-        );
-        return toResumeResponse(saved);
+        try {
+            Resume saved = resumeRepository.save(
+                    Resume.builder()
+                            .templateId(req.templateId())
+                            .status(ResumeStatus.DRAFT)
+                            .name(req.name())
+                            .phone(req.phone())
+                            .email(req.email())
+                            .passwordHash(encoded)
+                            .build()
+            );
+            return toResumeResponse(saved);
+        }catch (Exception e) {
+            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
+        }
     }
 
     //지원서 단건 조회에서 get
     @Transactional(readOnly = true)
     public ResumeResponse get(UUID resumeId, String secret) {
-        Resume r = tempAuth.authenticate(resumeId, secret);
-        return toResumeResponse(r);
+        try {
+            if (!resumeRepository.existsById(resumeId)) {
+                throw new CustomException(ResumeErrorCode.RESUME_NOT_FOUND);
+            }
+            Resume r = tempAuth.authenticate(resumeId, secret);
+            return toResumeResponse(r);
+        }catch (Exception e) {
+            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
+        }
     }
 
     //지원서 목록 조회에서 list
     @Transactional(readOnly = true)
     public Page<ResumeResponse> list(Pageable pageable) {
-        return resumeRepository.findAll(pageable).map(this::toResumeResponse);
+        try {
+            return resumeRepository.findAll(pageable).map(this::toResumeResponse);
+        }catch (Exception e) {
+            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
+        }
     }
 
 
     //이력서 기본 정보 UPDATE/INSERT에서 upsertBasic
     @Transactional
     public ResumeBasicResponse upsertBasic(UUID resumeId, String secret, ResumeBasicCreateRequest req) {
-        Resume resume = tempAuth.authenticate(resumeId, secret);
+        try {
+            // 401/403/404는 tempAuth 내부에서 CustomException으로 던진다고 가정
+            Resume resume = tempAuth.authenticate(resumeId, secret);
 
-        Optional<ResumeBasic> opt = basicRepository.findByResume_Id(resumeId);
-        ResumeBasic basic = opt.orElseGet(() -> basicRepository.save(
-                ResumeBasic.builder()
-                        .resume(resume)
-                        .englishName(req.englishName())
-                        .gender(req.gender())
-                        .birthDate(req.birthDate())
-                        .nationality(req.nationality())
-                        .applyField(req.applyField())
-                        .profileImageUrl(req.profileImage())
-                        .address(req.address())
-                        .specialty(req.specialty())
-                        .hobbies(req.hobbies())
-                        .build()
-        ));
+            Optional<ResumeBasic> opt = basicRepository.findByResume_Id(resumeId);
 
-        // 수정 경로: null = 변경 없음
-        if (opt.isPresent()) {
-            if (req.englishName() != null) basic.changeEnglishName(req.englishName());
-            if (req.gender() != null)      basic.changeGender(req.gender());
-            if (req.birthDate() != null)   basic.changeBirthDate(req.birthDate());
-            if (req.nationality() != null) basic.changeNationality(req.nationality());
-            if (req.applyField() != null)  basic.changeApplyField(req.applyField());
-            if (req.address() != null)     basic.changeAddress(req.address());
-            if (req.specialty() != null)   basic.changeSpecialty(req.specialty());
-            if (req.hobbies() != null)     basic.changeHobbies(req.hobbies());
-            if (req.profileImage() != null) basic.changeProfileImageUrl(req.profileImage());
+            ResumeBasic basic = opt.orElseGet(() -> basicRepository.save(
+                    ResumeBasic.builder()
+                            .resume(resume)
+                            .englishName(req.englishName())
+                            .gender(req.gender())
+                            .birthDate(req.birthDate())
+                            .nationality(req.nationality())
+                            .applyField(req.applyField())
+                            .profileImageUrl(req.profileImage())
+                            .address(req.address())
+                            .specialty(req.specialty())
+                            .hobbies(req.hobbies())
+                            .build()
+            ));
+
+            // 수정 경로 (null이면 변경 없음)
+            if (opt.isPresent()) {
+                if (req.englishName() != null) basic.changeEnglishName(req.englishName());
+                if (req.gender() != null)      basic.changeGender(req.gender());
+                if (req.birthDate() != null)   basic.changeBirthDate(req.birthDate());
+                if (req.nationality() != null) basic.changeNationality(req.nationality());
+                if (req.applyField() != null)  basic.changeApplyField(req.applyField());
+                if (req.address() != null)     basic.changeAddress(req.address());
+                if (req.specialty() != null)   basic.changeSpecialty(req.specialty());
+                if (req.hobbies() != null)     basic.changeHobbies(req.hobbies());
+                if (req.profileImage() != null) basic.changeProfileImageUrl(req.profileImage());
+            }
+
+            return toBasicResponse(basic, resumeId);
+
+        } catch (CustomException e) {
+            throw e;
+
+        } catch (MaxUploadSizeExceededException e) {
+            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
+
+        } catch (Exception e) {
+            if (isFileUploadError(e)) {
+                throw new CustomException(ResumeErrorCode.FILE_UPLOAD_ERROR);
+            }
+            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
         }
-        return toBasicResponse(basic, resumeId);
+    }
+    private boolean isFileUploadError(Exception e) {
+        // 외부 스토리지 SDK 예외 타입/메시지 기반으로 판단
+        return false;
     }
 
 
     //이력서 학력/경력/포트폴리오 링크 정보 UPDATE/INSERT
     @Transactional
     public void upsertAggregate(UUID resumeId, String secret, ResumeAggregateUpdateRequest req) {
+
         Resume resume = tempAuth.authenticate(resumeId, secret);
 
 
-        Resume ref = resumeRepository.getReferenceById(resumeId);
+        try {
+            Resume ref = resumeRepository.getReferenceById(resumeId);
 
-        if (req.educations() != null) {
-            educationRepository.deleteByResume_Id(resumeId);
-            for (var d : req.educations()) {
-                educationRepository.save(mapEducation(ref, d));
+            if (req.educations() != null) {
+                validateEducationDuplicates(req.educations());
+
+                educationRepository.deleteByResume_Id(resumeId);
+                for (var d : req.educations()) {
+                    if (d.schoolName() == null || d.major() == null) {
+                        throw new CustomException(CommonErrorCode.INVALID_REQUEST);
+                    }
+                    educationRepository.save(mapEducation(ref, d));
+                }
             }
+
+            if (req.experiences() != null) {
+                validateExperienceDuplicates(req.experiences());
+                experienceRepository.deleteByResume_Id(resumeId);
+                for (var d : req.experiences()) {
+                    if (d.companyName() == null || d.position() == null) {
+                        throw new CustomException(CommonErrorCode.INVALID_REQUEST);
+                    }
+                    experienceRepository.save(mapExperience(ref, d));
+                }
+            }
+
+            if (req.certificates() != null) {
+                for (var d : req.certificates()) {
+                    if (d.certificateName() == null || d.certificateNumber() == null) {
+                        throw new CustomException(CommonErrorCode.INVALID_REQUEST);
+                    }
+                    certificateRepository.save(mapCertificate(ref, d));
+                }
+            }
+
+            if (req.links() != null) {
+                validateLinkDuplicates(req.links());
+
+                linkRepository.deleteByResume_Id(resumeId);
+                for (var d : req.links()) {
+                    if (d.url() == null || d.linkType() == null) {
+                        throw new CustomException(CommonErrorCode.INVALID_REQUEST);
+                    }
+                    linkRepository.save(mapLink(ref, d));
+                }
+            }
+        }catch (Exception e) {
+            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
         }
 
-        if (req.experiences() != null) {
-            experienceRepository.deleteByResume_Id(resumeId);
-            for (var d : req.experiences()) {
-                experienceRepository.save(mapExperience(ref, d));
-            }
-        }
+    }
 
-        if (req.certificates() != null) {
-            certificateRepository.deleteByResume_Id(resumeId);
-            for (var d : req.certificates()) {
-                certificateRepository.save(mapCertificate(ref, d));
-            }
-        }
 
-        if (req.links() != null) {
-            linkRepository.deleteByResume_Id(resumeId);
-            for (var d : req.links()) {
-                linkRepository.save(mapLink(ref, d));
+    // 학력 중복/기간 검증
+    private void validateEducationDuplicates(List<ResumeEducationUpsertRequest> educations) {
+        Set<String> keys = new HashSet<>();
+        for (var edu : educations) {
+            if (edu.startDate() != null && edu.endDate() != null && edu.startDate().isAfter(edu.endDate())) {
+                throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
+            }
+            String key = edu.schoolName() + "|" + edu.startDate() + "|" + edu.endDate();
+            if (!keys.add(key)) {
+                throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
             }
         }
     }
+
+    // 경력 중복/기간 검증
+    private void validateExperienceDuplicates(List<ResumeExperienceUpsertRequest> experiences) {
+        Set<String> keys = new HashSet<>();
+        for (var exp : experiences) {
+            if (exp.startDate() != null && exp.endDate() != null && exp.startDate().isAfter(exp.endDate())) {
+                throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
+            }
+            String key = exp.companyName() + "|" + exp.startDate() + "|" + exp.endDate();
+            if (!keys.add(key)) {
+                throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
+            }
+        }
+    }
+
+    // 링크 중복 검증
+    private void validateLinkDuplicates(List<ResumeLinkUpsertRequest> links) {
+        Set<String> keys = new HashSet<>();
+        for (var link : links) {
+            if (link.url() == null || link.url().isBlank()) {
+                throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
+            }
+            String norm = link.url().trim().toLowerCase();
+            if (!keys.add(norm)) {
+                throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
+            }
+        }
+    }
+
+
+
 
     //이력서 자격증 정보 UPDATE/INSERT upsertCertificates
     @Transactional
     public void upsertCertificates(UUID resumeId, String secret, List<ResumeCertificateUpsertRequest> certs) {
         tempAuth.authenticate(resumeId, secret);
         certificateRepository.deleteByResume_Id(resumeId);
+
         if(certs == null || certs.isEmpty()) return;
 
         Resume ref = resumeRepository.getReferenceById(resumeId);
-        for (var d : certs) certificateRepository.save(mapCertificate(ref, d));
+
+        Set<String> seen = new HashSet<>();
+
+        for (var d : certs) {
+            if (d.certificateName() == null || d.certificateNumber() == null) {
+                throw new CustomException(CommonErrorCode.INVALID_REQUEST);
+            }
+            String key = d.certificateName().trim().toLowerCase() + "|" + d.certificateNumber().trim().toLowerCase();
+            if (!seen.add(key)) {
+                throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
+            }
+            certificateRepository.save(mapCertificate(ref, d));
+        }
     }
 
     //이력서 자기소개서 답변 UPDATE/INSERT saveTemplateResponses
@@ -165,21 +286,33 @@ public class ResumeService {
     public CompanyTemplateResponseResponse saveTemplateResponses(UUID resumeId, String secret, CompanyTemplateResponseCreateRequest ctr){
         Resume resume = tempAuth.authenticate(resumeId, secret);
 
-        List<CompanyTemplateResponse> saved = new ArrayList<>();
-        for (var i : ctr.responses()) {
-            var opt = templateResponseRepository.findByResume_IdAndFieldId(resumeId, i.fieldId());
-            CompanyTemplateResponse e = opt.orElseGet(() ->
-                    CompanyTemplateResponse.builder()
-                            .resume(resume)
-                            .fieldId(i.fieldId())
-                            .answer(i.answer())
-                            .build()
-            );
-            if (opt.isPresent()) e.changeAnswer(i.answer());
-            saved.add(templateResponseRepository.save(e));
+        if (!resumeRepository.existsById(resumeId)) {
+            throw new CustomException(ResumeErrorCode.RESUME_NOT_FOUND);
+        }
+        if (ctr == null || ctr.responses() == null) {
+            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
+        }
+        if (ctr.responses().isEmpty()) {
+            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
 
-
+        List<CompanyTemplateResponse> saved = new ArrayList<>();
+        try{
+            for (var i : ctr.responses()) {
+                var opt = templateResponseRepository.findByResume_IdAndFieldId(resumeId, i.fieldId());
+                CompanyTemplateResponse e = opt.orElseGet(() ->
+                        CompanyTemplateResponse.builder()
+                                .resume(resume)
+                                .fieldId(i.fieldId())
+                                .answer(i.answer())
+                                .build()
+                );
+                if (opt.isPresent()) e.changeAnswer(i.answer());
+                saved.add(templateResponseRepository.save(e));
+            }
+        }catch(Exception e){
+            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
+        }
         var items = saved.stream().map(e ->
                 new CompanyTemplateResponseResponse.Item(
                         e.getId(), resumeId, e.getFieldId(), e.getAnswer(),
@@ -193,6 +326,9 @@ public class ResumeService {
     @Transactional(readOnly = true)
     public boolean verifyCertificate(UUID resumeId, String secret, UUID certificateId) {
         tempAuth.authenticate(resumeId, secret);
+        //기업 사용자 여부 확인에 대한 예외 필요 -> HOW???
+
+
         return certificateRepository.findByIdAndResume_Id(certificateId, resumeId).isPresent();
     }
 
@@ -200,24 +336,20 @@ public class ResumeService {
     //최종 제출
     @Transactional
     public ResumeSubmitResponse submit(UUID resumeId, String secret, UUID companyId) {
-        // 1) 임시 인증
         Resume resume = tempAuth.authenticate(resumeId, secret);
-
-        // 2) 요청 값 체크
+        if (!resumeRepository.existsById(resumeId)) {
+            throw new CustomException(ResumeErrorCode.RESUME_NOT_FOUND);
+        }
         if (companyId == null) {
             throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
-        // (선택) 제출 전 필수 섹션 점검
         if (!basicRepository.existsByResume_Id(resumeId)) {
             throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
-
-        // 3) 중복 제출 방지
         if (submissionRepository.existsByResume_IdAndCompanyId(resumeId, companyId)) {
-            throw new CustomException(ResumeErrorCode.ALREADY_SUBMITTED); // 409
+            throw new CustomException(ResumeErrorCode.ALREADY_SUBMITTED);
         }
 
-        // 4) 제출 이력 저장
         CompanyFormSubmission submission = submissionRepository.save(
                 CompanyFormSubmission.builder()
                         .resume(resume)
@@ -225,10 +357,8 @@ public class ResumeService {
                         .build()
         );
 
-        // 5) 상태 전환
         resume.changeStatus(ResumeStatus.PENDING);
 
-        // 6) 응답
         return new ResumeSubmitResponse(
                 submission.getId(),
                 resume.getId(),

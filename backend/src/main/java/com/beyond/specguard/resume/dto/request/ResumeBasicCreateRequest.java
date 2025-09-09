@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 public record ResumeBasicCreateRequest(
-        @Schema(description = "영문 이름", example = "John Doe")
+        @Schema(description = "영문 이름", example = "Hong GilDong")
         @NotNull
         String englishName,
 

@@ -1,24 +1,27 @@
 package com.beyond.specguard.resume.controller;
 
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
+import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.resume.dto.request.*;
-import com.beyond.specguard.resume.dto.response.*;
+import com.beyond.specguard.resume.dto.response.CompanyTemplateResponseResponse;
+import com.beyond.specguard.resume.dto.response.ResumeBasicResponse;
+import com.beyond.specguard.resume.dto.response.ResumeResponse;
+import com.beyond.specguard.resume.dto.response.ResumeSubmitResponse;
+import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.service.ResumeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -66,22 +69,56 @@ public class ResumeController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(value = "sort", required = false) List<String> sort
     ) {
-        Sort sortObj = Sort.unsorted();
-        if (sort == null || sort.isEmpty()) {
-            sortObj = Sort.by(Sort.Direction.DESC, "createdAt");
-        } else {
-            for (String s : sort) {
-                String[] parts = s.split(",");
-                String prop = parts[0].trim();
-                Sort.Direction dir = (parts.length > 1 && "desc".equalsIgnoreCase(parts[1].trim()))
-                        ? Sort.Direction.DESC : Sort.Direction.ASC;
-                sortObj = sortObj.and(Sort.by(dir, prop));
-            }
+        if (page < 0 || size < 1 || size > 100) {
+            throw new CustomException(ResumeErrorCode.INVALID_PARAMETER);
         }
-        page = Math.max(page, 0);
-        size = Math.min(Math.max(size, 1), 100);
+
+        Sort sortObj = buildSortOrThrow(sort); // 기본: createdAt,DESC
         Pageable pageable = PageRequest.of(page, size, sortObj);
-        return resumeService.list(pageable);
+
+        try {
+            return resumeService.list(pageable);
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // 정렬 기준
+    private static final Set<String> ALLOWED_SORT = Set.of(
+            "createdAt", "updatedAt", "name", "status"
+    );
+
+    private Sort buildSortOrThrow(List<String> sort) {
+        // 기본 정렬: createdAt desc
+        if (sort == null || sort.isEmpty()) {
+            return Sort.by(Sort.Direction.DESC, "createdAt");
+        }
+
+        Sort result = Sort.unsorted();
+        for (String token : sort) {
+            if (token == null || token.isBlank()) {
+                throw new CustomException(ResumeErrorCode.INVALID_PARAMETER);
+            }
+            String[] parts = token.split(",");
+            String prop = parts[0].trim();
+
+            if (!ALLOWED_SORT.contains(prop)) {
+                throw new CustomException(ResumeErrorCode.INVALID_PARAMETER);
+            }
+
+            Sort.Direction dir = Sort.Direction.ASC;
+            if (parts.length > 1) {
+                String d = parts[1].trim().toLowerCase();
+                if (!d.equals("asc") && !d.equals("desc")) {
+                    throw new CustomException(ResumeErrorCode.INVALID_PARAMETER);
+                }
+                dir = "desc".equals(d) ? Sort.Direction.DESC : Sort.Direction.ASC;
+            }
+            result = result.and(Sort.by(dir, prop));
+        }
+        return result;
     }
 
     //이력서 기본 정보 UPDATE/INSERT
@@ -96,6 +133,15 @@ public class ResumeController {
             @RequestHeader("X-Resume-Secret") String secret,
             @Valid @RequestBody ResumeBasicCreateRequest req
     ) {
+        if(req.englishName() == null ||
+        req.birthDate() ==null ||
+        req.gender() == null ||
+        req.nationality() == null ||
+        req.applyField() == null ||
+        req.profileImage() == null ||
+        req.address() == null){
+            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
+        }
         return resumeService.upsertBasic(resumeId, secret, req);
     }
 

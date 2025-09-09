@@ -12,6 +12,5 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID> {
     Optional<Resume> findByEmail(String email);
     boolean existsByEmail(String email);
 
-
     Page<Resume> findAllByEmail(String email, Pageable pageable);
 }
