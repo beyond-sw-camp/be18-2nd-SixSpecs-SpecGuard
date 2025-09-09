@@ -11,6 +11,8 @@ import com.beyond.specguard.resume.service.ResumeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,7 +20,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Set;
@@ -232,6 +236,37 @@ public class ResumeController {
 
     public record VerificationResult(boolean verified) {}
 
+    // 커스텀 질문 임시저장
+    //(resume_id, field_id) 기준 upsert
+    @Operation(
+            summary = "이력서 커스텀 문항 임시저장",
+            description = "자기소개서/역량기술서 등 기업 커스텀 문항 답변을 임시저장합니다. - 임시 저장 시 answer는 빈 문자열/NULL 허용"
+    )
+    @PostMapping("/template-responses/draft")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CompanyTemplateResponseResponse saveTemplateResponsesDraft(
+            @RequestHeader("X-Resume-Id") UUID resumeId,
+            @RequestHeader("X-Resume-Secret") String secret,
+            @Valid @org.springframework.web.bind.annotation.RequestBody CompanyTemplateResponseDraftUpsertRequest req
+    ) {
+        return resumeService.saveTemplateResponsesDraft(resumeId, secret, req);
+    }
+
+
+    // 프로필 이미지 업로드
+    @Operation(
+            summary = "프로필 이미지 업로드",
+            description = "multipart/form-data로 이미지를 업로드하여 로컬 저장하고, profile_image_url을 갱신합니다."
+    )
+    @PostMapping(value = "/basic/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResumeBasicResponse uploadProfileImage(
+            @RequestHeader("X-Resume-Id") UUID resumeId,
+            @RequestHeader("X-Resume-Secret") String secret,
+            @RequestPart("file") MultipartFile file
+    ) {
+        return resumeService.uploadProfileImage(resumeId, secret, file);
+    }
 
 
 

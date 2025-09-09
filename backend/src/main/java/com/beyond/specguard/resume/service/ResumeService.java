@@ -8,6 +8,7 @@ import com.beyond.specguard.resume.dto.response.CompanyTemplateResponseResponse;
 import com.beyond.specguard.resume.dto.response.ResumeBasicResponse;
 import com.beyond.specguard.resume.dto.response.ResumeResponse;
 import com.beyond.specguard.resume.dto.response.ResumeSubmitResponse;
+import com.beyond.specguard.resume.entity.common.enums.Gender;
 import com.beyond.specguard.resume.entity.common.enums.ResumeStatus;
 import com.beyond.specguard.resume.entity.core.*;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
@@ -19,7 +20,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.*;
 
 
@@ -37,6 +40,7 @@ public class ResumeService {
 
     private final PasswordEncoder passwordEncoder;
     private final ResumeTempAuth tempAuth;
+    private final LocalFileStorageService storageService;
 
 
 
@@ -185,14 +189,6 @@ public class ResumeService {
                 }
             }
 
-            if (req.certificates() != null) {
-                for (var d : req.certificates()) {
-                    if (d.certificateName() == null || d.certificateNumber() == null) {
-                        throw new CustomException(CommonErrorCode.INVALID_REQUEST);
-                    }
-                    certificateRepository.save(mapCertificate(ref, d));
-                }
-            }
 
             if (req.links() != null) {
                 validateLinkDuplicates(req.links());
@@ -367,6 +363,103 @@ public class ResumeService {
                 resume.getStatus()
         );
     }
+
+
+    // 커스텀 질문 임시 저장
+    @Transactional
+    public CompanyTemplateResponseResponse saveTemplateResponsesDraft(
+            UUID resumeId, String secret, CompanyTemplateResponseDraftUpsertRequest dr
+    ) {
+        Resume resume = tempAuth.authenticate(resumeId, secret);
+
+        if (dr == null || dr.responses() == null || dr.responses().isEmpty()) {
+            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
+        }
+
+        List<CompanyTemplateResponse> saved = new ArrayList<>();
+        try {
+            for (var i : dr.responses()) {
+                if (i == null || i.fieldId() == null) {
+                    throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
+                }
+                var opt = templateResponseRepository.findByResume_IdAndFieldId(resumeId, i.fieldId());
+                CompanyTemplateResponse e = opt.orElseGet(() ->
+                        CompanyTemplateResponse.builder()
+                                .resume(resume)
+                                .fieldId(i.fieldId())
+                                .answer(i.answer())
+                                .build()
+                );
+                if (opt.isPresent()) {
+                    e.changeAnswer(i.answer());
+                }
+                saved.add(templateResponseRepository.save(e));
+            }
+        } catch (CustomException ce) {
+            throw ce;
+        } catch (Exception e) {
+            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
+        }
+
+        var items = saved.stream().map(ent ->
+                new CompanyTemplateResponseResponse.Item(
+                        ent.getId(),
+                        resumeId,
+                        ent.getFieldId(),
+                        ent.getAnswer(),
+                        ent.getCreatedAt(),
+                        ent.getUpdatedAt()
+                )
+        ).toList();
+
+        return new CompanyTemplateResponseResponse(items.size(), items);
+    }
+
+    // 프로필 이미지 업로드: 로컬 저장 후 URL만 DB 저장
+    @Transactional
+    public ResumeBasicResponse uploadProfileImage(UUID resumeId, String secret, MultipartFile file) {
+        // 임시 인증
+        Resume resume = tempAuth.authenticate(resumeId, secret);
+
+        if (file == null) {
+            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
+        }
+
+        String url = storageService.saveProfileImage(resumeId, file);
+
+        // 기본정보 없으면 테스트 모드에서는 최소값으로 생성 허용
+        ResumeBasic basic = basicRepository.findByResume_Id(resumeId)
+                .orElseGet(() -> basicRepository.save(
+                        ResumeBasic.builder()
+                                .resume(resume)
+                                .englishName(" ")
+                                .gender(Gender.OTHER)
+                                .birthDate(LocalDate.of(1900, 1, 1))
+                                .nationality(" ")
+                                .applyField(" ")
+                                .address(" ")
+                                .profileImageUrl(url)
+                                .build()
+                ));
+
+        basic.changeProfileImageUrl(url);
+
+        return new ResumeBasicResponse(
+                basic.getId(),
+                resumeId,
+                basic.getEnglishName(),
+                basic.getGender().name(),
+                basic.getBirthDate(),
+                basic.getNationality(),
+                basic.getAddress(),
+                basic.getApplyField(),
+                basic.getSpecialty(),
+                basic.getHobbies(),
+                basic.getProfileImageUrl(),
+                basic.getCreatedAt()
+        );
+    }
+
 
 
 
