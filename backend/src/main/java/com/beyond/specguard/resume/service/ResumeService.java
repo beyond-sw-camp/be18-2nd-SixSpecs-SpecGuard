@@ -3,10 +3,7 @@ package com.beyond.specguard.resume.service;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.resume.auth.ResumeTempAuth;
 import com.beyond.specguard.resume.dto.request.*;
-import com.beyond.specguard.resume.dto.response.CompanyTemplateResponseResponse;
-import com.beyond.specguard.resume.dto.response.ResumeBasicResponse;
-import com.beyond.specguard.resume.dto.response.ResumeCertificateResponse;
-import com.beyond.specguard.resume.dto.response.ResumeResponse;
+import com.beyond.specguard.resume.dto.response.*;
 import com.beyond.specguard.resume.entity.common.enums.ResumeStatus;
 import com.beyond.specguard.resume.entity.core.*;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
@@ -36,7 +33,7 @@ public class ResumeService {
     private final ResumeCertificateRepository certificateRepository;
     private final ResumeLinkRepository linkRepository;
     private final CompanyTemplateResponseRepository templateResponseRepository;
-
+    private final CompanyFormSubmissionRepository submissionRepository;
 
     private final PasswordEncoder passwordEncoder;
     private final ResumeTempAuth tempAuth;
@@ -118,31 +115,37 @@ public class ResumeService {
     //이력서 학력/경력/포트폴리오 링크 정보 UPDATE/INSERT
     @Transactional
     public void upsertAggregate(UUID resumeId, String secret, ResumeAggregateUpdateRequest req) {
-        tempAuth.authenticate(resumeId, secret);
+        Resume resume = tempAuth.authenticate(resumeId, secret);
 
-        if (req.core() != null) {
-            var c = req.core();
-            boolean hasAny = (c.templateId() != null) || (c.name() != null) || (c.phone() != null) || (c.email() != null);
-            if (hasAny) throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
-        }
 
         Resume ref = resumeRepository.getReferenceById(resumeId);
 
         if (req.educations() != null) {
             educationRepository.deleteByResume_Id(resumeId);
-            for (var d : req.educations()) educationRepository.save(mapEducation(ref, d));
+            for (var d : req.educations()) {
+                educationRepository.save(mapEducation(ref, d));
+            }
         }
+
         if (req.experiences() != null) {
             experienceRepository.deleteByResume_Id(resumeId);
-            for (var d : req.experiences()) experienceRepository.save(mapExperience(ref, d));
+            for (var d : req.experiences()) {
+                experienceRepository.save(mapExperience(ref, d));
+            }
         }
+
         if (req.certificates() != null) {
             certificateRepository.deleteByResume_Id(resumeId);
-            for (var d : req.certificates()) certificateRepository.save(mapCertificate(ref, d));
+            for (var d : req.certificates()) {
+                certificateRepository.save(mapCertificate(ref, d));
+            }
         }
+
         if (req.links() != null) {
             linkRepository.deleteByResume_Id(resumeId);
-            for (var d : req.links()) linkRepository.save(mapLink(ref, d));
+            for (var d : req.links()) {
+                linkRepository.save(mapLink(ref, d));
+            }
         }
     }
 
@@ -194,7 +197,30 @@ public class ResumeService {
     }
 
 
+    //최종 제출
+    @Transactional
+    public ResumeSubmitResponse submit(UUID resumeId, String secret, ResumeSubmitRequest req) {
+        Resume resume = tempAuth.authenticate(resumeId, secret);
 
+        CompanyFormSubmission saved = submissionRepository.save(
+                CompanyFormSubmission.builder()
+                        .companyId(req.companyId())
+                        .resume(resume)
+                        .build()
+        );
+
+        if (resume.getStatus() == ResumeStatus.DRAFT) {
+            resume.changeStatus(ResumeStatus.PENDING);
+        }
+
+        return new ResumeSubmitResponse(
+                saved.getId(),
+                resume.getId(),
+                saved.getCompanyId(),
+                saved.getSubmittedAt(),
+                resume.getStatus()
+        );
+    }
 
 
 
@@ -278,9 +304,5 @@ public class ResumeService {
                 b.getCreatedAt()
         );
     }
-
-
-
-
 
 }
