@@ -12,6 +12,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+
 @Service
 @RequiredArgsConstructor
 public class TokenService {
@@ -50,9 +52,9 @@ public class TokenService {
 
             // 5. 단일 세션 관리 (Redis에 저장)
             String jti = jwtUtil.getJti(newAccessToken);
-            long accessTtl = jwtUtil.getExpiration(newAccessToken).getTime() - System.currentTimeMillis();
-
-            redisTokenService.saveUserSession(user.getEmail(), jti, accessTtl / 1000);
+            Date accessExpiration = jwtUtil.getExpiration(newAccessToken);
+            long accessTtl = (accessExpiration.getTime() - System.currentTimeMillis()) / 1000;
+            redisTokenService.saveUserSession(user.getEmail(), jti, accessTtl);
 
             return new TokenResponseDto(newAccessToken, "AccessToken 발급 성공");
         } catch (Exception e) {

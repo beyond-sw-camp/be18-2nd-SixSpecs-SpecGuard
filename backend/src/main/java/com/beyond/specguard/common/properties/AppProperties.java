@@ -21,7 +21,8 @@ public class AppProperties {
         private long inviteTtl;
     }
 
-    @Getter @Setter
+    @Getter
+    @Setter
     public static class Redis {
         private Prefix prefix = new Prefix();
 

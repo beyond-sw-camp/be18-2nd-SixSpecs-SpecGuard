@@ -90,7 +90,7 @@ public class SecurityConfig {
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/v1/invite/**").hasRole("OWNER")
                 .requestMatchers("/api/**").hasAnyRole("OWNER", "MANAGER", "VIEWER")
-                .anyRequest().permitAll()
+                .anyRequest().authenticated()
         );
 
         // 🔹 인증/인가 실패 핸들러

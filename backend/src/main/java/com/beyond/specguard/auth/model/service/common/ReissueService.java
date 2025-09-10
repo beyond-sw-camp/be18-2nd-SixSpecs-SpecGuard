@@ -68,7 +68,9 @@ public class ReissueService {
 
         //  세션 갱신 (새 AccessToken jti 기준, refresh TTL 유지)
         String newAccessJti = jwtUtil.getJti(newAccess);
-        redisTokenService.saveUserSession(username, newAccessJti, refreshTtl);
+        long accessTtl = (jwtUtil.getExpiration(newAccess).getTime() - System.currentTimeMillis()) / 1000;
+        redisTokenService.saveUserSession(username, newAccessJti, accessTtl);
+
 
         return ReissueResponseDto.builder()
                 .accessToken(newAccess)

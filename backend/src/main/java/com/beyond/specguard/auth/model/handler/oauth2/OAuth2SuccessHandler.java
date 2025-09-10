@@ -35,13 +35,13 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         //  RefreshToken 발급
         String refreshToken = jwtUtil.createRefreshToken(email);
-        int refreshTtl = (int) (appProperties.getJwt().getRefreshTtl() / 1000);
+        long refreshTtl = (jwtUtil.getExpiration(refreshToken).getTime() - System.currentTimeMillis()) / 1000;
 
         //  Redis에 저장 (username → RefreshToken)
         redisTokenService.saveRefreshToken(email, refreshToken, refreshTtl);
 
         //  HttpOnly Cookie 저장
-        Cookie refreshCookie = CookieUtil.createHttpOnlyCookie("refresh_token", refreshToken, refreshTtl);
+        Cookie refreshCookie = CookieUtil.createHttpOnlyCookie("refresh_token", refreshToken, (int) refreshTtl);
         response.addCookie(refreshCookie);
 
         log.info(" OAuth2 로그인 성공: email={}, RefreshToken 발급 및 Redis 저장 완료", email);
