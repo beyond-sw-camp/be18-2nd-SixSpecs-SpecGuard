@@ -1,18 +1,16 @@
 package com.beyond.specguard.auth.model.service;
 
+import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import com.beyond.specguard.auth.model.dto.response.ReissueResponseDto;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.common.exception.CustomException;
-import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Date;
 
 @Service
 @Slf4j
@@ -46,7 +44,7 @@ public class ReissueService {
         //  username 추출
         String username = jwtUtil.getUsername(refreshToken);
 
-        //  Redis에서 RefreshToken 확인
+        //  Redis 에서 RefreshToken 확인
         String savedRefresh = redisTokenService.getRefreshToken(username);
         if (savedRefresh == null || !savedRefresh.equals(refreshToken)) {
             throw new CustomException(AuthErrorCode.INVALID_REFRESH_TOKEN);

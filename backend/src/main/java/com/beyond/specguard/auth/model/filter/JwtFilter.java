@@ -9,6 +9,8 @@ import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.auth.model.service.CustomUserDetails;
 import com.beyond.specguard.auth.model.service.RedisTokenService;
+import com.beyond.specguard.auth.model.token.AdminAuthenticationToken;
+import com.beyond.specguard.auth.model.token.ClientAuthenticationToken;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -16,7 +18,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -54,6 +55,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 || path.startsWith("/api/v1/auth/token/refresh")
                 || path.startsWith("/api/v1/auth/invite");
     }
+
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -96,6 +98,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
             Authentication auth;
 
+            log.debug("email : {}", email);
+
             // Admin 유저인지 Repository 조회로 확인
             Optional<InternalAdmin> adminOpt = internalAdminRepository.findByEmail(email);
 
@@ -104,7 +108,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 InternalAdminDetails adminDetails = new InternalAdminDetails(admin);
 
-                auth = new UsernamePasswordAuthenticationToken(
+                auth = new AdminAuthenticationToken(
                         adminDetails, null, adminDetails.getAuthorities());
             } else {
                 ClientUser user = clientUserRepository.findByEmailWithCompany(email)
@@ -113,17 +117,18 @@ public class JwtFilter extends OncePerRequestFilter {
                             return new AuthException(AuthErrorCode.USER_NOT_FOUND);
                         });
 
-                // 세션 검증
-                String session = redisTokenService.getUserSession(email);
-                if (session == null || !session.equals(jti)) {
-                    log.warn(">>> 세션 불일치: email={}, session={}, jti={}", email, session, jti);
-                    throw new AuthException(AuthErrorCode.BLACKLISTED_ACCESS_TOKEN);
-                }
 
                 CustomUserDetails userDetails = new CustomUserDetails(user);
-                auth = new UsernamePasswordAuthenticationToken(
+                auth = new ClientAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()
                 );
+            }
+
+            // 세션 검증
+            String session = redisTokenService.getUserSession(email);
+            if (session == null || !session.equals(jti)) {
+                log.warn(">>> 세션 불일치: email={}, session={}, jti={}", email, session, jti);
+                throw new AuthException(AuthErrorCode.BLACKLISTED_ACCESS_TOKEN);
             }
 
             SecurityContextHolder.getContext().setAuthentication(auth);

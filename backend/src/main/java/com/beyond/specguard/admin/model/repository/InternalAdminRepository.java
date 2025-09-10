@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface InternalAdminRepository extends JpaRepository<InternalAdmin, UUID> {
     Optional<InternalAdmin> findByEmail(String email);
+
+    boolean existsByEmail(String email);
 }
