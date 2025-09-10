@@ -1,4 +1,4 @@
-package com.github.github.dto;
+package com.beyond.specguard.githubcrawling.model.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

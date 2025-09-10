@@ -1,8 +1,7 @@
-package com.github.github.service;
+package com.beyond.specguard.githubcrawling.model.service;
 
-import com.github.github.client.GitHubApiClient;
-import com.github.github.dto.GitHubStatsDto;
-import com.github.github.util.GitHubUrlParser;
+import com.beyond.specguard.githubcrawling.model.dto.GitHubStatsDto;
+import com.beyond.specguard.githubcrawling.util.GitHubUrlParser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -1,14 +1,19 @@
-package com.github.github.client;
+package com.beyond.specguard.githubcrawling.model.service;
 
-import com.github.github.dto.GitHubStatsDto;
+import com.beyond.specguard.githubcrawling.model.dto.GitHubStatsDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.*;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor

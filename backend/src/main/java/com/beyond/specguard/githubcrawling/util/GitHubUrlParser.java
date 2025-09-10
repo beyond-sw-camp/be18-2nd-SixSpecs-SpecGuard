@@ -1,4 +1,4 @@
-package com.github.github.util;
+package com.beyond.specguard.githubcrawling.util;
 
 public class GitHubUrlParser {
 
