@@ -40,7 +40,7 @@ public class ResumeController {
     )
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ResumeResponse create(@Valid @RequestBody ResumeCreateRequest req) {
+    public ResumeResponse create(@Valid @RequestBody ResumeCreateRequest req){
         return resumeService.create(req);
     }
 
@@ -55,7 +55,7 @@ public class ResumeController {
             @Parameter(name = "X-Resume-Secret", in = ParameterIn.HEADER, required = true,
                     description = "원문 비밀번호")
             @RequestHeader("X-Resume-Secret") String secret
-    ) {
+    ){
         return resumeService.get(resumeId, secret);
     }
 
@@ -135,13 +135,13 @@ public class ResumeController {
             @RequestHeader("X-Resume-Secret") String secret,
             @Valid @RequestBody ResumeBasicCreateRequest req
     ) {
-        if (req.englishName() == null ||
-                req.birthDate() == null ||
-                req.gender() == null ||
-                req.nationality() == null ||
-                req.applyField() == null ||
-                req.profileImage() == null ||
-                req.address() == null) {
+        if(req.englishName() == null ||
+        req.birthDate() ==null ||
+        req.gender() == null ||
+        req.nationality() == null ||
+        req.applyField() == null ||
+        req.profileImage() == null ||
+        req.address() == null){
             throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
         return resumeService.upsertBasic(resumeId, secret, req);
@@ -232,8 +232,7 @@ public class ResumeController {
         return resumeService.submit(resumeId, secret, req.companyId());
     }
 
-    public record VerificationResult(boolean verified) {
-    }
+    public record VerificationResult(boolean verified) {}
 
     // 커스텀 질문 임시저장
     //(resume_id, field_id) 기준 upsert

@@ -18,16 +18,20 @@ public class ResumeCleanupScheduler {
     @Value("${app.cleanup.resumes.enabled:true}")
     private boolean enabled;
 
-    @Value("${app.cleanup.resumes.batch-size:200}")
-    private int batchSize;
+    @Value("${app.cleanup.resume.chunk-size:100}")
+    private int chunkSize;
 
-    // 기본: 매 15분 (서울 타임존)
-    @Scheduled(cron = "${app.cleanup.resumes.cron:0 0/15 * * * *}", zone = "Asia/Seoul")
-    public void run() {
-        if (!enabled) return;
-        int deleted = resumeService.cleanupExpiredUnsubmittedResumes(batchSize);
+    @Scheduled(cron = "${app.cleanup.resume.cron:0 10 3 * * *}", zone = "${app.timezone:Asia/Seoul}")
+    public void runDailyCleanup() {
+        if (!enabled) {
+            log.debug("[cleanup] disabled by app.cleanup.resume.enabled=false");
+            return;
+        }
+        int deleted = resumeService.cleanupExpiredUnsubmittedResumes(chunkSize);
         if (deleted > 0) {
             log.info("[cleanup] expired & unsubmitted resumes deleted: {}", deleted);
+        } else {
+            log.debug("[cleanup] nothing to delete this run");
         }
     }
 }
