@@ -15,6 +15,7 @@ import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,8 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,6 +41,8 @@ public class ResumeService {
     private final ResumeLinkRepository linkRepository;
     private final CompanyTemplateResponseRepository templateResponseRepository;
     private final CompanyFormSubmissionRepository submissionRepository;
+
+    private final com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository companyTemplateRepository;
 
     private final PasswordEncoder passwordEncoder;
     private final ResumeTempAuth tempAuth;
@@ -444,10 +449,10 @@ public class ResumeService {
                                 .nationality(" ")
                                 .applyField(" ")
                                 .address(" ")
-                                .profileImageUrl(url) // 최초 생성 시에도 URL 저장
+                                .profileImageUrl(url)
                                 .build()
                 ));
-        basic.changeProfileImageUrl(url); // 기존 행이 있으면 갱신
+        basic.changeProfileImageUrl(url);
 
         return new ResumeBasicResponse(
                 basic.getId(), resumeId, basic.getEnglishName(), basic.getGender().name(),
@@ -455,6 +460,46 @@ public class ResumeService {
                 basic.getApplyField(), basic.getSpecialty(), basic.getHobbies(),
                 basic.getProfileImageUrl(), basic.getCreatedAt()
         );
+    }
+
+
+    //삭제
+    @Transactional
+    public int cleanupExpiredUnsubmittedResumes(int batchSize) {
+        int totalDeleted = 0;
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+
+        var expiredTemplateIds = companyTemplateRepository.findExpiredTemplateIds(now);
+        if (expiredTemplateIds.isEmpty()) return 0;
+
+        Pageable limit = PageRequest.of(0, batchSize);
+
+        while (true) {
+            var targetIds = resumeRepository.findUnsubmittedIdsByTemplateIds(expiredTemplateIds, limit);
+            if (targetIds.isEmpty()) break;
+
+            for (UUID resumeId : targetIds) {
+                // 자식 -> 부모 순으로 삭제 + 파일 정리
+                cascadeDeleteByResume(resumeId);
+                totalDeleted++;
+            }
+
+        }
+        return totalDeleted;
+    }
+
+
+    private void cascadeDeleteByResume(UUID resumeId) {
+        templateResponseRepository.deleteByResume_Id(resumeId);
+        certificateRepository.deleteByResume_Id(resumeId);
+        linkRepository.deleteByResume_Id(resumeId);
+        experienceRepository.deleteByResume_Id(resumeId);
+        educationRepository.deleteByResume_Id(resumeId);
+        basicRepository.deleteByResume_Id(resumeId);
+        submissionRepository.deleteByResume_Id(resumeId);
+
+        resumeRepository.deleteById(resumeId);
+        storageService.deleteAllProfileImages(resumeId);
     }
 
 

@@ -86,6 +86,16 @@ public enum ResumeErrorCode implements ErrorCode {
             "ALREADY_SUBMITTED",
             "이미 제출된 이력서입니다."
     ),
+    DELETE_NOT_ALLOWED_BEFORE_DEADLINE(
+            HttpStatus.CONFLICT,
+            "DELETE_NOT_ALLOWED_BEFORE_DEADLINE",
+            "마감 전에는 삭제할 수 없습니다."
+    ),
+    TEMPLATE_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "TEMPLATE_NOT_FOUND",
+            "템플릿이 없습니다."
+    ),
     INVALID_RESUME_CREDENTIAL(HttpStatus.UNAUTHORIZED, "INVALID_RESUME_CREDENTIAL", "이력서 인증에 실패했습니다.");
 
 

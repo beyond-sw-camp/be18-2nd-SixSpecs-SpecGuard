@@ -13,7 +13,10 @@ import java.util.UUID;
 
 @Getter
 @Entity
-@Table(name = "resume")
+@Table(name = "resume",
+        indexes = {
+                @Index(name = "idx_resume_template", columnList = "template_id")
+        })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Resume extends BaseEntity {
 

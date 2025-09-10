@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -50,5 +51,19 @@ public class LocalFileStorageService {
         } catch (IOException e) {
             throw new CustomException(ResumeErrorCode.FILE_UPLOAD_ERROR);
         }
+    }
+
+
+    public void deleteAllProfileImages(UUID resumeId) {
+        Path dir = Paths.get(basePath, "profile", resumeId.toString());
+        try {
+            if (Files.exists(dir)) {
+                Files.walk(dir)
+                        .sorted(Comparator.reverseOrder())
+                        .forEach(p -> {
+                            try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+                        });
+            }
+        } catch (IOException ignored) {}
     }
 }

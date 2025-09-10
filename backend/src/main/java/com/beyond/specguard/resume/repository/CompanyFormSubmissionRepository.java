@@ -9,4 +9,7 @@ import java.util.UUID;
 public interface CompanyFormSubmissionRepository extends JpaRepository<CompanyFormSubmission, UUID> {
     boolean existsByResume_IdAndCompanyId(UUID resumeId, UUID companyId);
     Optional<CompanyFormSubmission> findTopByResume_IdOrderBySubmittedAtDesc(UUID resumeId);
+
+    boolean existsByResume_Id(UUID resumeId);
+    void deleteByResume_Id(UUID resumeId);
 }
