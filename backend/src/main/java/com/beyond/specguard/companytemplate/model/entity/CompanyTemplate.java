@@ -33,7 +33,12 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "company_template")
+@Table(
+  name = "company_template",
+  indexes = {
+     @Index(name = "idx_ct_end_date", columnList = "end_date")
+  }
+)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
