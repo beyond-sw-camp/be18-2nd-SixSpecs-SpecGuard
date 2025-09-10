@@ -9,16 +9,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ResumeEducationRepository extends JpaRepository<ResumeEducation, UUID> {
-
-    @Query("""
-        select (count(e) > 0) from ResumeEducation e
-        where e.resume.id = :resumeId
-          and (:endDate is null or e.startDate <= :endDate)
-          and (e.endDate is null or e.endDate >= :startDate)
-    """)
-    boolean existsPeriodOverlap(UUID resumeId, LocalDate startDate, LocalDate endDate);
-
-    List<ResumeEducation> findByResume_Id(UUID resumeId);
     void deleteByResume_Id(UUID resumeId);
-    long countByResume_Id(UUID resumeId);
 }

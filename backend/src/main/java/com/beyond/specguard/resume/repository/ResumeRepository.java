@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ResumeRepository extends JpaRepository<Resume, UUID> {
-    Optional<Resume> findByEmail(String email);
     boolean existsByEmail(String email);
     @Query("""
         select r.id
@@ -25,9 +24,4 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID> {
           )
     """)
     List<UUID> findUnsubmittedIdsByTemplateIds(List<UUID> templateIds, Pageable pageable);
-    Page<Resume> findAllByEmail(String email, Pageable pageable);
-
-    @Lock(LockModeType.PESSIMISTIC_READ)
-    @Query("select r from Resume r where r.id = :id")
-    Optional<Resume> lockById(UUID id);
 }

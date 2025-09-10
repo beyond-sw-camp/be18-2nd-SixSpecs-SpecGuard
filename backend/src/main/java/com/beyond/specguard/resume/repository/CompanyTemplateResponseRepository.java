@@ -10,10 +10,5 @@ import java.util.UUID;
 
 public interface CompanyTemplateResponseRepository extends JpaRepository<CompanyTemplateResponse, UUID> {
     Optional<CompanyTemplateResponse> findByResume_IdAndFieldId(UUID resumeId, UUID fieldId);
-
-    List<CompanyTemplateResponse> findAllByResume_Id(UUID resumeId);
-
-    List<CompanyTemplateResponse> findAllByResume_IdAndFieldIdIn(UUID resumeId, Collection<UUID> fieldIds);
-
     void deleteByResume_Id(UUID resumeId);
 }
