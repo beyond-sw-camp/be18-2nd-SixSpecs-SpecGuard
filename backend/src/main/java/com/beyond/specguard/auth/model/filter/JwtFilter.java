@@ -1,11 +1,16 @@
 package com.beyond.specguard.auth.model.filter;
 
-import com.beyond.specguard.auth.model.entity.ClientUser;
-import com.beyond.specguard.auth.model.repository.ClientUserRepository;
-import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
-import com.beyond.specguard.auth.model.service.common.RedisTokenService;
+import com.beyond.specguard.admin.model.entity.InternalAdmin;
+import com.beyond.specguard.admin.model.repository.InternalAdminRepository;
+import com.beyond.specguard.admin.model.service.InternalAdminDetails;
 import com.beyond.specguard.auth.exception.AuthException;
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
+import com.beyond.specguard.auth.model.entity.ClientUser;
+import com.beyond.specguard.auth.model.repository.ClientUserRepository;
+import com.beyond.specguard.auth.model.service.common.RedisTokenService;
+import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
+import com.beyond.specguard.auth.model.token.AdminAuthenticationToken;
+import com.beyond.specguard.auth.model.token.ClientAuthenticationToken;
 import com.beyond.specguard.common.util.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -14,13 +19,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -30,6 +35,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private final ClientUserRepository clientUserRepository;
     private final RedisTokenService redisTokenService;
     private final AuthenticationEntryPoint entryPoint;
+    private final InternalAdminRepository internalAdminRepository;
 
 
     @Override
@@ -80,11 +86,34 @@ public class JwtFilter extends OncePerRequestFilter {
 
             // 사용자 조회
             String email = jwtUtil.getUsername(token);
-            ClientUser user = clientUserRepository.findByEmailWithCompany(email)
-                    .orElseThrow(() -> {
-                        log.warn(">>> 사용자 조회 실패: email={}", email);
-                        return new AuthException(AuthErrorCode.USER_NOT_FOUND);
-                    });
+
+            Authentication auth;
+
+            log.debug("email : {}", email);
+
+            // Admin 유저인지 Repository 조회로 확인
+            Optional<InternalAdmin> adminOpt = internalAdminRepository.findByEmail(email);
+
+            if (adminOpt.isPresent()) {
+                InternalAdmin admin = adminOpt.get();
+
+                InternalAdminDetails adminDetails = new InternalAdminDetails(admin);
+
+                auth = new AdminAuthenticationToken(
+                        adminDetails, null, adminDetails.getAuthorities());
+            } else {
+                ClientUser user = clientUserRepository.findByEmailWithCompany(email)
+                        .orElseThrow(() -> {
+                            log.warn(">>> 사용자 조회 실패: email={}", email);
+                            return new AuthException(AuthErrorCode.USER_NOT_FOUND);
+                        });
+
+
+                CustomUserDetails userDetails = new CustomUserDetails(user);
+                auth = new ClientAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities()
+                );
+            }
 
             // 세션 검증
             String session = redisTokenService.getUserSession(email);
@@ -93,10 +122,6 @@ public class JwtFilter extends OncePerRequestFilter {
                 throw new AuthException(AuthErrorCode.SESSION_CONFLICT);
             }
 
-            CustomUserDetails userDetails = new CustomUserDetails(user);
-            Authentication auth = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities()
-            );
             SecurityContextHolder.getContext().setAuthentication(auth);
 
             filterChain.doFilter(request, response);
