@@ -37,7 +37,10 @@ public enum AuthErrorCode implements ErrorCode {
     DUPLICATE_COMPANY_NAME(HttpStatus.CONFLICT,"DUPLICATE_COMPANY_NAME" ,"이미 사용중인 회사명입니다" ), 
     DUPLICATE_EMAIL_IN_COMPANY(HttpStatus.CONFLICT,"DUPLICATE_EMAIL_IN_COMPANY","이미 내부에서 사용중인 이메일 입니다" ),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "서버 내부 처리 중 오류가 발생했습니다."),
-    SESSION_CONFLICT(HttpStatus.CONFLICT ,"SESSION_CONFLICT","다른기기에서 로그인하여 로그아웃 되었습니다" );
+    SESSION_CONFLICT(HttpStatus.CONFLICT ,"SESSION_CONFLICT","다른기기에서 로그인하여 로그아웃 되었습니다" ),
+    PASSWORD_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST,"PASSWORD_CHANGE_NOT_ALLOWED" , "소셜 로그인은 비밀번호를 번경할 수 없습니다"),
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST,"INVALID_PASSWORD" ,"잘못된 비밀번호입니다"),
+    LAST_OWNER_CANNOT_DELETE(HttpStatus.BAD_REQUEST,"LAST_OWNER_CANNOT_DELETE" ,"최고 권한자는 다른 경로에서 삭제해주세요" );
 
     private final HttpStatus status;
     private final String code;
