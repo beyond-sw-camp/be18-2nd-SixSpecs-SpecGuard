@@ -1,8 +1,7 @@
 package com.beyond.specguard.auth.model.filter;
 
 import com.beyond.specguard.auth.model.dto.request.LoginRequestDto;
-import com.beyond.specguard.auth.model.token.ClientAuthenticationToken;
-import com.beyond.specguard.common.jwt.JwtUtil;
+import com.beyond.specguard.common.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

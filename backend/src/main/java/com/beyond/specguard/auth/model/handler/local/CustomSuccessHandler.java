@@ -1,13 +1,10 @@
-package com.beyond.specguard.auth.model.handler;
+package com.beyond.specguard.auth.model.handler.local;
 
-import com.beyond.specguard.admin.model.service.InternalAdminDetails;
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
-import com.beyond.specguard.auth.model.service.RedisTokenService;
-import com.beyond.specguard.common.jwt.JwtUtil;
+import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
+import com.beyond.specguard.auth.model.service.common.RedisTokenService;
+import com.beyond.specguard.common.util.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,6 +12,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Date;
 
@@ -68,7 +67,9 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         redisTokenService.saveRefreshToken(email, refreshToken, refreshTtl);
 
         // 5. 세션 생성
-        redisTokenService.saveUserSession(email, accessJti, refreshTtl);
+        Date accessExpiration = jwtUtil.getExpiration(accessToken);
+        long accessTtl = (accessExpiration.getTime() - System.currentTimeMillis()) / 1000;
+        redisTokenService.saveUserSession(email, accessJti, accessTtl);
 
         // 6. Access Token → Authorization 헤더
         response.setHeader("Authorization", "Bearer " + accessToken);
