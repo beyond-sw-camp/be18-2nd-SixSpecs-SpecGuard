@@ -9,6 +9,7 @@ import com.beyond.specguard.evaluationprofile.model.dto.command.CreateEvaluation
 import com.beyond.specguard.evaluationprofile.model.dto.command.GetEvaluationProfileCommand;
 import com.beyond.specguard.evaluationprofile.model.dto.command.SearchEvaluationProfileCommand;
 import com.beyond.specguard.evaluationprofile.model.dto.command.UpdateEvaluationProfileCommand;
+import com.beyond.specguard.evaluationprofile.model.dto.request.EvaluationProfileRequestDto;
 import com.beyond.specguard.evaluationprofile.model.dto.response.EvaluationProfileListResponseDto;
 import com.beyond.specguard.evaluationprofile.model.dto.response.EvaluationProfileResponseDto;
 import com.beyond.specguard.evaluationprofile.model.entity.EvaluationProfile;
@@ -43,11 +44,24 @@ public class EvaluationProfileServiceImpl implements EvaluationProfileService {
         }
     }
 
+    private void validateWeights(List<EvaluationProfileRequestDto.WeightCreateDto> weights) {
+        float total = weights.stream()
+                .map(EvaluationProfileRequestDto.WeightCreateDto::getWeightValue)
+                .reduce(0f, Float::sum);
+
+        if (Math.abs(total - 1.0f) > 0.0001f) {
+            throw new CustomException(EvaluationProfileErrorCode.INVALID_WEIGHT_SUM);
+        }
+    }
+
     @Override
     @Transactional
     public EvaluationProfileResponseDto createProfile(CreateEvaluationProfileCommand command) {
         // 권한 OWNER, MANAGER 체크
         validateWriteRole(command.user().getRole());
+
+        // request weights 합 1.0 체크
+        validateWeights(command.evaluationProfileRequestDto().getWeights());
 
         // EvaluationProfile 생성
         EvaluationProfile profile = evaluationProfileRepository.save(command.evaluationProfileRequestDto().fromEntity(command.user().getCompany()));
@@ -120,6 +134,9 @@ public class EvaluationProfileServiceImpl implements EvaluationProfileService {
     public EvaluationProfileResponseDto updateProfile(UpdateEvaluationProfileCommand command) {
         // 1. 권한 체크
         validateWriteRole(command.user().getRole());
+
+        // request weights 합 1.0 체크
+        validateWeights(command.request().getWeights());
 
         // 2. 프로필 조회
         EvaluationProfile profile = evaluationProfileRepository.findById(command.profileId())
