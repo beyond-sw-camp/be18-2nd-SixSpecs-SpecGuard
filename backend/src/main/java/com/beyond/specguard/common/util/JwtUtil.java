@@ -1,4 +1,4 @@
-package com.beyond.specguard.common.jwt;
+package com.beyond.specguard.common.util;
 
 import com.beyond.specguard.common.properties.AppProperties;
 import io.jsonwebtoken.ExpiredJwtException;
