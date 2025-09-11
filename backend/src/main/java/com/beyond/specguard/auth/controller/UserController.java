@@ -20,7 +20,7 @@ public class UserController {
         // 인증된 유저 가져오기
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        // ✅ slug 검증
+        //  slug 검증
         if (!userDetails.getCompany().getSlug().equals(slug)) {
             throw new CustomException(AuthErrorCode.ACCESS_DENIED);
         }
