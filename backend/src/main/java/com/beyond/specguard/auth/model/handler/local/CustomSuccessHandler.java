@@ -1,10 +1,13 @@
 package com.beyond.specguard.auth.model.handler.local;
 
-import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
+import com.beyond.specguard.admin.model.service.InternalAdminDetails;
 import com.beyond.specguard.auth.model.service.common.RedisTokenService;
-import com.beyond.specguard.common.util.JwtUtil;
+import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
 import com.beyond.specguard.common.util.CookieUtil;
+import com.beyond.specguard.common.util.JwtUtil;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -12,8 +15,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Date;
 

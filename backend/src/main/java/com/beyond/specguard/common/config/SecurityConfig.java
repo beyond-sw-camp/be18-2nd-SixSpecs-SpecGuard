@@ -1,29 +1,39 @@
 package com.beyond.specguard.common.config;
 
+import com.beyond.specguard.admin.model.repository.InternalAdminRepository;
+import com.beyond.specguard.auth.model.filter.AdminLoginFilter;
+import com.beyond.specguard.auth.model.filter.ClientLoginFilter;
 import com.beyond.specguard.auth.model.filter.JwtFilter;
-import com.beyond.specguard.auth.model.filter.LoginFilter;
-import com.beyond.specguard.auth.model.handler.CustomFailureHandler;
-import com.beyond.specguard.auth.model.handler.CustomSuccessHandler;
+import com.beyond.specguard.auth.model.handler.local.CustomFailureHandler;
+import com.beyond.specguard.auth.model.handler.local.CustomSuccessHandler;
+import com.beyond.specguard.auth.model.handler.oauth2.OAuth2FailureHandler;
+import com.beyond.specguard.auth.model.handler.oauth2.OAuth2SuccessHandler;
+import com.beyond.specguard.auth.model.provider.AdminAuthenticationProvider;
+import com.beyond.specguard.auth.model.provider.ClientAuthenticationProvider;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
-import com.beyond.specguard.auth.model.service.RedisTokenService;
+import com.beyond.specguard.auth.model.service.common.RedisTokenService;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
-import com.beyond.specguard.common.jwt.JwtUtil;
+import com.beyond.specguard.common.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 
 import java.util.List;
 
@@ -31,7 +41,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final AuthenticationConfiguration authenticationConfiguration;
+    // private final AuthenticationConfiguration authenticationConfiguration;
     private final JwtUtil jwtUtil;
     private final ClientUserRepository clientUserRepository;
     private final InternalAdminRepository internalAdminRepository;
@@ -71,6 +81,11 @@ public class SecurityConfig {
             "/admins/auth/token/refresh"
     };
 
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
     @Bean("adminAuthenticationManager")
     @Primary
     public AuthenticationManager adminAuthenticationManager(
@@ -108,8 +123,8 @@ public class SecurityConfig {
                         .anyRequest().hasRole("ADMIN")
                 )
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(restAuthenticationEntryPoint) // Admin 전용 EntryPoint
-                        .accessDeniedHandler(restAccessDeniedHandler) // Admin 전용 AccessDenied
+                        .authenticationEntryPoint(restAuthenticationEntryPoint)
+                        .accessDeniedHandler(restAccessDeniedHandler)
                 );
 
         http
@@ -139,13 +154,12 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .httpBasic(httpBasic -> httpBasic.disable())
+                .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         // 🔹 요청 인가 설정
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(AUTH_WHITE_LIST).permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/v1/invite/**").hasRole("OWNER")
                 .requestMatchers("/api/**").hasAnyRole("OWNER", "MANAGER", "VIEWER")
                 .anyRequest().authenticated()
@@ -159,11 +173,11 @@ public class SecurityConfig {
 
         // 🔹 JWT 필터
         http.addFilterBefore(
-                new JwtFilter(jwtUtil, clientUserRepository, redisTokenService, restAuthenticationEntryPoint),
+                new JwtFilter(jwtUtil, clientUserRepository, redisTokenService, restAuthenticationEntryPoint, internalAdminRepository),
                 UsernamePasswordAuthenticationFilter.class
         );
 
-        ClientLoginFilter clientLoginFilter = new ClientLoginFilter(clientAuthenticationManager, jwtUtil);
+        ClientLoginFilter clientLoginFilter = new ClientLoginFilter(clientAuthenticationManager);
         clientLoginFilter.setAuthenticationSuccessHandler(customSuccessHandler);
         clientLoginFilter.setAuthenticationFailureHandler(customFailureHandler);
 

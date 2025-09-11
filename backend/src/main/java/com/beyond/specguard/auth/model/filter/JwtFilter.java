@@ -1,25 +1,31 @@
 package com.beyond.specguard.auth.model.filter;
 
-import com.beyond.specguard.auth.model.entity.ClientUser;
-import com.beyond.specguard.auth.model.repository.ClientUserRepository;
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
-import com.beyond.specguard.auth.model.service.RedisTokenService;
+import com.beyond.specguard.admin.model.entity.InternalAdmin;
+import com.beyond.specguard.admin.model.repository.InternalAdminRepository;
+import com.beyond.specguard.admin.model.service.InternalAdminDetails;
 import com.beyond.specguard.auth.exception.AuthException;
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
-import com.beyond.specguard.common.jwt.JwtUtil;
+import com.beyond.specguard.auth.model.entity.ClientUser;
+import com.beyond.specguard.auth.model.repository.ClientUserRepository;
+import com.beyond.specguard.auth.model.service.common.RedisTokenService;
+import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
+import com.beyond.specguard.auth.model.token.AdminAuthenticationToken;
+import com.beyond.specguard.auth.model.token.ClientAuthenticationToken;
+import com.beyond.specguard.common.util.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor

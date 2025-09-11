@@ -10,11 +10,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-@Component
 public class AdminLoginFilter extends UsernamePasswordAuthenticationFilter {
 
     public AdminLoginFilter(@Qualifier("adminAuthenticationManager") AuthenticationManager adminAuthenticationManager) {
