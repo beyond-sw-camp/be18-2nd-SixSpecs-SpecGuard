@@ -68,13 +68,6 @@ class CrawlForwardReq(BaseModel):
     nlp_url: str
     max_posts: Optional[int] = None
 
-#요청/응답 모델
-class CrawlAndStoreReq(BaseModel):
-    username: str
-    resume_id: str = Field(..., pattern=UUID36_RE.pattern)
-    storage_url: str
-    max_posts: Optional[int] = None
-
 #엔드 포인트
 #게시글 목록 조회 
 @router.get("/posts", dependencies=[Depends(require_admin)])
@@ -105,13 +98,3 @@ async def crawl_and_forward(body: CrawlForwardReq):
     _assert_http_url(body.nlp_url, "nlp_url")
     count, nlp_resp = await svc.crawl_and_forward(body.username, body.nlp_url, body.max_posts)
     return {"status": "forwarded", "count": count, "nlp_response": nlp_resp}
-
-# 전체 수집 후 스토리지 저장 
-@router.post("/crawl-and-store", dependencies=[Depends(require_admin)])
-async def crawl_and_store(body: CrawlAndStoreReq):
-    _assert_safe_handle(body.username)
-    _assert_http_url(body.storage_url, "storage_url")
-    if not UUID36_RE.match(body.resume_id or ""):
-        _bad(400, "INVALID_INPUT_VALUE", "Invalid resume_id")
-    result = await svc.crawl_and_store(body.username, body.resume_id, body.storage_url, body.max_posts)
-    return {"status": "stored", **result}
