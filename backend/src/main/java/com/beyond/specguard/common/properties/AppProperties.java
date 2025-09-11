@@ -14,6 +14,7 @@ public class AppProperties {
     private Jwt jwt = new Jwt();
     private Redis redis = new Redis();
     private Github github = new Github();
+    private Verify verify = new Verify();
 
     @Getter @Setter
     public static class Jwt {
@@ -32,7 +33,17 @@ public class AppProperties {
             private String refresh;
             private String blacklist;
             private String session;
+            private String verifyAttempt;
+            private String verifyPhone;
         }
+    }
+
+    @Getter @Setter
+    public static class Verify {
+        private Long ttlSeconds;
+        private int maxAttempts;
+        private String receiverEmail;
+        private String receiverSms;
     }
 
     @Getter @Setter

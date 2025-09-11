@@ -50,11 +50,25 @@ dependencies {
     //oauth2 의존성
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     //sendgrid
-    implementation("com.sendgrid:sendgrid-java:4.10.3")
+    implementation 'com.sendgrid:sendgrid-java:4.10.3'
     //redis의존성
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.12'
+
+    // IMAP 메일 수신 (Gmail 등)
+    implementation 'com.sun.mail:jakarta.mail:2.0.1'   // Jakarta Mail
+//    implementation 'com.sun.activation:jakarta.activation:2.0.1' // MIME 처리를 위해 필요할 수 있음
+
+    // QR 생성 (SMSTO 스킴)
+    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.google.zxing:javase:3.5.3'
+
+    // Random String Util
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    // UUIDV7
+    implementation 'com.github.f4b6a3:uuid-creator:5.3.5'
+
 }
 
 

@@ -1,7 +1,7 @@
-package com.beyond.specguard.verification.job;
+package com.beyond.specguard.verification.model.job;
 
-import com.beyond.specguard.verification.dto.VerifyDto;
-import com.beyond.specguard.verification.service.PhoneVerificationService;
+import com.beyond.specguard.verification.model.dto.VerifyDto;
+import com.beyond.specguard.verification.model.service.PhoneVerificationService;
 import com.beyond.specguard.verification.util.ImapReader;
 import jakarta.mail.Message;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,5 @@
-package com.beyond.specguard.verification.dto;
+package com.beyond.specguard.verification.model.dto;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
