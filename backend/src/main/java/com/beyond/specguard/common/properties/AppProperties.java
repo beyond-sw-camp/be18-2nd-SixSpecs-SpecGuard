@@ -13,6 +13,7 @@ public class AppProperties {
 
     private Jwt jwt = new Jwt();
     private Redis redis = new Redis();
+    private Github github = new Github();
 
     @Getter @Setter
     public static class Jwt {
@@ -21,7 +22,8 @@ public class AppProperties {
         private long inviteTtl;
     }
 
-    @Getter @Setter
+    @Getter
+    @Setter
     public static class Redis {
         private Prefix prefix = new Prefix();
 
@@ -31,5 +33,10 @@ public class AppProperties {
             private String blacklist;
             private String session;
         }
+    }
+
+    @Getter @Setter
+    public static class Github {
+        private String token;
     }
 }
