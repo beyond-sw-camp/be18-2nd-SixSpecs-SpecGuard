@@ -1,7 +1,6 @@
 package com.beyond.specguard.common.util;
 
 import com.beyond.specguard.auth.model.dto.response.ReissueResponseDto;
-import com.beyond.specguard.common.jwt.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
