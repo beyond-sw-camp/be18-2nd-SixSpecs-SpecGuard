@@ -1,4 +1,4 @@
-package com.beyond.specguard.auth.model.service;
+package com.beyond.specguard.auth.model.service.local;
 
 import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.auth.model.entity.ClientUser;

@@ -1,8 +1,8 @@
-package com.beyond.specguard.auth.model.handler;
+package com.beyond.specguard.auth.model.handler.local;
 
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
-import com.beyond.specguard.auth.model.service.RedisTokenService;
-import com.beyond.specguard.common.jwt.JwtUtil;
+import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
+import com.beyond.specguard.auth.model.service.common.RedisTokenService;
+import com.beyond.specguard.common.util.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;
 import jakarta.servlet.ServletException;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +50,9 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         redisTokenService.saveRefreshToken(email, refreshToken, refreshTtl);
 
         // 5. 세션 생성
-        redisTokenService.saveUserSession(email, accessJti, refreshTtl);
+        Date accessExpiration = jwtUtil.getExpiration(accessToken);
+        long accessTtl = (accessExpiration.getTime() - System.currentTimeMillis()) / 1000;
+        redisTokenService.saveUserSession(email, accessJti, accessTtl);
 
         // 6. Access Token → Authorization 헤더
         response.setHeader("Authorization", "Bearer " + accessToken);
