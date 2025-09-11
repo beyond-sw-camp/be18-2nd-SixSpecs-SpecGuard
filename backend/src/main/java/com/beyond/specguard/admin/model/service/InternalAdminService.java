@@ -1,8 +1,8 @@
 package com.beyond.specguard.admin.model.service;
 
-import com.beyond.specguard.admin.model.dto.InternalAdminRequestDto;
-import com.beyond.specguard.admin.model.entity.InternalAdmin;
+import com.beyond.specguard.admin.model.dto.request.InternalAdminRequestDto;
+import com.beyond.specguard.admin.model.dto.response.InternalAdminResponseDto;
 
 public interface InternalAdminService {
-    InternalAdmin createAdmin(InternalAdminRequestDto request);
+    InternalAdminResponseDto createAdmin(InternalAdminRequestDto request);
 }

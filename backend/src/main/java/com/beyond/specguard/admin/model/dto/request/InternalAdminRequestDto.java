@@ -1,4 +1,4 @@
-package com.beyond.specguard.admin.model.dto;
+package com.beyond.specguard.admin.model.dto.request;
 
 import com.beyond.specguard.admin.model.entity.InternalAdmin;
 import lombok.Getter;
@@ -23,7 +23,7 @@ public class InternalAdminRequestDto {
                 .name(this.getName())
                 .email(this.getEmail())
                 .passwordHash(this.getPassword())
-                .role(InternalAdmin.Role.ADMIN)
+                .role(this.getRole())
                 .phone(this.getPhone())
                 .build();
     }
