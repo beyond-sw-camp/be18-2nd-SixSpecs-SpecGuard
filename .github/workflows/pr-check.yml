@@ -1,0 +1,30 @@
+name: PR Secret Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  secret-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Scan for secrets in properties
+        run: |
+          echo "Scanning for secrets in .properties and .env files..."
+          SECRET_FOUND=false
+          # PR 대상 변경 파일 중 .properties, .env, .yml 확장자만 확인
+          FILES=$(git diff --name-only origin/main...HEAD | grep -E '.*(\.properties|\.env|\.yml)$' || true)
+          for file in $FILES; do
+            # 대소문자 구분 없이 검색 (-i)
+            if grep -E -i 'password|secret|token|apikey' "$file"; then
+              echo "⚠️ Secret found in $file"
+              SECRET_FOUND=true
+            fi
+          done
+          if [ "$SECRET_FOUND" = true ]; then
+            echo "PR contains secrets! Please remove them."
+            exit 1
+          fi
