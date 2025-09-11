@@ -50,7 +50,7 @@ public class EvaluationProfileServiceImpl implements EvaluationProfileService {
         validateWriteRole(command.user().getRole());
 
         // EvaluationProfile 생성
-        EvaluationProfile profile = evaluationProfileRepository.save(command.evaluationProfileRequestDto().toEntity(command.user().getCompany()));
+        EvaluationProfile profile = evaluationProfileRepository.save(command.evaluationProfileRequestDto().fromEntity(command.user().getCompany()));
 
         // EvaluationWeight 들 생성
         List<EvaluationWeight> weights = evaluationWeightService.createWeights(

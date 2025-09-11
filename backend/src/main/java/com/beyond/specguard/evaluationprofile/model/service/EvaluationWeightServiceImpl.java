@@ -22,7 +22,7 @@ public class EvaluationWeightServiceImpl implements EvaluationWeightService {
         return evaluationWeightRepository.saveAll(
                 command.weights()
                         .stream()
-                        .map(w -> w.toEntity(command.evaluationProfile())).toList()
+                        .map(w -> w.fromEntity(command.evaluationProfile())).toList()
         );
     }
 

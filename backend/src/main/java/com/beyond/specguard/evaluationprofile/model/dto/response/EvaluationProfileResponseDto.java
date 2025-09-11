@@ -32,10 +32,12 @@ public class EvaluationProfileResponseDto {
         private EvaluationWeight.WeightType weightType;
         private Float weightValue;
 
-        public EvaluationWeightResponseDto(EvaluationWeight evaluationWeight) {
-            this.id = evaluationWeight.getId();
-            this.weightType = evaluationWeight.getWeightType();
-            this.weightValue = evaluationWeight.getWeightValue();
+        public static EvaluationWeightResponseDto fromEntity(EvaluationWeight evaluationWeight) {
+            return EvaluationWeightResponseDto.builder()
+                    .id(evaluationWeight.getId())
+                    .weightType(evaluationWeight.getWeightType())
+                    .weightValue(evaluationWeight.getWeightValue())
+                    .build();
         }
     }
 
@@ -45,7 +47,7 @@ public class EvaluationProfileResponseDto {
                 .name(evaluationProfile.getName())
                 .description(evaluationProfile.getDescription())
                 .isActive(evaluationProfile.getIsActive())
-                .weights(evaluationProfile.getWeights().stream().map(EvaluationWeightResponseDto::new).toList())
+                .weights(evaluationProfile.getWeights().stream().map(EvaluationWeightResponseDto::fromEntity).toList())
                 .build();
     }
 }

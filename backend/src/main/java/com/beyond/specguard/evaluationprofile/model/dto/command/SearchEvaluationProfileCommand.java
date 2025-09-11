@@ -1,7 +1,10 @@
 package com.beyond.specguard.evaluationprofile.model.dto.command;
 
+import com.beyond.specguard.auth.model.entity.ClientUser;
+import org.springframework.data.domain.Pageable;
+
 public record SearchEvaluationProfileCommand(
-        com.beyond.specguard.auth.model.entity.ClientUser user,
+        ClientUser user,
         Boolean isActive,
-        org.springframework.data.domain.Pageable pageable) {
+        Pageable pageable) {
 }
