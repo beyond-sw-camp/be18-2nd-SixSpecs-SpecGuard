@@ -63,7 +63,8 @@ public class SecurityConfig {
             // SpringDocs OpenApi Swagger API
             "/swagger-ui/**", "/v3/api-docs/**",
             "/api/v1/auth/token/refresh",
-            "/admins/auth/login"
+            "/admins/auth/login",
+            "/admins/auth/token/refresh"
     };
 
     @Bean("adminAuthenticationManager")
