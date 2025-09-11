@@ -64,7 +64,7 @@ public class SecurityConfig {
             "/login/oauth2/code/**",
             "/api/v1/auth",
 
-            // 이력서
+            //이력서
             "/api/v1/resumes/**"
     };
 
