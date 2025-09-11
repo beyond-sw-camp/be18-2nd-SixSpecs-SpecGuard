@@ -1,5 +1,8 @@
 package com.beyond.specguard.evaluationprofile.model.entity;
 
+import com.beyond.specguard.common.exception.CustomException;
+import com.beyond.specguard.evaluationprofile.exception.errorcode.EvaluationProfileErrorCode;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import jakarta.persistence.Column;
 import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
@@ -21,6 +24,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.UUID;
 
 @Entity
@@ -81,6 +85,14 @@ public class EvaluationWeight {
         VELOG_RECENT_ACTIVITY,
         VELOG_KEYWORD_MATCH,
         CAREER_MATCH,
-        CERTIFICATE_MATCH
+        CERTIFICATE_MATCH;
+
+        @JsonCreator
+        public static WeightType from(String value) {
+            return Arrays.stream(values())
+                    .filter(type -> type.name().equalsIgnoreCase(value))
+                    .findFirst()
+                    .orElseThrow(() -> new CustomException(EvaluationProfileErrorCode.INVALID_WEIGHT_TYPE));
+        }
     }
 }
