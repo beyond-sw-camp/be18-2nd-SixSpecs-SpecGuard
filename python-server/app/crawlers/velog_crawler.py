@@ -57,12 +57,13 @@ async def _safe_goto(page, url, retries=2, wait="domcontentloaded"):
 async def render_list_with_playwright(
     handle: str,
     max_scrolls: int = CONF["list"]["max_scrolls"],
-    pause_sec: float = CONF["list"]["pause_sec"],   # 호환을 위해 남겨두지만, 지터가 우선 적용됩니다.
+    pause_sec: float = CONF["list"]["pause_sec"],  
     timeout_ms: int = CONF["list"]["timeout_ms"],
 ) -> List[str]:
 
     base = f"https://velog.io/@{handle}"
-    hrefs: Set[str] = set()
+    hrefs: List[str] = []
+    seen: Set[str] = set()
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -76,23 +77,22 @@ async def render_list_with_playwright(
 
             await _safe_goto(page, base)
 
-            async def collect_links() -> Set[str]:
+            async def collect_links() -> List[str]:
                 anchors = await page.eval_on_selector_all(
                     "a", "els => els.map(e => e.getAttribute('href') || '')"
                 )
-                out = set()
-                for h in anchors or []:
-                    if not h:
-                        continue
-                    if f"/@{handle}/" in h:
-                        if any(x in h for x in ["/series/", "/tag/", "/followers", "/following"]):
-                            continue
-                        out.add(urljoin("https://velog.io", h))
+                out: List[str] = []
+                full = urljoin("https://velog.io", h)
+                if full not in seen:
+                    seen.add(full)
+                    out.append(full)
                 return out
 
             last_count, stagnant = -1, 0
             for _ in range(max_scrolls):
-                hrefs |= await collect_links()
+                new_links = await collect_links()
+                if new_links:
+                    hrefs.extend(new_links)
 
                 if len(hrefs) == last_count:
                     stagnant += 1
@@ -109,8 +109,7 @@ async def render_list_with_playwright(
         finally:
             await browser.close()
 
-    hrefs = {h for h in hrefs if f"/@{handle}/" in h}
-    return sorted(hrefs)
+    return hrefs
 
 # 게시글 상세 수집
 async def render_post_with_playwright(

@@ -12,7 +12,6 @@ JWT_AUD = os.environ.get("JWT_AUD", "specguard-api")
 def _raise(status:int, code:str, msg:str):
     raise HTTPException(status_code=status, detail={"error": code, "message": msg})
 
-# 테스트 할때는 아래의 주석처리된 require_admin() 사용
 async def require_admin(authorization: Optional[str] = Header(None)):
     # 1) Bearer 필수
     if not authorization or not authorization.lower().startswith("bearer "):
