@@ -4,6 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
+@org.springframework.boot.context.properties.ConfigurationPropertiesScan(
+        basePackages = "com.beyond.specguard.common.properties"
+)
 public class BackendApplication {
 
     public static void main(String[] args) {
