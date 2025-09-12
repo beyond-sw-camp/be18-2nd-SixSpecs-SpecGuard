@@ -1,21 +1,24 @@
-package com.beyond.specguard.auth.model.handler;
+package com.beyond.specguard.auth.model.handler.local;
 
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
-import com.beyond.specguard.auth.model.service.RedisTokenService;
-import com.beyond.specguard.common.jwt.JwtUtil;
+import com.beyond.specguard.admin.model.service.InternalAdminDetails;
+import com.beyond.specguard.auth.model.service.common.RedisTokenService;
+import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
 import com.beyond.specguard.common.util.CookieUtil;
+import com.beyond.specguard.common.util.JwtUtil;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Date;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class CustomSuccessHandler implements AuthenticationSuccessHandler {
@@ -28,10 +31,25 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
 
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        String email = userDetails.getUsername();
-        String role = userDetails.getUser().getRole().name();
-        String companySlug = userDetails.getUser().getCompany().getSlug();
+        String email;
+        String role;
+        String companySlug = null;
+
+        log.debug(authentication.getName());
+
+        // 🔹 인증 대상 분기 처리
+        if (authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
+            email = userDetails.getUsername();
+            role = userDetails.getUser().getRole().name();
+            companySlug = userDetails.getUser().getCompany().getSlug(); // 기업 유저만 존재
+
+        } else if (authentication.getPrincipal() instanceof InternalAdminDetails adminDetails) {
+            email = adminDetails.getAdmin().getEmail();
+            role = adminDetails.getAdmin().getRole().name();
+            // Admin은 회사 정보 없음
+        } else {
+            throw new IllegalStateException("Unknown principal type: " + authentication.getPrincipal().getClass());
+        }
 
         // 1. 토큰 생성
         String accessToken = jwtUtil.createAccessToken(email, role, companySlug);
@@ -50,7 +68,9 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         redisTokenService.saveRefreshToken(email, refreshToken, refreshTtl);
 
         // 5. 세션 생성
-        redisTokenService.saveUserSession(email, accessJti, refreshTtl);
+        Date accessExpiration = jwtUtil.getExpiration(accessToken);
+        long accessTtl = (accessExpiration.getTime() - System.currentTimeMillis()) / 1000;
+        redisTokenService.saveUserSession(email, accessJti, accessTtl);
 
         // 6. Access Token → Authorization 헤더
         response.setHeader("Authorization", "Bearer " + accessToken);

@@ -1,31 +1,39 @@
 package com.beyond.specguard.common.config;
 
+import com.beyond.specguard.admin.model.repository.InternalAdminRepository;
+import com.beyond.specguard.auth.model.filter.AdminLoginFilter;
+import com.beyond.specguard.auth.model.filter.ClientLoginFilter;
 import com.beyond.specguard.auth.model.filter.JwtFilter;
-import com.beyond.specguard.auth.model.filter.LoginFilter;
 import com.beyond.specguard.auth.model.handler.local.CustomFailureHandler;
 import com.beyond.specguard.auth.model.handler.local.CustomSuccessHandler;
 import com.beyond.specguard.auth.model.handler.oauth2.OAuth2FailureHandler;
 import com.beyond.specguard.auth.model.handler.oauth2.OAuth2SuccessHandler;
+import com.beyond.specguard.auth.model.provider.AdminAuthenticationProvider;
+import com.beyond.specguard.auth.model.provider.ClientAuthenticationProvider;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.auth.model.service.common.RedisTokenService;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
 import com.beyond.specguard.common.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 
 import java.util.List;
 
@@ -33,9 +41,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final AuthenticationConfiguration authenticationConfiguration;
+    // private final AuthenticationConfiguration authenticationConfiguration;
     private final JwtUtil jwtUtil;
     private final ClientUserRepository clientUserRepository;
+    private final InternalAdminRepository internalAdminRepository;
     private final CustomSuccessHandler customSuccessHandler;
     private final CustomFailureHandler customFailureHandler;
     private final RedisTokenService redisTokenService;
@@ -62,35 +71,95 @@ public class SecurityConfig {
             // OAuth2 관련 엔드포인트
             "/oauth2/authorization/**",
             "/login/oauth2/code/**",
-            "/api/v1/auth",
-
-            //이력서
-            "/api/v1/resumes/**"
+            "/api/v1/auth"
     };
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager();
-    }
+    private final static String[] ADMIN_AUTH_WHITE_LIST = {
+            // SpringDocs OpenApi Swagger API
+            "/swagger-ui/**", "/v3/api-docs/**",
+            "/admins/auth/login",
+            "/admins/auth/token/refresh"
+    };
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Bean("adminAuthenticationManager")
+    @Primary
+    public AuthenticationManager adminAuthenticationManager(
+            AdminAuthenticationProvider adminAuthenticationProvider
+    ) {
+        return new ProviderManager(adminAuthenticationProvider);
+    }
 
-        http.csrf(csrf -> csrf.disable())
-                .formLogin(form -> form.disable())
+    @Bean("clientAuthenticationManager")
+    public AuthenticationManager clientAuthenticationManager(
+            ClientAuthenticationProvider clientAuthenticationProvider
+    ) {
+        return new ProviderManager(clientAuthenticationProvider);
+    }
+
+
+    /**
+     * Admin 전용 SecurityFilterChain
+     */
+    @Bean
+    @Order(1)
+    public SecurityFilterChain adminSecurityFilterChain(HttpSecurity http,
+                                                        @Qualifier("adminAuthenticationManager") AuthenticationManager adminAuthenticationManager) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .httpBasic(httpBasic -> httpBasic.disable())
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        http
+                .securityMatcher("/admins/**") // Admin 전용 엔드포인트만 적용
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(ADMIN_AUTH_WHITE_LIST).permitAll()
+                        .anyRequest().hasRole("ADMIN")
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(restAuthenticationEntryPoint)
+                        .accessDeniedHandler(restAccessDeniedHandler)
+                );
+
+        http
+                .addFilterBefore(
+                        new JwtFilter(jwtUtil, clientUserRepository, redisTokenService, restAuthenticationEntryPoint, internalAdminRepository),
+                        UsernamePasswordAuthenticationFilter.class
+                );
+
+        AdminLoginFilter adminLoginFilter = new AdminLoginFilter(adminAuthenticationManager);
+        adminLoginFilter.setAuthenticationSuccessHandler(customSuccessHandler);
+        adminLoginFilter.setAuthenticationFailureHandler(customFailureHandler);
+
+        http.addFilterAt(adminLoginFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    /**
+     * Client 전용 SecurityFilterChain
+     */
+    @Bean
+    @Order(2)
+    public SecurityFilterChain clientSecurityFilterChain(HttpSecurity http,
+                                                         @Qualifier("clientAuthenticationManager") AuthenticationManager clientAuthenticationManager
+    ) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         // 🔹 요청 인가 설정
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(AUTH_WHITE_LIST).permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/v1/invite/**").hasRole("OWNER")
                 .requestMatchers("/api/**").hasAnyRole("OWNER", "MANAGER", "VIEWER")
                 .anyRequest().authenticated()
@@ -104,15 +173,15 @@ public class SecurityConfig {
 
         // 🔹 JWT 필터
         http.addFilterBefore(
-                new JwtFilter(jwtUtil, clientUserRepository, redisTokenService, restAuthenticationEntryPoint),
+                new JwtFilter(jwtUtil, clientUserRepository, redisTokenService, restAuthenticationEntryPoint, internalAdminRepository),
                 UsernamePasswordAuthenticationFilter.class
         );
 
-        // 🔹 로그인 필터 (ID/PW)
-        LoginFilter loginFilter = new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil);
-        loginFilter.setAuthenticationSuccessHandler(customSuccessHandler);
-        loginFilter.setAuthenticationFailureHandler(customFailureHandler);
-        http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
+        ClientLoginFilter clientLoginFilter = new ClientLoginFilter(clientAuthenticationManager);
+        clientLoginFilter.setAuthenticationSuccessHandler(customSuccessHandler);
+        clientLoginFilter.setAuthenticationFailureHandler(customFailureHandler);
+
+        http.addFilterAt(clientLoginFilter, UsernamePasswordAuthenticationFilter.class);
 
         // 🔹 OAuth2 로그인
         http.oauth2Login(oauth2 -> oauth2
@@ -125,7 +194,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
