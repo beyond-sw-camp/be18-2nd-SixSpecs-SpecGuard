@@ -1,10 +1,10 @@
 package com.beyond.specguard.invite.model.service;
 
-import com.beyond.specguard.auth.model.entity.ClientCompany;
-import com.beyond.specguard.auth.model.entity.ClientUser;
-import com.beyond.specguard.auth.model.repository.ClientCompanyRepository;
-import com.beyond.specguard.auth.model.repository.ClientUserRepository;
-import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
+import com.beyond.specguard.client.model.entity.ClientCompany;
+import com.beyond.specguard.client.model.entity.ClientUser;
+import com.beyond.specguard.client.model.repository.ClientCompanyRepository;
+import com.beyond.specguard.client.model.repository.ClientUserRepository;
+import com.beyond.specguard.client.model.service.local.ClientUserDetails;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.invite.exception.errorcode.InviteErrorCode;
 import com.beyond.specguard.common.util.JwtUtil;
@@ -33,7 +33,7 @@ public class InviteService {
     private String inviteBaseUrl;
 
     @Transactional
-    public InviteResponseDto sendInvite(String slug, InviteRequestDto request, CustomUserDetails currentUser) {
+    public InviteResponseDto sendInvite(String slug, InviteRequestDto request, ClientUserDetails currentUser) {
         // 1. 권한 검증 (OWNER만 초대 가능)
         if (currentUser.getUser().getRole() != ClientUser.Role.OWNER) {
             throw new CustomException(InviteErrorCode.FORBIDDEN_INVITE);

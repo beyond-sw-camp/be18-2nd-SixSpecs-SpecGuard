@@ -1,6 +1,6 @@
 package com.beyond.specguard.invite.model.entity;
 
-import com.beyond.specguard.auth.model.entity.ClientCompany;
+import com.beyond.specguard.client.model.entity.ClientCompany;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;

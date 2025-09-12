@@ -1,6 +1,6 @@
 package com.beyond.specguard.auth.model.provider;
 
-import com.beyond.specguard.auth.model.service.local.CustomUserDetailsService;
+import com.beyond.specguard.client.model.service.local.ClientUserDetailsService;
 import com.beyond.specguard.auth.model.token.ClientAuthenticationToken;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -10,10 +10,10 @@ import org.springframework.stereotype.Component;
 public class ClientAuthenticationProvider extends DaoAuthenticationProvider {
 
     public ClientAuthenticationProvider(
-            CustomUserDetailsService customUserDetailsService,
+            ClientUserDetailsService clientUserDetailsService,
             PasswordEncoder passwordEncoder
     ) {
-        super(customUserDetailsService);
+        super(clientUserDetailsService);
         super.setPasswordEncoder(passwordEncoder);
     }
 

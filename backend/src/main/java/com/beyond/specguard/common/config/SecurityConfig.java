@@ -9,9 +9,10 @@ import com.beyond.specguard.auth.model.handler.local.CustomSuccessHandler;
 import com.beyond.specguard.auth.model.handler.oauth2.OAuth2FailureHandler;
 import com.beyond.specguard.auth.model.handler.oauth2.OAuth2SuccessHandler;
 import com.beyond.specguard.auth.model.provider.AdminAuthenticationProvider;
+import com.beyond.specguard.auth.model.provider.ApplicantAuthenticationProvider;
 import com.beyond.specguard.auth.model.provider.ClientAuthenticationProvider;
-import com.beyond.specguard.auth.model.repository.ClientUserRepository;
-import com.beyond.specguard.auth.model.service.common.RedisTokenService;
+import com.beyond.specguard.client.model.repository.ClientUserRepository;
+import com.beyond.specguard.auth.model.service.RedisTokenService;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
 import com.beyond.specguard.common.util.JwtUtil;
@@ -43,15 +44,21 @@ public class SecurityConfig {
 
     // private final AuthenticationConfiguration authenticationConfiguration;
     private final JwtUtil jwtUtil;
+
+    // Repository
     private final ClientUserRepository clientUserRepository;
     private final InternalAdminRepository internalAdminRepository;
+
+    // Login Handlers
     private final CustomSuccessHandler customSuccessHandler;
     private final CustomFailureHandler customFailureHandler;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final OAuth2FailureHandler oAuth2FailureHandler;
+
     private final RedisTokenService redisTokenService;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
-    private final OAuth2SuccessHandler oAuth2SuccessHandler;
-    private final OAuth2FailureHandler oAuth2FailureHandler;
+
     private final OAuth2AuthorizationRequestResolver customResolver;
 
     private final static String[] AUTH_WHITE_LIST = {
@@ -99,6 +106,13 @@ public class SecurityConfig {
             ClientAuthenticationProvider clientAuthenticationProvider
     ) {
         return new ProviderManager(clientAuthenticationProvider);
+    }
+
+    @Bean("applicantAuthenticationManager")
+    public AuthenticationManager applicantAuthenticationManager(
+            ApplicantAuthenticationProvider applicantAuthenticationProvider
+    ) {
+        return new ProviderManager(applicantAuthenticationProvider);
     }
 
 

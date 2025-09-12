@@ -1,8 +1,8 @@
 package com.beyond.specguard.auth.model.handler.local;
 
 import com.beyond.specguard.admin.model.service.InternalAdminDetails;
-import com.beyond.specguard.auth.model.service.common.RedisTokenService;
-import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
+import com.beyond.specguard.auth.model.service.RedisTokenService;
+import com.beyond.specguard.client.model.service.local.ClientUserDetails;
 import com.beyond.specguard.common.util.CookieUtil;
 import com.beyond.specguard.common.util.JwtUtil;
 import jakarta.servlet.ServletException;
@@ -38,7 +38,7 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         log.debug(authentication.getName());
 
         // 🔹 인증 대상 분기 처리
-        if (authentication.getPrincipal() instanceof CustomUserDetails userDetails) {
+        if (authentication.getPrincipal() instanceof ClientUserDetails userDetails) {
             email = userDetails.getUsername();
             role = userDetails.getUser().getRole().name();
             companySlug = userDetails.getUser().getCompany().getSlug(); // 기업 유저만 존재

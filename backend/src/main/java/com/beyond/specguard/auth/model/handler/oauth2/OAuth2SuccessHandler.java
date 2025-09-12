@@ -1,7 +1,7 @@
 package com.beyond.specguard.auth.model.handler.oauth2;
 
-import com.beyond.specguard.auth.model.service.oauth2.CustomOAuth2UserDetails;
-import com.beyond.specguard.auth.model.service.common.RedisTokenService;
+import com.beyond.specguard.client.model.service.oauth2.ClientOAuth2UserDetails;
+import com.beyond.specguard.auth.model.service.RedisTokenService;
 import com.beyond.specguard.common.util.JwtUtil;
 import com.beyond.specguard.common.properties.AppProperties;
 import com.beyond.specguard.common.util.CookieUtil;
@@ -30,7 +30,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException {
 
-        CustomOAuth2UserDetails customUser = (CustomOAuth2UserDetails) authentication.getPrincipal();
+        ClientOAuth2UserDetails customUser = (ClientOAuth2UserDetails) authentication.getPrincipal();
         String email = customUser.getEmail();
 
         //  RefreshToken 발급
