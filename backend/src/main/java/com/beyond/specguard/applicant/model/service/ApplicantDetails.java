@@ -19,6 +19,10 @@ public class ApplicantDetails implements UserDetails {
         return List.of(new SimpleGrantedAuthority("ROLE_" + Resume.ResumeRole.APPLICANT.name()));
     }
 
+    public Resume getResume() {
+        return resume;
+    }
+
     @Override
     public String getPassword() {
         return resume.getPasswordHash();
