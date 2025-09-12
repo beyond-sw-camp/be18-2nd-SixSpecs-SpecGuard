@@ -1,8 +1,10 @@
 package com.beyond.specguard.auth.controller;
 
 import com.beyond.specguard.auth.model.dto.request.ChangePasswordRequestDto;
+import com.beyond.specguard.auth.model.dto.request.UpdateCompanyRequestDto;
 import com.beyond.specguard.auth.model.dto.request.UpdateUserRequestDto;
 import com.beyond.specguard.auth.model.dto.response.SignupResponseDto;
+import com.beyond.specguard.auth.model.service.common.CompanyService;
 import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
 import com.beyond.specguard.auth.model.service.common.UserService;
 import com.beyond.specguard.common.exception.CustomException;
@@ -21,6 +23,8 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final CompanyService companyService;
+
     @GetMapping("/company/{slug}/users/me")
     public ResponseEntity<SignupResponseDto.UserDTO> getMyInfo(@PathVariable String slug, Authentication authentication) {
         // 인증된 유저 가져오기
@@ -54,5 +58,25 @@ public class UserController {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         userService.deleteMyAccount(userDetails.getUser().getId());
         return ResponseEntity.ok(Map.of("message", "회원 탈퇴가 완료되었습니다."));
+    }
+
+    @PatchMapping("company/{slug}")
+    public ResponseEntity<SignupResponseDto.CompanyDTO> updateCompany(
+            @PathVariable String slug,
+            @Valid @RequestBody UpdateCompanyRequestDto request,
+            Authentication authentication){
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        SignupResponseDto.CompanyDTO updated = companyService.updateCompany(slug, request, userDetails.getUser().getId());
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("company/{slug}")
+    public ResponseEntity<Map<String,String>> deleteCompany(
+            @PathVariable String slug,
+            Authentication authentication
+    ){
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        companyService.deleteCompany(slug, userDetails.getUser().getId());
+        return ResponseEntity.ok(Map.of("message", "회사가 성공적으로 삭제 되었습니다"));
     }
 }

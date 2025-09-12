@@ -32,4 +32,6 @@ public interface ClientUserRepository extends JpaRepository<ClientUser, UUID> {
     Optional<ClientUser> findByEmailWithCompany(@Param("email") String email);
 
     boolean existsByCompanyIdAndRoleAndIdNot(UUID companyId, ClientUser.Role role, UUID excludeId);
+
+    void deleteAllByCompanyId(UUID companyId);
 }

@@ -40,7 +40,8 @@ public enum AuthErrorCode implements ErrorCode {
     SESSION_CONFLICT(HttpStatus.CONFLICT ,"SESSION_CONFLICT","다른기기에서 로그인하여 로그아웃 되었습니다" ),
     PASSWORD_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST,"PASSWORD_CHANGE_NOT_ALLOWED" , "소셜 로그인은 비밀번호를 번경할 수 없습니다"),
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST,"INVALID_PASSWORD" ,"잘못된 비밀번호입니다"),
-    LAST_OWNER_CANNOT_DELETE(HttpStatus.BAD_REQUEST,"LAST_OWNER_CANNOT_DELETE" ,"최고 권한자는 다른 경로에서 삭제해주세요" );
+    LAST_OWNER_CANNOT_DELETE(HttpStatus.BAD_REQUEST,"LAST_OWNER_CANNOT_DELETE" ,"최고 권한자는 다른 경로에서 삭제해주세요" ),
+    COMPANY_NOT_FOUND(HttpStatus.BAD_REQUEST, "COMPANY_NOT_FOUND", "회사를 찾을 수 없습니다"),;
 
     private final HttpStatus status;
     private final String code;
