@@ -25,7 +25,7 @@ public class InviteService {
 
     private final InviteRepository inviteRepository;
     private final ClientCompanyRepository companyRepository;
-    private final SendGridService sendGridService;
+    private final InviteSendGridService inviteSendGridService;
     private final JwtUtil jwtUtil;
     private final ClientUserRepository userRepository;
 
@@ -85,7 +85,7 @@ public class InviteService {
         String inviteUrl = inviteBaseUrl + "?token=" + inviteToken;
 
         // 8. 메일 발송
-        sendGridService.sendInviteEmail(newInvite.getEmail(), inviteUrl);
+        inviteSendGridService.sendInviteEmail(newInvite.getEmail(), inviteUrl);
 
         // 9. 응답 반환
         return InviteResponseDto.builder()
