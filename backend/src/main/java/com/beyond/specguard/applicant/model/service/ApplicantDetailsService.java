@@ -1,7 +1,7 @@
 package com.beyond.specguard.applicant.model.service;
 
-import com.beyond.specguard.resume.Resume;
-import com.beyond.specguard.resume.ResumeRepository;
+import com.beyond.specguard.tempresume.Resume;
+import com.beyond.specguard.tempresume.ResumeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

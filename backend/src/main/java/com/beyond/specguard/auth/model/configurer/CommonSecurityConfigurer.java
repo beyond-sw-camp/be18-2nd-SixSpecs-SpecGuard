@@ -39,8 +39,4 @@ public class CommonSecurityConfigurer extends AbstractHttpConfigurer<CommonSecur
                         UsernamePasswordAuthenticationFilter.class
                 );
     }
-
-
-
-
 }

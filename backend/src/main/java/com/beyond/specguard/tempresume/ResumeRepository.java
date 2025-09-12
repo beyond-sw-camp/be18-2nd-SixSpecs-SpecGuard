@@ -1,4 +1,4 @@
-package com.beyond.specguard.resume;
+package com.beyond.specguard.tempresume;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

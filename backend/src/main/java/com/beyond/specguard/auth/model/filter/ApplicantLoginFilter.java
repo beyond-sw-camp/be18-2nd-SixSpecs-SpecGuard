@@ -1,7 +1,6 @@
 package com.beyond.specguard.auth.model.filter;
 
 import com.beyond.specguard.applicant.model.dto.ApplicantLoginRequestDto;
-import com.beyond.specguard.applicant.model.service.ApplicantDetails;
 import com.beyond.specguard.auth.model.handler.local.CustomFailureHandler;
 import com.beyond.specguard.auth.model.token.ApplicantAuthenticationToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +16,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.io.IOException;
-import java.util.Map;
 
 public class ApplicantLoginFilter extends UsernamePasswordAuthenticationFilter {
     public ApplicantLoginFilter(
@@ -54,19 +52,14 @@ public class ApplicantLoginFilter extends UsernamePasswordAuthenticationFilter {
             FilterChain chain,
             Authentication authResult) throws IOException, ServletException {
 
+        // ✅ 필수
         // SecurityContextHolder에 인증 객체 저장
         SecurityContextHolder.getContext().setAuthentication(authResult);
 
         HttpSession session = request.getSession(true);
-        ApplicantDetails applicantDetails = (ApplicantDetails) authResult.getPrincipal();
 
-        // templateId + email 조합 세션 저장
-        session.setAttribute("APPLICANT_SESSION", Map.of(
-                "templateId", applicantDetails.getResume().getTemplateId(),
-                "email", applicantDetails.getResume().getEmail()
-        ));
-
-        session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext()); // ✅ 필수
+        // ✅ 필수
+        session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
         response.setStatus(HttpServletResponse.SC_OK);
         response.getWriter().write("로그인 성공");

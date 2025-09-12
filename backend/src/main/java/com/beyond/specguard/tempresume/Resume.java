@@ -1,4 +1,4 @@
-package com.beyond.specguard.resume;
+package com.beyond.specguard.tempresume;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
