@@ -1,7 +1,7 @@
 package com.beyond.specguard.auth.controller;
 
 import com.beyond.specguard.auth.model.dto.response.SignupResponseDto;
-import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
+import com.beyond.specguard.auth.model.service.CustomUserDetails;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +20,7 @@ public class UserController {
         // 인증된 유저 가져오기
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        //  slug 검증
+        // ✅ slug 검증
         if (!userDetails.getCompany().getSlug().equals(slug)) {
             throw new CustomException(AuthErrorCode.ACCESS_DENIED);
         }

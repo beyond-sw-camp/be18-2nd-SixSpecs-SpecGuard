@@ -16,7 +16,7 @@ public interface InviteRepository extends JpaRepository<InviteEntity, String> {
      */
     Optional<InviteEntity> findByInviteToken(String inviteToken);
 
-    Optional<InviteEntity> findByInviteTokenAndStatus(String inviteToken, InviteEntity.InviteStatus status);
+    Optional<InviteEntity> findByInviteTokenAndStatus(String inviteToken, InviteStatus status);
 
     Optional<InviteEntity> findByEmailAndCompanyAndStatus(
             @Email @NotBlank(message = "이메일은 필수입니다.") String email,

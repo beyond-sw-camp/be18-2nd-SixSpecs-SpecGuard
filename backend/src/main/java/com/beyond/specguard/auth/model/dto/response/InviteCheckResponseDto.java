@@ -10,5 +10,4 @@ public class InviteCheckResponseDto {
     private String role;
     private String slug;
     private String companyName;
-    private String token;
 }
