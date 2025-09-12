@@ -12,9 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.annotation.RestController;
 
-@RestControllerAdvice
+@RestController
 @RequestMapping("/api/v1/verify/email")
 @RequiredArgsConstructor
 @Tag(name = "Email Verification", description = "지원자 회원가입 시 이메일 인증 API")
@@ -31,9 +31,6 @@ public class EmailVerificationController {
             }
     )
 
-//    @PostMapping("/create")
-//    public VerifyDto.
-
 
     @PostMapping("/request")
     public ResponseEntity<Void> request(@RequestBody VerifyDto.EmailRequest req) {
@@ -43,6 +40,8 @@ public class EmailVerificationController {
 
     @PostMapping("/confirm")
     public ResponseEntity<VerifyDto.VerifyResult> confirm(@RequestBody VerifyDto.EmailConfirm req) {
-        return ResponseEntity.ok(svc.confirmCode(req.email(), req.code()));
+        String status = svc.confirm(req.email(), req.code());
+        if ("SUCCESS".equals(status)) return ResponseEntity.ok(VerifyDto.VerifyResult.ok());
+        return ResponseEntity.ok(new VerifyDto.VerifyResult(status, "not verified"));
     }
 }
