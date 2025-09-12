@@ -71,7 +71,11 @@ public class SecurityConfig {
             // OAuth2 관련 엔드포인트
             "/oauth2/authorization/**",
             "/login/oauth2/code/**",
-            "/api/v1/auth"
+            "/api/v1/auth",
+
+            // 본인인증 API
+            "/api/v1/email/request",
+            "/api/v1/email/confirm"
     };
 
     private final static String[] ADMIN_AUTH_WHITE_LIST = {
