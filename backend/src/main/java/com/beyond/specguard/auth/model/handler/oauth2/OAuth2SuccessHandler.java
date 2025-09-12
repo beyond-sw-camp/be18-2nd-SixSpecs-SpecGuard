@@ -1,10 +1,10 @@
 package com.beyond.specguard.auth.model.handler.oauth2;
 
-import com.beyond.specguard.client.model.service.oauth2.ClientOAuth2UserDetails;
 import com.beyond.specguard.auth.model.service.RedisTokenService;
-import com.beyond.specguard.common.util.JwtUtil;
+import com.beyond.specguard.auth.model.service.oauth2.ClientOAuth2UserDetails;
 import com.beyond.specguard.common.properties.AppProperties;
 import com.beyond.specguard.common.util.CookieUtil;
+import com.beyond.specguard.common.util.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

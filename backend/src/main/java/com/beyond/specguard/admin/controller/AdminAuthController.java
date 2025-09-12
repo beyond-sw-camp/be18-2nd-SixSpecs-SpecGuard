@@ -3,7 +3,7 @@ package com.beyond.specguard.admin.controller;
 import com.beyond.specguard.admin.model.dto.request.InternalAdminRequestDto;
 import com.beyond.specguard.admin.model.dto.response.InternalAdminResponseDto;
 import com.beyond.specguard.admin.model.service.InternalAdminService;
-import com.beyond.specguard.client.model.dto.response.ReissueResponseDto;
+import com.beyond.specguard.auth.model.dto.response.ReissueResponseDto;
 import com.beyond.specguard.auth.model.service.LogoutService;
 import com.beyond.specguard.auth.model.service.ReissueService;
 import com.beyond.specguard.common.util.CookieUtil;

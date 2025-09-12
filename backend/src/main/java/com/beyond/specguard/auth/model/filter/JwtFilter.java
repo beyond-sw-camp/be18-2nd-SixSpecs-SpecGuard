@@ -5,12 +5,12 @@ import com.beyond.specguard.admin.model.repository.InternalAdminRepository;
 import com.beyond.specguard.admin.model.service.InternalAdminDetails;
 import com.beyond.specguard.auth.exception.AuthException;
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
+import com.beyond.specguard.auth.model.entity.ClientUser;
+import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.auth.model.service.RedisTokenService;
+import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
 import com.beyond.specguard.auth.model.token.AdminAuthenticationToken;
 import com.beyond.specguard.auth.model.token.ClientAuthenticationToken;
-import com.beyond.specguard.client.model.entity.ClientUser;
-import com.beyond.specguard.client.model.repository.ClientUserRepository;
-import com.beyond.specguard.client.model.service.local.ClientUserDetails;
 import com.beyond.specguard.common.util.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -111,7 +111,7 @@ public class JwtFilter extends OncePerRequestFilter {
                         });
 
 
-                ClientUserDetails userDetails = new ClientUserDetails(user);
+                CustomUserDetails userDetails = new CustomUserDetails(user);
                 auth = new ClientAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()
                 );
