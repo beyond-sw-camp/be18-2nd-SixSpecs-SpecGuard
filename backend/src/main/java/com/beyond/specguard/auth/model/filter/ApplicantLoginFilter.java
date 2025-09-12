@@ -1,6 +1,8 @@
 package com.beyond.specguard.auth.model.filter;
 
 import com.beyond.specguard.applicant.model.dto.ApplicantLoginRequestDto;
+import com.beyond.specguard.auth.model.handler.local.CustomFailureHandler;
+import com.beyond.specguard.auth.model.handler.local.CustomSuccessHandler;
 import com.beyond.specguard.auth.model.token.ApplicantAuthenticationToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,8 +15,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import java.io.IOException;
 
 public class ApplicantLoginFilter extends UsernamePasswordAuthenticationFilter {
-    public ApplicantLoginFilter(@Qualifier("applicantAuthenticationManager") AuthenticationManager applicantAuthenticationManager) {
+    public ApplicantLoginFilter(
+            @Qualifier("applicantAuthenticationManager") AuthenticationManager applicantAuthenticationManager,
+            CustomSuccessHandler customSuccessHandler,
+            CustomFailureHandler customFailureHandler
+    ) {
         super(applicantAuthenticationManager);
+        setAuthenticationSuccessHandler(customSuccessHandler);
+        setAuthenticationFailureHandler(customFailureHandler);
         setFilterProcessesUrl("/api/v1/resumes/login");
     }
 

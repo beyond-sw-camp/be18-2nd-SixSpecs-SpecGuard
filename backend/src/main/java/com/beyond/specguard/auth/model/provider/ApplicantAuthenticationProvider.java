@@ -4,7 +4,9 @@ import com.beyond.specguard.applicant.model.service.ApplicantDetailsService;
 import com.beyond.specguard.auth.model.token.ApplicantAuthenticationToken;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ApplicantAuthenticationProvider extends DaoAuthenticationProvider {
     public ApplicantAuthenticationProvider(
             ApplicantDetailsService applicantDetailService,
