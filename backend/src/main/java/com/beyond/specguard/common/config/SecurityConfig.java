@@ -74,8 +74,8 @@ public class SecurityConfig {
             "/api/v1/auth",
 
             // 본인인증 API
-            "/api/v1/email/request",
-            "/api/v1/email/confirm"
+            "/api/v1/verify/email/request",
+            "/api/v1/verify/email/confirm"
     };
 
     private final static String[] ADMIN_AUTH_WHITE_LIST = {
