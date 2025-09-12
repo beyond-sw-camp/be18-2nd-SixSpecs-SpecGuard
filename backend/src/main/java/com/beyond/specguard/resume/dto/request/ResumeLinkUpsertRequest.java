@@ -17,9 +17,9 @@ public record ResumeLinkUpsertRequest(
 
         @Schema(description = "링크 타입", example = "GITHUB")
         @NotNull
-        LinkType linkType,
+        LinkType linkType
 
-        @Schema(description = "레이블/설명", example = "GitHub")
-        String label
+//        @Schema(description = "레이블/설명", example = "GitHub")
+//        String label
 ) {
 }
