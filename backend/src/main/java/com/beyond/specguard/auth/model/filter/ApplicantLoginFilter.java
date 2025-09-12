@@ -2,11 +2,13 @@ package com.beyond.specguard.auth.model.filter;
 
 import com.beyond.specguard.applicant.model.dto.ApplicantLoginRequestDto;
 import com.beyond.specguard.auth.model.handler.local.CustomFailureHandler;
-import com.beyond.specguard.auth.model.handler.local.CustomSuccessHandler;
 import com.beyond.specguard.auth.model.token.ApplicantAuthenticationToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -17,11 +19,9 @@ import java.io.IOException;
 public class ApplicantLoginFilter extends UsernamePasswordAuthenticationFilter {
     public ApplicantLoginFilter(
             @Qualifier("applicantAuthenticationManager") AuthenticationManager applicantAuthenticationManager,
-            CustomSuccessHandler customSuccessHandler,
             CustomFailureHandler customFailureHandler
     ) {
         super(applicantAuthenticationManager);
-        setAuthenticationSuccessHandler(customSuccessHandler);
         setAuthenticationFailureHandler(customFailureHandler);
         setFilterProcessesUrl("/api/v1/resumes/login");
     }
@@ -35,9 +35,27 @@ public class ApplicantLoginFilter extends UsernamePasswordAuthenticationFilter {
             ApplicantLoginRequestDto loginRequestDto =  new ObjectMapper().readValue(request.getInputStream(), ApplicantLoginRequestDto.class);
             ApplicantAuthenticationToken authToken =
                     new ApplicantAuthenticationToken(loginRequestDto.getEmail(), loginRequestDto.getPassword());
+
+            authToken.setDetails(loginRequestDto);
+
             return this.getAuthenticationManager().authenticate(authToken);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    protected void successfulAuthentication(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain chain,
+            Authentication authResult) throws IOException, ServletException {
+
+        // 세션 생성 및 Authentication 저장
+        HttpSession session = request.getSession(true);
+        session.setAttribute("APPLICANT_SESSION", authResult);
+
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.getWriter().write("로그인 성공");
     }
 }

@@ -11,6 +11,8 @@ import com.beyond.specguard.auth.model.handler.oauth2.OAuth2SuccessHandler;
 import com.beyond.specguard.auth.model.provider.AdminAuthenticationProvider;
 import com.beyond.specguard.auth.model.provider.ApplicantAuthenticationProvider;
 import com.beyond.specguard.auth.model.provider.ClientAuthenticationProvider;
+import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
+import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -46,6 +48,9 @@ public class SecurityConfig {
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final OAuth2FailureHandler oAuth2FailureHandler;
     private final OAuth2AuthorizationRequestResolver customResolver;
+
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+    private final RestAccessDeniedHandler restAccessDeniedHandler;
 
     private final static String[] AUTH_WHITE_LIST = {
             // Swagger
@@ -105,12 +110,6 @@ public class SecurityConfig {
     ) {
         return new ProviderManager(applicantAuthenticationProvider);
     }
-
-    /*
-     SecurityFilterChain에 경로 순서 선정
-       - 더 구체적인 경로 -> 먼저 처리
-       - 일반 적인 경로 -> 나중에 처리
-     */
 
     /**
      * Admin 전용 SecurityFilterChain
@@ -187,15 +186,15 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain applicantSecurityFilterChain(
             HttpSecurity http,
-            @Qualifier("applicantAuthenticationManager") AuthenticationManager applicantAuthenticationManager,
-            CommonSecurityConfigurer configurer
+            @Qualifier("applicantAuthenticationManager") AuthenticationManager applicantAuthenticationManager
     ) throws Exception {
-        // 전역 세팅
-        applyGlobalSettings(http);
-
-        // 공통 예외처리, 필터 설정
-        http.with(configurer, Customizer.withDefaults());
-
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
         // Applicant 전용 엔드포인트만 적용
         http.securityMatcher("/api/v1/resumes/**")
@@ -203,11 +202,14 @@ public class SecurityConfig {
                         .requestMatchers(APPLICANT_AUTH_WHITE_LIST).permitAll()
                         .anyRequest().hasRole("APPLICANT")
                 );
+        http
+                .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(restAuthenticationEntryPoint) // 401
+                .accessDeniedHandler(restAccessDeniedHandler)   // 403
+                );
 
-        ApplicantLoginFilter applicantLoginFilter = new ApplicantLoginFilter(applicantAuthenticationManager, customSuccessHandler, customFailureHandler);
-
-        http.addFilterAt(applicantLoginFilter, UsernamePasswordAuthenticationFilter.class);
-
+        ApplicantLoginFilter loginFilter = new ApplicantLoginFilter(applicantAuthenticationManager, customFailureHandler);
+        http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

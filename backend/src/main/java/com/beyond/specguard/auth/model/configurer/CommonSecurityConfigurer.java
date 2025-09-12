@@ -35,10 +35,12 @@ public class CommonSecurityConfigurer extends AbstractHttpConfigurer<CommonSecur
                 )
                 // 🔹 JWT 필터
                 .addFilterBefore(
-                        new JwtFilter(jwtUtil, clientUserRepository, redisTokenService, restAuthenticationEntryPoint, internalAdminRepository),
+                        new JwtFilter(jwtUtil, clientUserRepository, internalAdminRepository, redisTokenService, restAuthenticationEntryPoint),
                         UsernamePasswordAuthenticationFilter.class
                 );
     }
+
+
 
 
 }

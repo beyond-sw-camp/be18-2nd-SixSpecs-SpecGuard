@@ -23,7 +23,7 @@ public class ClientLoginFilter extends UsernamePasswordAuthenticationFilter {
             CustomSuccessHandler customSuccessHandler,
             CustomFailureHandler customFailureHandler
     ) {
-        super.setAuthenticationManager(clientAuthenticationManager);
+        super(clientAuthenticationManager);
         setAuthenticationSuccessHandler(customSuccessHandler);
         setAuthenticationFailureHandler(customFailureHandler);
         setFilterProcessesUrl("/api/v1/auth/login"); // 로그인 엔드포인트
