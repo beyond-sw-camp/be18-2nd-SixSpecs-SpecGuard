@@ -1,7 +1,7 @@
-package com.beyond.specguard.auth.model.service.local;
+package com.beyond.specguard.auth.model.service;
 
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
-import com.beyond.specguard.auth.model.dto.request.ClientSignupRequestDto;
+import com.beyond.specguard.auth.model.dto.request.SignupRequestDto;
 import com.beyond.specguard.auth.model.dto.response.SignupResponseDto;
 import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.auth.model.entity.ClientUser;
@@ -22,9 +22,9 @@ public class SignupService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public SignupResponseDto signup(ClientSignupRequestDto request) {
-        ClientSignupRequestDto.CompanyDTO companyReq = request.getCompany();
-        ClientSignupRequestDto.UserDTO userReq = request.getUser();
+    public SignupResponseDto signup(SignupRequestDto request) {
+        SignupRequestDto.CompanyDTO companyReq = request.getCompany();
+        SignupRequestDto.UserDTO userReq = request.getUser();
 
         // [회사 검증]
         if (companyRepository.existsByBusinessNumber(companyReq.getBusinessNumber())) {

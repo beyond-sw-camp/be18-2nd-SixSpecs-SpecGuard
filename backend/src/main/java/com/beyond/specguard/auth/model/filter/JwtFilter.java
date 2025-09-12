@@ -8,7 +8,7 @@ import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.auth.model.service.RedisTokenService;
-import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
+import com.beyond.specguard.auth.model.service.CustomUserDetails;
 import com.beyond.specguard.auth.model.token.AdminAuthenticationToken;
 import com.beyond.specguard.auth.model.token.ClientAuthenticationToken;
 import com.beyond.specguard.common.util.JwtUtil;

@@ -1,8 +1,8 @@
 package com.beyond.specguard.auth.model.filter;
 
-import com.beyond.specguard.auth.model.dto.request.ClientLoginRequestDto;
-import com.beyond.specguard.auth.model.handler.local.CustomFailureHandler;
-import com.beyond.specguard.auth.model.handler.local.CustomSuccessHandler;
+import com.beyond.specguard.auth.model.dto.request.LoginRequestDto;
+import com.beyond.specguard.auth.model.handler.CustomFailureHandler;
+import com.beyond.specguard.auth.model.handler.CustomSuccessHandler;
 import com.beyond.specguard.auth.model.token.AdminAuthenticationToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,7 +34,7 @@ public class AdminLoginFilter extends UsernamePasswordAuthenticationFilter {
             HttpServletResponse response
     ) throws AuthenticationException {
         try {
-            ClientLoginRequestDto loginDTO = new ObjectMapper().readValue(request.getInputStream(), ClientLoginRequestDto.class);
+            LoginRequestDto loginDTO = new ObjectMapper().readValue(request.getInputStream(), LoginRequestDto.class);
             AdminAuthenticationToken authToken =
                     new AdminAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword());
             return this.getAuthenticationManager().authenticate(authToken);

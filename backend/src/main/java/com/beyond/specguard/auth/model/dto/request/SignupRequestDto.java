@@ -34,7 +34,7 @@ import lombok.NoArgsConstructor;
   }
 }
 """)
-public class ClientSignupRequestDto {
+public class SignupRequestDto {
 
     @NotNull(message = "회사 정보는 필수입니다.")
     @Schema(description = "회사 정보")
