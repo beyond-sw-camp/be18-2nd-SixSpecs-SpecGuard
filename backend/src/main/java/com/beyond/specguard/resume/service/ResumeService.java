@@ -548,7 +548,7 @@ public class ResumeService {
                 .resume(r)
                 .url(d.url())
                 .linkType(d.linkType())
-                .label(d.label())
+//                .label(d.label())
                 .contents(null)
                 .build();
     }
