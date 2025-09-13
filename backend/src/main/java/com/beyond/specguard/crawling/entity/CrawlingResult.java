@@ -1,5 +1,6 @@
 package com.beyond.specguard.crawling.entity;
 
+import com.beyond.specguard.resume.entity.core.Resume;
 import com.beyond.specguard.resume.entity.core.ResumeLink;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -24,6 +25,10 @@ public class CrawlingResult {
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name="resume_link_id", nullable = false, columnDefinition = "CHAR(36)", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private ResumeLink resumeLink;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "CHAR(36)", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private Resume resume;
 
     @Enumerated(EnumType.STRING)
     @Column(name="crawling_status", nullable = false)
