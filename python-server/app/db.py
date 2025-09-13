@@ -1,65 +1,55 @@
+# app/db.py
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy import text
 
 DB_URL = os.getenv("DB_URL", "mysql+asyncmy://user:pass@localhost:3306/specguard")
-
 engine = create_async_engine(DB_URL, pool_pre_ping=True, pool_recycle=1800)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
-# --- 상태 전이/저장 SQL ---
+# ---- 테이블/컬럼 매핑 (ENV로 덮어쓰기 가능) ----
+TBL = os.getenv("CRAWL_TABLE", "crawling_result")
+COL_RESUME_ID = os.getenv("CRAWL_COL_RESUME_ID", "resume_id")
+COL_URL       = os.getenv("CRAWL_COL_URL", "url")
+COL_STATUS    = os.getenv("CRAWL_COL_STATUS", "crawling_status")
+COL_CONTENTS_GZIP = os.getenv("CRAWL_COL_CONTENTS_GZIP", "contents_gzip")
 
-SQL_MARK_RESUME_CRAWLING = text("""
-UPDATE resume
-SET status = 'CRAWLING', updated_at = CURRENT_TIMESTAMP
-WHERE id = :rid AND status = 'PENDING'
+# 1) 시작: PENDING -> RUNNING (선점)
+SQL_CLAIM_RUNNING = text(f"""
+UPDATE {TBL}
+SET {COL_STATUS} = 'RUNNING', updated_at = CURRENT_TIMESTAMP
+WHERE {COL_RESUME_ID} = :rid
+  AND {COL_URL} = :url
+  AND {COL_STATUS} = 'PENDING'
 """)
 
-SQL_GET_VELOG_LINKS = text("""
-SELECT id, url, crawling_status
-FROM resume_link
-WHERE resume_id = :rid AND link_type = 'VELOG'
+# 2) URL 없음: NOTEXISTED + 더미 gzip (터미널이 아니면 업데이트)
+SQL_SET_NOTEXISTED_IF_NOT_TERMINAL = text(f"""
+UPDATE {TBL}
+SET {COL_CONTENTS_GZIP} = :contents,
+    {COL_STATUS} = 'NOTEXISTED',
+    updated_at = CURRENT_TIMESTAMP
+WHERE {COL_RESUME_ID} = :rid
+  AND {COL_URL} = :url
+  AND {COL_STATUS} NOT IN ('COMPLETED','FAILED','NOTEXISTED')
 """)
 
-# 링크 선점: PENDING일 때만 RUNNING으로
-SQL_CLAIM_LINK_RUNNING = text("""
-UPDATE resume_link
-SET crawling_status = 'RUNNING', updated_at = CURRENT_TIMESTAMP
-WHERE id = :lid AND crawling_status = 'PENDING'
+# 3) 성공 저장: RUNNING -> COMPLETED
+SQL_SAVE_COMPLETED = text(f"""
+UPDATE {TBL}
+SET {COL_CONTENTS_GZIP} = :contents,
+    {COL_STATUS} = 'COMPLETED',
+    updated_at = CURRENT_TIMESTAMP
+WHERE {COL_RESUME_ID} = :rid
+  AND {COL_URL} = :url
+  AND {COL_STATUS} = 'RUNNING'
 """)
 
-# URL 없음 → NONEXISTED (터미널 상태가 아니면)
-SQL_SET_NONEXISTED_IF_NOT_TERMINAL = text("""
-UPDATE resume_link
-SET contents = :contents, crawling_status = 'NONEXISTED', updated_at = CURRENT_TIMESTAMP
-WHERE id = :lid AND crawling_status NOT IN ('COMPLETED','FAILED','NONEXISTED')
+# 4) 실패: RUNNING -> FAILED
+SQL_SET_FAILED_IF_RUNNING = text(f"""
+UPDATE {TBL}
+SET {COL_STATUS} = 'FAILED', updated_at = CURRENT_TIMESTAMP
+WHERE {COL_RESUME_ID} = :rid
+  AND {COL_URL} = :url
+  AND {COL_STATUS} = 'RUNNING'
 """)
-
-# 성공 저장: RUNNING일 때만 COMPLETED
-SQL_SAVE_CONTENTS_COMPLETED = text("""
-UPDATE resume_link
-SET contents = :contents, crawling_status = 'COMPLETED', updated_at = CURRENT_TIMESTAMP
-WHERE id = :lid AND crawling_status = 'RUNNING'
-""")
-
-# 실패: RUNNING → FAILED
-SQL_SET_FAILED_IF_RUNNING = text("""
-UPDATE resume_link
-SET crawling_status = 'FAILED', updated_at = CURRENT_TIMESTAMP
-WHERE id = :lid AND crawling_status = 'RUNNING'
-""")
-
-SQL_COUNT_PENDING_LINKS = text("""
-SELECT COUNT(*) AS c
-FROM resume_link
-WHERE resume_id = :rid
-AND crawling_status NOT IN ('COMPLETED','FAILED','NONEXISTED')
-""")
-
-# 모든 링크 종료 시, 이력서를 다음 단계로
-SQL_MARK_RESUME_PROCESSING = text("""
-UPDATE resume
-SET status = 'PROCESSING', updated_at = CURRENT_TIMESTAMP
-WHERE id = :rid AND status = 'CRAWLING'
-""")
-

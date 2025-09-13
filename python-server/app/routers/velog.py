@@ -1,23 +1,22 @@
+# app/routers/velog.py
 import typing as t
-from fastapi import APIRouter, Depends, HTTPException, Path, Body
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Path, Body
+from pydantic import BaseModel, Field
 
-from app.utils.auth import require_internal
 from app.services import crawler_service as svc
 
 router = APIRouter(prefix="/api/v1", tags=["ingest"])
 
 class StartBody(BaseModel):
-    # 스키마상 URL은 resume_link.url에서 읽으므로 옵션
-    url: t.Optional[str] = None
+    url: str = Field(..., description="Velog 프로필 URL (예: https://velog.io/@handle/posts)")
 
-@router.post("/ingest/resumes/{resumeId}/velog/start", dependencies=[Depends(require_internal)])
+@router.post("/ingest/resumes/{resumeId}/velog/start")
 async def start_velog_ingest(
     resumeId: str = Path(..., description="resume.id (UUID)"),
-    body: StartBody = Body(default=StartBody())
+    body: StartBody = Body(...),
 ):
     try:
-        result = await svc.ingest_velog_for_resume(resumeId, body.url)
+        result = await svc.ingest_velog_single(resumeId, body.url)
         return {"status": "success", "data": result}
     except HTTPException:
         raise
