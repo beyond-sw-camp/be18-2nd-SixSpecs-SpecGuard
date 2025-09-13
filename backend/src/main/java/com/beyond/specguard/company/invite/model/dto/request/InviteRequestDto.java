@@ -1,6 +1,6 @@
-package com.beyond.specguard.invite.model.dto.request;
+package com.beyond.specguard.company.invite.model.dto.request;
 
-import com.beyond.specguard.invite.model.entity.InviteEntity;
+import com.beyond.specguard.company.invite.model.entity.InviteEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -9,7 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Getter
 @NoArgsConstructor

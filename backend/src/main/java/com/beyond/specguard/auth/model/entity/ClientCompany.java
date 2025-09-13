@@ -1,6 +1,6 @@
 package com.beyond.specguard.auth.model.entity;
 
-import com.beyond.specguard.auth.model.dto.request.UpdateCompanyRequestDto;
+import com.beyond.specguard.company.management.model.dto.request.UpdateCompanyRequestDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

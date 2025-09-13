@@ -1,7 +1,7 @@
 package com.beyond.specguard.auth.model.entity;
 
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
-import com.beyond.specguard.auth.model.dto.request.UpdateUserRequestDto;
+import com.beyond.specguard.company.management.model.dto.request.UpdateUserRequestDto;
 import com.beyond.specguard.common.exception.CustomException;
 import jakarta.persistence.*;
 import lombok.*;

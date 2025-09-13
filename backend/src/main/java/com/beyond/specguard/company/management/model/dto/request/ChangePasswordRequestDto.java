@@ -1,4 +1,4 @@
-package com.beyond.specguard.auth.model.dto.request;
+package com.beyond.specguard.company.management.model.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

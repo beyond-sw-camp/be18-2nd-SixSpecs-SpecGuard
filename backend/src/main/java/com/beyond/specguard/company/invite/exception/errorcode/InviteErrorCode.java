@@ -1,4 +1,4 @@
-package com.beyond.specguard.invite.exception.errorcode;
+package com.beyond.specguard.company.invite.exception.errorcode;
 
 import com.beyond.specguard.common.exception.errorcode.ErrorCode;
 import lombok.Getter;

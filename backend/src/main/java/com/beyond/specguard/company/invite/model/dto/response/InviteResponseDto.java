@@ -1,4 +1,4 @@
-package com.beyond.specguard.invite.model.dto.response;
+package com.beyond.specguard.company.invite.model.dto.response;
 
 import lombok.*;
 

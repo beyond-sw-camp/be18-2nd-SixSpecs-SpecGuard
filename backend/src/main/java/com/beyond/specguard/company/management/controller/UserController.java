@@ -1,12 +1,12 @@
-package com.beyond.specguard.auth.controller;
+package com.beyond.specguard.company.management.controller;
 
-import com.beyond.specguard.auth.model.dto.request.ChangePasswordRequestDto;
-import com.beyond.specguard.auth.model.dto.request.UpdateCompanyRequestDto;
-import com.beyond.specguard.auth.model.dto.request.UpdateUserRequestDto;
+import com.beyond.specguard.company.management.model.dto.request.ChangePasswordRequestDto;
+import com.beyond.specguard.company.management.model.dto.request.UpdateCompanyRequestDto;
+import com.beyond.specguard.company.management.model.dto.request.UpdateUserRequestDto;
 import com.beyond.specguard.auth.model.dto.response.SignupResponseDto;
-import com.beyond.specguard.auth.model.service.common.CompanyService;
+import com.beyond.specguard.company.management.model.service.CompanyService;
 import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
-import com.beyond.specguard.auth.model.service.common.UserService;
+import com.beyond.specguard.company.management.model.service.UserService;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import jakarta.validation.Valid;

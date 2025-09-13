@@ -1,7 +1,7 @@
-package com.beyond.specguard.auth.model.service.common;
+package com.beyond.specguard.company.management.model.service;
 
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
-import com.beyond.specguard.auth.model.dto.request.UpdateCompanyRequestDto;
+import com.beyond.specguard.company.management.model.dto.request.UpdateCompanyRequestDto;
 import com.beyond.specguard.auth.model.dto.response.SignupResponseDto;
 import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.auth.model.entity.ClientUser;

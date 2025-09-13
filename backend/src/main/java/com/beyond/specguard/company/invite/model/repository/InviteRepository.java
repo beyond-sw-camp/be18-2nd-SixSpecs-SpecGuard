@@ -1,8 +1,8 @@
-package com.beyond.specguard.invite.model.repository;
+package com.beyond.specguard.company.invite.model.repository;
 
 import com.beyond.specguard.auth.model.entity.ClientCompany;
-import com.beyond.specguard.invite.model.entity.InviteEntity;
-import com.beyond.specguard.invite.model.entity.InviteEntity.InviteStatus;
+import com.beyond.specguard.company.invite.model.entity.InviteEntity;
+import com.beyond.specguard.company.invite.model.entity.InviteEntity.InviteStatus;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.jpa.repository.JpaRepository;

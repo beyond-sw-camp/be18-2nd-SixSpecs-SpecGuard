@@ -1,10 +1,10 @@
-package com.beyond.specguard.invite.model.service;
+package com.beyond.specguard.company.invite.model.service;
 
 import com.beyond.specguard.common.util.JwtUtil;
-import com.beyond.specguard.invite.exception.InviteException;
-import com.beyond.specguard.invite.exception.errorcode.InviteErrorCode;
-import com.beyond.specguard.invite.model.entity.InviteEntity;
-import com.beyond.specguard.invite.model.repository.InviteRepository;
+import com.beyond.specguard.company.invite.exception.InviteException;
+import com.beyond.specguard.company.invite.exception.errorcode.InviteErrorCode;
+import com.beyond.specguard.company.invite.model.entity.InviteEntity;
+import com.beyond.specguard.company.invite.model.repository.InviteRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;

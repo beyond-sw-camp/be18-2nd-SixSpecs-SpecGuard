@@ -1,4 +1,4 @@
-package com.beyond.specguard.invite.model.service;
+package com.beyond.specguard.company.invite.model.service;
 
 import com.sendgrid.*;
 import com.sendgrid.helpers.mail.Mail;

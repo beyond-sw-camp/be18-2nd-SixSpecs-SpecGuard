@@ -1,4 +1,4 @@
-package com.beyond.specguard.invite.model.service;
+package com.beyond.specguard.company.invite.model.service;
 
 import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.auth.model.entity.ClientUser;
@@ -6,12 +6,12 @@ import com.beyond.specguard.auth.model.repository.ClientCompanyRepository;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
 import com.beyond.specguard.common.exception.CustomException;
-import com.beyond.specguard.invite.exception.errorcode.InviteErrorCode;
+import com.beyond.specguard.company.invite.exception.errorcode.InviteErrorCode;
 import com.beyond.specguard.common.util.JwtUtil;
-import com.beyond.specguard.invite.model.dto.request.InviteRequestDto;
-import com.beyond.specguard.invite.model.dto.response.InviteResponseDto;
-import com.beyond.specguard.invite.model.entity.InviteEntity;
-import com.beyond.specguard.invite.model.repository.InviteRepository;
+import com.beyond.specguard.company.invite.model.dto.request.InviteRequestDto;
+import com.beyond.specguard.company.invite.model.dto.response.InviteResponseDto;
+import com.beyond.specguard.company.invite.model.entity.InviteEntity;
+import com.beyond.specguard.company.invite.model.repository.InviteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

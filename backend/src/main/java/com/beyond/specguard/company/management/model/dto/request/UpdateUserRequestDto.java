@@ -1,6 +1,5 @@
-package com.beyond.specguard.auth.model.dto.request;
+package com.beyond.specguard.company.management.model.dto.request;
 
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

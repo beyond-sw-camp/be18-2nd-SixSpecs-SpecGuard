@@ -1,4 +1,4 @@
-package com.beyond.specguard.invite.model.entity;
+package com.beyond.specguard.company.invite.model.entity;
 
 import com.beyond.specguard.auth.model.entity.ClientCompany;
 import jakarta.persistence.*;
