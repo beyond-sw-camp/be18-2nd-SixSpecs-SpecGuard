@@ -1,4 +1,3 @@
-# app/services/crawler_service.py
 import os
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -6,6 +5,7 @@ from fastapi import HTTPException
 
 from app.db import (
     SessionLocal,
+    SQL_FIND_RESUME_LINK_ID,
     SQL_CLAIM_RUNNING,
     SQL_SET_NOTEXISTED_IF_NOT_TERMINAL,
     SQL_SAVE_COMPLETED,
@@ -17,14 +17,10 @@ from app.utils.codec import to_gzip_bytes_from_json, to_gzip_bytes_from_text
 
 RECENT_WINDOW_DAYS = int(os.getenv("RECENT_WINDOW_DAYS", "365"))
 MAX_TEXT_LEN = int(os.getenv("MAX_TEXT_LEN", "200000"))
+RL_TYPE_VELOG      = os.getenv("RL_VELOG_TYPE", "VELOG")
 
 def _build_recent_activity(posts: list[dict]) -> str:
-    """
-    posts[] -> 최근 1년치만 골라
-    'YYYY-MM-DD | [제목]\\n본문' 형태로 이어 붙여 문자열 하나로 반환
-    """
-    # 1) 정규화 + 잘라내기
-    items = []
+    items: list[tuple[str, str, str]] = []
     for p in posts:
         iso = normalize_created_at(p.get("published_at"))
         if not iso:
@@ -32,18 +28,30 @@ def _build_recent_activity(posts: list[dict]) -> str:
         txt = p.get("text") or ""
         if MAX_TEXT_LEN and len(txt) > MAX_TEXT_LEN:
             txt = txt[:MAX_TEXT_LEN]
-        items.append({"title": p.get("title") or "", "date": iso, "text": txt})
+        items.append((iso, p.get("title") or "", txt))
 
-    # 2) 최근 1년 필터
+    # 최근 1년 필터
     cutoff = (datetime.now(ZoneInfo("Asia/Seoul")).date() - timedelta(days=RECENT_WINDOW_DAYS))
     items = [i for i in items if datetime.fromisoformat(i["date"]).date() >= cutoff]
 
-    # 3) 문자열 병합
-    merged_lines = [f"{i['date']} | [{i['title']}]\n{i['text']}".strip() for i in items]
-    return "\n---\n".join(merged_lines) if merged_lines else ""
+    # 문자열 병합
+    return "\n---\n".join([f"{d} | [{t}]\n{c}".strip() for d, t, c in items]) if items else ""
 
-async def ingest_velog_single(resume_id: str, url: str):
+async def ingest_velog_single(resume_id: str, url: str | None):
     url = (url or "").strip()
+
+    # 대상 resume_link.id 찾기 (없으면 404)
+    async with SessionLocal() as s:
+        res = await s.execute(
+            SQL_FIND_RESUME_LINK_ID,
+            {"rid": resume_id, "lt": RL_TYPE_VELOG, "url": url},
+        )
+        row = res.mappings().first()
+    if not row:
+        raise HTTPException(status_code=404, detail={"errorCode":"NOT_FOUND", "message":"resume_link(row) not found for given resume_id/url"})
+
+    lid = row["id"]
+
 
     # URL 공란이면: NOTEXISTED + 더미 gzip 후 종료
     if not url:
@@ -51,14 +59,14 @@ async def ingest_velog_single(resume_id: str, url: str):
         async with SessionLocal() as s0:
             await s0.execute(
                 SQL_SET_NOTEXISTED_IF_NOT_TERMINAL,
-                {"rid": resume_id, "url": "", "contents": dummy},
+                {"rid": resume_id, "lid": lid, "contents": dummy},
             )
             await s0.commit()
         return {"claimed": False, "status": "NOTEXISTED"}
 
     # RUNNING 선점 (PENDING -> RUNNING)
     async with SessionLocal() as s1:
-        r = await s1.execute(SQL_CLAIM_RUNNING, {"rid": resume_id, "url": url})
+        r = await s1.execute(SQL_CLAIM_RUNNING, {"rid": resume_id, "lid": lid})
         await s1.commit()
         if r.rowcount == 0:
             # 이미 RUNNING/COMPLETED/FAILED/NOTEXISTED 등
@@ -83,7 +91,7 @@ async def ingest_velog_single(resume_id: str, url: str):
         # RUNNING -> COMPLETED + gzip 저장
         async with SessionLocal() as s2:
             await s2.execute(
-                SQL_SAVE_COMPLETED, {"rid": resume_id, "url": url, "contents": gz}
+                SQL_SAVE_COMPLETED,  {"rid": resume_id, "lid": lid, "contents": gz},
             )
             await s2.commit()
 
@@ -91,6 +99,9 @@ async def ingest_velog_single(resume_id: str, url: str):
     except Exception as e:
         # RUNNING -> FAILED
         async with SessionLocal() as s3:
-            await s3.execute(SQL_SET_FAILED_IF_RUNNING, {"rid": resume_id, "url": url})
+            await s3.execute(SQL_SET_FAILED_IF_RUNNING, {"rid": resume_id, "lid": lid})  # ← lid 사용
             await s3.commit()
-        raise HTTPException(status_code=500, detail={"error": "CRAWLING_FAILED", "message": str(e)})
+        raise HTTPException(
+            status_code=500,
+            detail={"errorCode": "CRAWLING_FAILED", "message": str(e)},  # ← errorCode 키 사용
+        )
