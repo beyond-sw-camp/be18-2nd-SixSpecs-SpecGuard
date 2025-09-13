@@ -19,4 +19,3 @@
 /poetry.toml
 
 __pycache__/
-*.py[cod]

@@ -1,5 +1,5 @@
 # app/services/crawler_service.py
-import os, asyncio
+import os
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from fastapi import HTTPException
@@ -18,22 +18,29 @@ from app.utils.codec import to_gzip_bytes_from_json, to_gzip_bytes_from_text
 RECENT_WINDOW_DAYS = int(os.getenv("RECENT_WINDOW_DAYS", "365"))
 MAX_TEXT_LEN = int(os.getenv("MAX_TEXT_LEN", "200000"))
 
-def _recent_items_and_merged(posts: list[dict]):
+def _build_recent_activity(posts: list[dict]) -> str:
+    """
+    posts[] -> 최근 1년치만 골라
+    'YYYY-MM-DD | [제목]\\n본문' 형태로 이어 붙여 문자열 하나로 반환
+    """
+    # 1) 정규화 + 잘라내기
     items = []
     for p in posts:
         iso = normalize_created_at(p.get("published_at"))
+        if not iso:
+            continue
         txt = p.get("text") or ""
         if MAX_TEXT_LEN and len(txt) > MAX_TEXT_LEN:
             txt = txt[:MAX_TEXT_LEN]
         items.append({"title": p.get("title") or "", "date": iso, "text": txt})
 
+    # 2) 최근 1년 필터
     cutoff = (datetime.now(ZoneInfo("Asia/Seoul")).date() - timedelta(days=RECENT_WINDOW_DAYS))
-    items = [i for i in items if i["date"] and datetime.fromisoformat(i["date"]).date() >= cutoff]
+    items = [i for i in items if datetime.fromisoformat(i["date"]).date() >= cutoff]
 
-    merged = []
-    for i in items:
-        merged.append(f"{i['date']} | [{i['title']}]\n{i['text']}".strip())
-    return items, ("\n---\n".join(merged) if merged else "")
+    # 3) 문자열 병합
+    merged_lines = [f"{i['date']} | [{i['title']}]\n{i['text']}".strip() for i in items]
+    return "\n---\n".join(merged_lines) if merged_lines else ""
 
 async def ingest_velog_single(resume_id: str, url: str):
     url = (url or "").strip()
@@ -62,14 +69,14 @@ async def ingest_velog_single(resume_id: str, url: str):
         crawled = await vc.crawl_all_with_url(url)
         posts = crawled.get("posts", [])
         post_count = int(crawled.get("post_count", len(posts)))
-        items, merged = _recent_items_and_merged(posts)
+
+        recent_activity = _build_recent_activity(posts)
 
         payload = {
             "source": "velog",
             "base_url": url,
             "post_count": post_count,
-            "recent_activity": merged,
-            "recent_activity_items": items,
+            "recent_activity": recent_activity
         }
         gz = to_gzip_bytes_from_json(payload)
 
