@@ -1,8 +1,8 @@
-package com.beyond.specguard.auth.model.handler;
+package com.beyond.specguard.auth.model.handler.local;
 
 import com.beyond.specguard.admin.model.service.InternalAdminDetails;
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
-import com.beyond.specguard.auth.model.service.RedisTokenService;
+import com.beyond.specguard.auth.model.service.common.RedisTokenService;
+import com.beyond.specguard.auth.model.service.local.CustomUserDetails;
 import com.beyond.specguard.common.util.CookieUtil;
 import com.beyond.specguard.common.util.JwtUtil;
 import jakarta.servlet.ServletException;

@@ -24,7 +24,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ClientOAuth2UserDetailsService extends DefaultOAuth2UserService {
+public class CustomOAuth2UserDetailsService extends DefaultOAuth2UserService {
 
     private final ClientUserRepository clientUserRepository;
     private final JwtUtil jwtUtil;
@@ -60,7 +60,7 @@ public class ClientOAuth2UserDetailsService extends DefaultOAuth2UserService {
             log.info("기존 유저 로그인: email={}", user.getEmail());
         }
 
-        return new ClientOAuth2UserDetails(user, oAuth2User.getAttributes());
+        return new CustomOAuth2UserDetails(user, oAuth2User.getAttributes());
     }
 
     /**

@@ -5,8 +5,6 @@ import com.beyond.specguard.auth.exception.AuthException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
@@ -27,14 +25,10 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         AuthErrorCode errorCode;
 
         if (ex instanceof AuthException authEx) {
-            // 직접 던진 AuthException
             errorCode = authEx.getErrorCode();
-        } else if (ex.getCause() instanceof AuthException causeEx) {
-            // Spring Security가 AuthException을 감싼 경우
-            errorCode = causeEx.getErrorCode();
-        } else if (ex instanceof BadCredentialsException) {
+        } else if (ex instanceof org.springframework.security.authentication.BadCredentialsException) {
             errorCode = AuthErrorCode.INVALID_ACCESS_TOKEN;
-        } else if (ex instanceof InsufficientAuthenticationException) {
+        } else if (ex instanceof org.springframework.security.authentication.InsufficientAuthenticationException) {
             errorCode = AuthErrorCode.UNAUTHORIZED;
         } else {
             errorCode = AuthErrorCode.UNAUTHORIZED;

@@ -1,6 +1,6 @@
 package com.beyond.specguard.auth.model.service;
 
-import com.beyond.specguard.common.util.JwtUtil;
+import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,7 +42,6 @@ public class LogoutService {
         //  Refresh Token 쿠키 삭제
         response.addCookie(CookieUtil.deleteCookie("refresh_token"));
 
-        redisTokenService.deleteUserSession(username);
         //  Access Token 블랙리스트 등록
         String jti = jwtUtil.getJti(accessToken); // Access Token의 jti 추출
         long ttl = (jwtUtil.getExpiration(accessToken).getTime() - System.currentTimeMillis()) / 1000; // 남은 만료 시간

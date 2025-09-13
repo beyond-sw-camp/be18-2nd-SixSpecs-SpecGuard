@@ -1,7 +1,7 @@
 package com.beyond.specguard.auth.model.service;
 
-import com.beyond.specguard.auth.model.dto.request.InviteSignupRequestDto;
 import com.beyond.specguard.auth.model.dto.response.InviteCheckResponseDto;
+import com.beyond.specguard.auth.model.dto.request.InviteSignupRequestDto;
 import com.beyond.specguard.auth.model.dto.response.SignupResponseDto;
 import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.auth.model.entity.ClientUser;
@@ -12,14 +12,12 @@ import com.beyond.specguard.invite.model.entity.InviteEntity;
 import com.beyond.specguard.invite.model.repository.InviteRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InviteSignupService {
@@ -91,14 +89,12 @@ public class InviteSignupService {
         }
 
         ClientCompany company = invite.getCompany();
-        log.info("✅ checkInvite API - DB에서 찾은 invite_token: {}", invite.getInviteToken());
 
         return InviteCheckResponseDto.builder()
                 .email(invite.getEmail())
                 .role(invite.getRole().name())
                 .slug(company.getSlug())
                 .companyName(company.getName())
-                .token(invite.getInviteToken()) // ✅ DB에 저장된 JWT를 그대로 내려줌
                 .build();
     }
 }

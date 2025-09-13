@@ -1,6 +1,5 @@
 package com.beyond.specguard.auth.model.service;
 
-import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import com.beyond.specguard.auth.model.dto.request.SignupRequestDto;
 import com.beyond.specguard.auth.model.dto.response.SignupResponseDto;
 import com.beyond.specguard.auth.model.entity.ClientCompany;
@@ -8,6 +7,7 @@ import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientCompanyRepository;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.common.exception.CustomException;
+import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
