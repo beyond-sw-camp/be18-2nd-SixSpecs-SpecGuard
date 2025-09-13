@@ -37,7 +37,7 @@ public class InviteEntity {
     @Enumerated(EnumType.STRING)
     private InviteRole role; // OWNER / MANAGER / VIEWER
 
-    @Column(name = "invite_token", nullable = false, length = 512, unique = true)
+    @Column(name = "invite_token", nullable = false, length = 255, unique = true)
     private String inviteToken;
 
     @Enumerated(EnumType.STRING)
