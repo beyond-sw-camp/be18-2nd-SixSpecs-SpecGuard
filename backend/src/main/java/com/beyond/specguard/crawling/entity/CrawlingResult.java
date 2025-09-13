@@ -12,7 +12,9 @@ import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(name="crawling_result")
+@Table(name="crawling_result",
+        uniqueConstraints = @UniqueConstraint(name="uk_crawl_resume_link", columnNames = {"resume_link_id"})
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CrawlingResult {
     @Id
@@ -38,6 +40,13 @@ public class CrawlingResult {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    void prePersist() {
+        if(crawlingStatus == null)
+            crawlingStatus = CrawlingStatus.PENDING;
+    }
+
 
     public enum CrawlingStatus {
         PENDING,
