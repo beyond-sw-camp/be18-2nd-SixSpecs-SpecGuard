@@ -2,6 +2,7 @@ package com.beyond.specguard.resume.service;
 
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
+import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository;
 import com.beyond.specguard.resume.auth.ResumeTempAuth;
 import com.beyond.specguard.resume.dto.request.*;
 import com.beyond.specguard.resume.dto.response.CompanyTemplateResponseResponse;
@@ -41,7 +42,7 @@ public class ResumeService {
     private final ResumeLinkRepository linkRepository;
     private final CompanyTemplateResponseRepository templateResponseRepository;
     private final CompanyFormSubmissionRepository submissionRepository;
-    private final com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository companyTemplateRepository;
+    private final CompanyTemplateRepository companyTemplateRepository;
     private final PasswordEncoder passwordEncoder;
     private final ResumeTempAuth tempAuth;
     private final LocalFileStorageService storageService;
