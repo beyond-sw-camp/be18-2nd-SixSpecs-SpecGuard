@@ -6,12 +6,16 @@ authors = [
     {name = "viroovr",email = "tjgusdnjs789@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.13,<4.0"
 dependencies = [
     "fastapi (>=0.116.1,<0.117.0)",
     "uvicorn (>=0.35.0,<0.36.0)",
     "httpx (>=0.28.1,<0.29.0)",
-    "playwright (>=1.54.0,<2.0.0)"
+    "playwright (>=1.54.0,<2.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+
+    "SQLAlchemy>=2.0,<3.0",
+    "asyncmy>=0.2.10,<0.3.0",
 ]
 
 [tool.poetry]
@@ -29,7 +33,7 @@ build-backend = "poetry.core.masonry.api"
 # 아래 섹션은 black의 설정
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py313']
 include = '\.pyi?$'
 exclude = '''
 /(

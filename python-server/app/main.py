@@ -2,6 +2,8 @@ import platform, sys
 from fastapi import FastAPI, Request
 from app.core.errors import install_error_handlers
 from app.routers.velog import router as velog_router
+from dotenv import load_dotenv; load_dotenv()
+
 
 app = FastAPI(title="SpecGuard Velog API", version="1.3.0")
 
@@ -25,5 +27,5 @@ async def root():
     return {
         "status": "ok",
         "env": {"python": sys.version.split()[0], "os": platform.platform()},
-        "security": "JWT bearer required on protected endpoints",
+        "note": "Use /api/v1/ingest/resumes/{resumeId}/velog/start",
     }

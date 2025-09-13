@@ -1,5 +1,3 @@
-# 크롤링 공통 설정/상수 (운영 튜닝 가능 버전)
-
 import os
 
 def _env_int(key: str, default: int) -> int:
@@ -42,19 +40,3 @@ CONF = {
         "hard_extra_sec": _env_int("CRAWLER_HARD_EXTRA_SEC", 4),
     },
 }
-
-# 코드 언어 정규화/화이트리스트/노이즈
-LANG_NORMALIZE = {
-    "js": "javascript", "jsx": "javascript",
-    "ts": "typescript", "tsx": "typescript",
-    "c++": "cpp", "c#": "csharp", "cs": "csharp",
-    "sh": "bash", "shell": "bash",
-    "yml": "yaml", "py": "python",
-    "kt": "kotlin", "rs": "rust", "ps1": "powershell",
-}
-WHITELIST = {
-    "java","javascript","typescript","python","sql","html","css","scss",
-    "cpp","c","csharp","kotlin","swift","go","rust","bash","shell",
-    "yaml","json","xml","markdown","powershell","dockerfile",
-}
-NOISE = {"flow","null","plaintext","text","md","none","unknown"}

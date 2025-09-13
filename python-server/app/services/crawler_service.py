@@ -1,149 +1,136 @@
-import os
-import asyncio
-from typing import Optional, List, Dict, Any
-from fastapi import HTTPException
+import os, json, asyncio
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from app.utils.dates import normalize_created_at
+from fastapi import HTTPException
+
+from app.utils.codec import (
+    to_gzip_base64_from_json, to_gzip_base64_from_text,
+    to_gzip_bytes_from_json, to_gzip_bytes_from_text
+)
+from app.db import (
+    SessionLocal,
+    SQL_MARK_RESUME_CRAWLING, SQL_GET_VELOG_LINKS,
+    SQL_CLAIM_LINK_RUNNING, SQL_SAVE_CONTENTS_COMPLETED, SQL_SET_FAILED_IF_RUNNING,
+    SQL_COUNT_PENDING_LINKS, SQL_MARK_RESUME_PROCESSING,
+    sql_save_contents_completed_blob, sql_set_nonexisted_blob   
+)
+
+SAVE_MODE = os.getenv("CONTENTS_SAVE_MODE", "BASE64").upper()      
+BLOB_COL  = os.getenv("CONTENTS_BLOB_COLUMN", "contents_gzip")
+
+SQL_SAVE_CONTENTS_COMPLETED_BLOB = sql_save_contents_completed_blob(BLOB_COL)
+SQL_SET_NONEXISTED_BLOB          = sql_set_nonexisted_blob(BLOB_COL)
 
 from app.crawlers import velog_crawler as vc
 from app.utils.dates import normalize_created_at
-from app.services.nlp_client import send_to_nlp
+from app.utils.codec import to_gzip_base64_from_json, to_gzip_base64_from_text
 
+RECENT_WINDOW_DAYS = int(os.environ.get("RECENT_WINDOW_DAYS", "365"))
+MAX_TEXT_LEN = int(os.environ.get("MAX_TEXT_LEN", "200000"))
 
-# ENV helpers
-def _env_bool(key: str, default: str = "false") -> bool:
-    return os.environ.get(key, default).lower() in {"1", "true", "yes"}
+def _recent_items_and_merged(posts: list[dict]):
+    # 구조화
+    items = []
+    for p in posts:
+        iso = normalize_created_at(p.get("published_at"))
+        txt = p.get("text") or ""
+        if MAX_TEXT_LEN and len(txt) > MAX_TEXT_LEN:
+            txt = txt[:MAX_TEXT_LEN]
+        items.append({"title": p.get("title") or "", "date": iso, "text": txt})
 
-def _env_int(key: str, default: str) -> int:
-    try:
-        return int(os.environ.get(key, default))
-    except Exception:
-        return int(default)
+    # 최근 1년만
+    cutoff = (datetime.now(ZoneInfo("Asia/Seoul")).date() - timedelta(days=RECENT_WINDOW_DAYS))
+    items = [i for i in items if i["date"] and datetime.fromisoformat(i["date"]).date() >= cutoff]
 
-def _env_float(key: str, default: str) -> float:
-    try:
-        return float(os.environ.get(key, default))
-    except Exception:
-        return float(default)
+    merged = []
+    for i in items:
+        merged.append(f"{i['date']} | [{i['title']}]\n{i['text']}".strip())
+    return items, ("\n---\n".join(merged) if merged else "")
 
+async def ingest_velog_for_resume(resume_id: str, _unused_url: str | None = None):
+    """
+    - resume.status: PENDING -> CRAWLING (CAS)
+    - resume_link(velog) 각각:
+        url 없으면 NONEXISTED(압축된 더미 텍스트 저장)
+        url 있으면 RUNNING 선점 -> 크롤 -> gz(base64) 저장 -> COMPLETED
+    - 모든 링크 종료 시 resume.status -> PROCESSING
+    """
+    # 1) 상태 전이(PENDING -> CRAWLING)
+    async with SessionLocal() as sess:
+        await sess.execute(SQL_MARK_RESUME_CRAWLING, {"rid": resume_id})
+        await sess.commit()
 
-# Chunk helpers
-def _chunked(seq: List[Any], size: int):
-    """size 단위로 리스트를 잘라 제너레이터로 반환"""
-    for i in range(0, len(seq), size):
-        yield seq[i:i + size]
+        res = await sess.execute(SQL_GET_VELOG_LINKS, {"rid": resume_id})
+        links = list(res.mappings())
 
-async def _sleep_ms(ms: int | float):
-    if ms and ms > 0:
-        await asyncio.sleep(float(ms) / 1000.0)
-
-
-# 목록
-async def list_posts(username: str, page: int, limit: int):
-    links: List[str] = await vc.render_list_with_playwright(username)
     if not links:
-        return []
+        return {"handled": 0, "note": "no velog rows"}
 
-    start, end = (page - 1) * limit, (page - 1) * limit + limit
-    out = []
-    for url in links[start:end]:
-        title, _text, _langs, tags, published = await vc.render_post_with_playwright(url)
-        out.append(
-            {
-                "title": title or "",
-                "url": url,
-                "date": normalize_created_at(published),
-                "tags": tags or [],
-            }
-        )
-    return out
+    async def _handle_link(row):
+        lid = row["id"]
+        url = (row["url"] or "").strip()
 
+        # URL 없음 -> NONEXISTED
+        if not url:
+            if SAVE_MODE == "GZIP_RAW":
+                payload = to_gzip_bytes_from_text("제출된 링크 없음")
+                async with SessionLocal() as s0:
+                    await s0.execute(SQL_SET_NONEXISTED_BLOB, {"lid": lid, "contents": payload})
+                    await s0.commit()
+            else:
+                dummy = to_gzip_base64_from_text("제출된 링크 없음")
+                async with SessionLocal() as s0:
+                    # 기존 JSON/TEXT 컬럼에 base64 문자열 저장
+                    from app.db import SQL_SET_NONEXISTED_IF_NOT_TERMINAL
+                    await s0.execute(SQL_SET_NONEXISTED_IF_NOT_TERMINAL, {"lid": lid, "contents": dummy})
+                    await s0.commit()
+            return
 
-# 상세
-async def post_detail(url: str):
-    title, text, langs, tags, published = await vc.render_post_with_playwright(url)
+        # RUNNING 선점
+        async with SessionLocal() as s1:
+            result = await s1.execute(SQL_CLAIM_LINK_RUNNING, {"lid": lid})
+            await s1.commit()
+            if result.rowcount == 0:
+                return
 
-    # 크롤/파싱 실패로 판단(정책: 제목/본문 모두 없음)
-    if not title and not text:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": "CRAWLING_FAILED",
-                "message": "Velog 구조 변경 또는 예외로 인해 게시글을 파싱할 수 없습니다",
-            },
-        )
-
-    MAX_TEXT_LEN = _env_int("MAX_TEXT_LEN", "200000")
-    if text and len(text) > MAX_TEXT_LEN:
-        text = text[:MAX_TEXT_LEN]
-
-    return {
-        "title": title,
-        "url": url,
-        "createdAt": normalize_created_at(published),
-        "content": text or "",
-        "tags": tags or [],
-        "codeLangs": langs or [],
-    }
-
-async def crawl_and_forward(username: str, nlp_url: str, body_max_posts: Optional[int]):
-    """
-    NLP로 전송을 'post_count'와 'recent_activity'로 축소:
-      - post_count: 전체 게시글 수 (링크 개수 기준)
-      - recent_activity: 최근 1년 이내 게시글들의 '본문' 배열
-    """
-    # 1) 링크 수집 (전체 글 수 산정용)
-    links: List[str] = await vc.render_list_with_playwright(username)
-    post_count = len(links)
-
-    if post_count == 0:
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "CRAWLING_FAILED", "message": "전달할 게시글이 없습니다. 사용자 또는 Velog 구조를 확인하세요"},
-        )
-
-    # 2) 최근 1년 윈도우
-    window_days = _env_int("RECENT_WINDOW_DAYS", "365")
-    cutoff = (datetime.now(ZoneInfo("Asia/Seoul")).date() - timedelta(days=window_days))
-
-    recent_texts: List[str] = []
-
-    # (옵션) 처리 상한: 너무 큰 계정 보호용
-    scan_cap = body_max_posts or _env_int("DEFAULT_CRAWL_MAX_POSTS", "0")
-    scanned = 0
-
-    # 3) 상세 조회하며 최근 1년 본문만 수집
-    for url in links:
-        if scan_cap and scanned >= scan_cap:
-            break
-        scanned = 1
         try:
-            title, text, _langs, _tags, published = await vc.render_post_with_playwright(url)
-            iso = normalize_created_at(published)
-            if not iso:
-                continue
-            try:
-                y, m, d = map(int, iso.split("-"))
-            except Exception:
-                continue
-            if datetime(y, m, d).date() >= cutoff:
-                if text:
-                    recent_texts.append(text)
-            # (선택 최적화) 링크가 최신→과거 순이라면, 과거를 만나면 중단 가능
-            # else:
-            #     break
-        except Exception:
-            continue
+            crawled = await vc.crawl_all_with_url(url)
+            posts = crawled.get("posts", [])
+            post_count = int(crawled.get("post_count", len(posts)))
+            items, merged = _recent_items_and_merged(posts)
 
-    # 4) 축소 페이로드로 NLP 전송
-    payload = {
-        "source": "velog",
-        "author": {"handle": username},
-        "post_count": post_count,
-        "recent_activity": recent_texts,   # 최근 1년 본문 배열
-        "window_days": window_days,
-        "schema_version": 2
-    }
-    resp = await send_to_nlp(nlp_url, payload)
-    return post_count, resp
+            payload_dict = {
+                "source": "velog",
+                "base_url": url,
+                "post_count": post_count,
+                "recent_activity": merged,
+                "recent_activity_items": items,
+            }
+
+            if SAVE_MODE == "GZIP_RAW":
+                payload = to_gzip_bytes_from_json(payload_dict)
+                async with SessionLocal() as s2:
+                    await s2.execute(SQL_SAVE_CONTENTS_COMPLETED_BLOB, {"lid": lid, "contents": payload})
+                    await s2.commit()
+            else:
+                gz_b64 = to_gzip_base64_from_json(payload_dict)
+                async with SessionLocal() as s2:
+                    await s2.execute(SQL_SAVE_CONTENTS_COMPLETED, {"lid": lid, "contents": gz_b64})
+                    await s2.commit()
+        except Exception:
+            async with SessionLocal() as s3:
+                await s3.execute(SQL_SET_FAILED_IF_RUNNING, {"lid": lid})
+                await s3.commit()
+
+
+    await asyncio.gather(*[_handle_link(r) for r in links])
+
+    # 남은 진행건 없으면 이력서 상태 상향
+    async with SessionLocal() as s_end:
+        res2 = await s_end.execute(SQL_COUNT_PENDING_LINKS, {"rid": resume_id})
+        remain = int(list(res2)[0][0])
+        if remain == 0:
+            await s_end.execute(SQL_MARK_RESUME_PROCESSING, {"rid": resume_id})
+            await s_end.commit()
+
+    return {"handled": len(links)}
