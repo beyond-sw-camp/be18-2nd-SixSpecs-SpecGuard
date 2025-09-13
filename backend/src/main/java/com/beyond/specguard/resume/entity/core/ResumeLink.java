@@ -36,21 +36,11 @@ public class ResumeLink extends BaseEntity {
     @Column(name = "link_type", nullable = false)
     private LinkType linkType;
 
-    //원문
-    @Lob
-    @Column(name = "contents", columnDefinition = "TEXT")
-    private String contents;
-
-    @Column(name = "label", length = 255)
-    private String label;
-
 
     @Builder
-    public ResumeLink( Resume resume, String url, LinkType linkType, String contents, String label) {
+    public ResumeLink( Resume resume, String url, LinkType linkType) {
         this.resume = resume;
         this.url = url;
         this.linkType = linkType;
-        this.contents = contents;
-        this.label = label;
     }
 }
