@@ -1,4 +1,3 @@
-# app/routers/velog.py
 import typing as t
 from fastapi import APIRouter, HTTPException, Path, Body
 from pydantic import BaseModel, Field
@@ -21,4 +20,4 @@ async def start_velog_ingest(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail={"error":"INTERNAL_SERVER_ERROR", "message": str(e)})
+        raise HTTPException(status_code=500, detail={"errorCode":"INTERNAL_SERVER_ERROR", "message": str(e)})

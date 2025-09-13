@@ -32,7 +32,8 @@ def _build_recent_activity(posts: list[dict]) -> str:
 
     # 최근 1년 필터
     cutoff = (datetime.now(ZoneInfo("Asia/Seoul")).date() - timedelta(days=RECENT_WINDOW_DAYS))
-    items = [i for i in items if datetime.fromisoformat(i["date"]).date() >= cutoff]
+    items = [i for i in items if datetime.fromisoformat(i[0]).date() >= cutoff]
+
 
     # 문자열 병합
     return "\n---\n".join([f"{d} | [{t}]\n{c}".strip() for d, t, c in items]) if items else ""
