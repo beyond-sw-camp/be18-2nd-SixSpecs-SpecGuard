@@ -1,6 +1,6 @@
 package com.beyond.specguard.invite.model.service;
 
-import com.beyond.specguard.common.util.JwtUtil;
+import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.invite.exception.InviteException;
 import com.beyond.specguard.invite.exception.errorcode.InviteErrorCode;
 import com.beyond.specguard.invite.model.entity.InviteEntity;

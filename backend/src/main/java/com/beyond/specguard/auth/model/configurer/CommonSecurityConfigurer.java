@@ -6,7 +6,7 @@ import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.auth.model.service.RedisTokenService;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
-import com.beyond.specguard.common.util.JwtUtil;
+import com.beyond.specguard.common.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -35,7 +35,7 @@ public class CommonSecurityConfigurer extends AbstractHttpConfigurer<CommonSecur
                 )
                 // 🔹 JWT 필터
                 .addFilterBefore(
-                        new JwtFilter(jwtUtil, clientUserRepository, internalAdminRepository, redisTokenService, restAuthenticationEntryPoint),
+                        new JwtFilter(jwtUtil, clientUserRepository, redisTokenService, restAuthenticationEntryPoint, internalAdminRepository),
                         UsernamePasswordAuthenticationFilter.class
                 );
     }
