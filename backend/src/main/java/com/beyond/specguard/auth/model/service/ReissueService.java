@@ -1,4 +1,4 @@
-package com.beyond.specguard.auth.model.service.common;
+package com.beyond.specguard.auth.model.service;
 
 import com.beyond.specguard.admin.model.entity.InternalAdmin;
 import com.beyond.specguard.admin.model.repository.InternalAdminRepository;
@@ -7,7 +7,7 @@ import com.beyond.specguard.auth.model.dto.response.ReissueResponseDto;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.common.exception.CustomException;
-import com.beyond.specguard.common.util.JwtUtil;
+import com.beyond.specguard.common.jwt.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

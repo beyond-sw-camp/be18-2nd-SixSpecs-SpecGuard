@@ -41,9 +41,7 @@ public class ResumeService {
     private final ResumeLinkRepository linkRepository;
     private final CompanyTemplateResponseRepository templateResponseRepository;
     private final CompanyFormSubmissionRepository submissionRepository;
-
     private final com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository companyTemplateRepository;
-
     private final PasswordEncoder passwordEncoder;
     private final ResumeTempAuth tempAuth;
     private final LocalFileStorageService storageService;

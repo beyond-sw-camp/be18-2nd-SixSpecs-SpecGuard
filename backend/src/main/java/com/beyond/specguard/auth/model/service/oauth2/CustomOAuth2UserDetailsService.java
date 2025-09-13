@@ -5,7 +5,7 @@ import com.beyond.specguard.auth.model.dto.response.NaverResponseDto;
 import com.beyond.specguard.auth.model.dto.response.OAuth2Response;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
-import com.beyond.specguard.common.util.JwtUtil;
+import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.common.util.OAuth2StateUtil;
 import com.beyond.specguard.company.invite.model.entity.InviteEntity;
 import com.beyond.specguard.company.invite.model.service.InviteValidator;

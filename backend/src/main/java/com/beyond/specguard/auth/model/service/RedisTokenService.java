@@ -1,4 +1,4 @@
-package com.beyond.specguard.auth.model.service.common;
+package com.beyond.specguard.auth.model.service;
 
 import com.beyond.specguard.common.properties.AppProperties;
 import lombok.RequiredArgsConstructor;
