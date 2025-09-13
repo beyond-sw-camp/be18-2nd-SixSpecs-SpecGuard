@@ -1,4 +1,4 @@
-package com.beyond.specguard.auth.model.service;
+package com.beyond.specguard.auth.model.service.common;
 
 import com.beyond.specguard.common.properties.AppProperties;
 import lombok.RequiredArgsConstructor;
@@ -54,9 +54,7 @@ public class RedisTokenService {
 
     // 블랙리스트 조회
     public boolean isBlacklisted(String jti) {
-        return Boolean.TRUE.equals(
-                redisTemplate.hasKey(appProperties.getRedis().getPrefix().getBlacklist() + jti)
-        );
+        return redisTemplate.hasKey(appProperties.getRedis().getPrefix().getBlacklist() + jti);
     }
 
     // ================== Access Token 세션 관리 (단일 세션) ==================

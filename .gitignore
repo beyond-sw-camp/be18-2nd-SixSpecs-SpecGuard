@@ -398,3 +398,7 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/intellij+all,visualstudiocode,windows,macos,java,python,vuejs,vue,linux
+
+# application.properties는 깃에 올리지 않음
+/src/main/resources/application.properties
+/src/main/resources/application-*.properties
