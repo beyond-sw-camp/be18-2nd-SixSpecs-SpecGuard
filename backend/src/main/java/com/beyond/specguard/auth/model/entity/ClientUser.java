@@ -1,5 +1,8 @@
 package com.beyond.specguard.auth.model.entity;
 
+import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
+import com.beyond.specguard.company.management.model.dto.request.UpdateUserRequestDto;
+import com.beyond.specguard.common.exception.CustomException;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -65,7 +68,23 @@ public class ClientUser {
     @Column(name = "profile_image", length = 500, nullable = true)
     private String profileImage;
 
+
     public enum Role {
         OWNER, MANAGER, VIEWER
+    }
+
+    public void update(UpdateUserRequestDto dto) {
+        if (dto.getName() != null) {
+            this.name = dto.getName();
+        }
+        if (dto.getPhone() != null) {
+            this.phone = dto.getPhone();
+        }
+    }
+    public void changePassword(String encodedPassword) {
+        if (encodedPassword == null || encodedPassword.isBlank()) {
+            throw new CustomException(AuthErrorCode.INVALID_PASSWORD);
+        }
+        this.passwordHash = encodedPassword;
     }
 }

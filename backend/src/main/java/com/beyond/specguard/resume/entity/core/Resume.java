@@ -66,4 +66,7 @@ public class Resume extends BaseEntity {
 
     public void changeStatus(ResumeStatus status) { this.status = status; }
 
+    public enum Role {
+        APPLICANT;
+    }
 }

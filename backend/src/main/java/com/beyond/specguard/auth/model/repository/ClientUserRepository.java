@@ -30,4 +30,8 @@ public interface ClientUserRepository extends JpaRepository<ClientUser, UUID> {
     //join fetch로 company까지 로딩 (로그인 시 사용)
     @Query("SELECT u FROM ClientUser u JOIN FETCH u.company WHERE u.email = :email")
     Optional<ClientUser> findByEmailWithCompany(@Param("email") String email);
+
+    boolean existsByCompanyIdAndRoleAndIdNot(UUID companyId, ClientUser.Role role, UUID excludeId);
+
+    void deleteAllByCompanyId(UUID companyId);
 }

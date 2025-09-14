@@ -1,6 +1,6 @@
 package com.beyond.specguard.applicant.model.service;
 
-import com.beyond.specguard.tempresume.Resume;
+import com.beyond.specguard.resume.entity.core.Resume;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,7 +18,7 @@ public class ApplicantDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + Resume.ResumeRole.APPLICANT.name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + Resume.Role.APPLICANT.name()));
     }
 
     @Override

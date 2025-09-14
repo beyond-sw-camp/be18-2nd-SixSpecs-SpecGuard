@@ -1,9 +1,11 @@
 package com.beyond.specguard.common.config;
 
+import com.beyond.specguard.admin.model.repository.InternalAdminRepository;
 import com.beyond.specguard.auth.model.configurer.CommonSecurityConfigurer;
 import com.beyond.specguard.auth.model.filter.AdminLoginFilter;
 import com.beyond.specguard.auth.model.filter.ApplicantLoginFilter;
 import com.beyond.specguard.auth.model.filter.ClientLoginFilter;
+import com.beyond.specguard.auth.model.filter.JwtFilter;
 import com.beyond.specguard.auth.model.handler.CustomFailureHandler;
 import com.beyond.specguard.auth.model.handler.CustomSuccessHandler;
 import com.beyond.specguard.auth.model.handler.oauth2.OAuth2FailureHandler;
@@ -11,6 +13,7 @@ import com.beyond.specguard.auth.model.handler.oauth2.OAuth2SuccessHandler;
 import com.beyond.specguard.auth.model.provider.AdminAuthenticationProvider;
 import com.beyond.specguard.auth.model.provider.ApplicantAuthenticationProvider;
 import com.beyond.specguard.auth.model.provider.ClientAuthenticationProvider;
+import com.beyond.specguard.auth.model.repository.ClientUserRepository;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.Customizer;
@@ -69,7 +73,10 @@ public class SecurityConfig {
             // OAuth2 관련 엔드포인트
             "/oauth2/authorization/**",
             "/login/oauth2/code/**",
-            "/api/v1/auth"
+            "/api/v1/auth",
+
+            //resume
+            "/api/v1/resumes/**"
     };
 
     private final static String[] ADMIN_AUTH_WHITE_LIST = {
@@ -89,8 +96,8 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Primary
     @Bean("adminAuthenticationManager")
+    @Primary
     public AuthenticationManager adminAuthenticationManager(
             AdminAuthenticationProvider adminAuthenticationProvider
     ) {
@@ -163,8 +170,11 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(AUTH_WHITE_LIST).permitAll()
                 .requestMatchers("/api/v1/invite/**").hasRole("OWNER")
-                .anyRequest().hasAnyRole("OWNER", "MANAGER", "VIEWER")
-            );
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/company/**").hasRole("OWNER")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/company/**").hasRole("OWNER")
+                .requestMatchers("/api/**").hasAnyRole("OWNER", "MANAGER", "VIEWER")
+                .anyRequest().authenticated()
+        );
 
         ClientLoginFilter clientLoginFilter = new ClientLoginFilter(clientAuthenticationManager, customSuccessHandler, customFailureHandler);
 
@@ -172,11 +182,11 @@ public class SecurityConfig {
 
         // 🔹 OAuth2 로그인
         http.oauth2Login(oauth2 -> oauth2
-            .authorizationEndpoint(authEndpoint -> authEndpoint
-                    .authorizationRequestResolver(customResolver) // ✅ 커스텀 Resolver 등록
-            )
-            .successHandler(oAuth2SuccessHandler) // ✅ 성공 핸들러
-            .failureHandler(oAuth2FailureHandler) // ✅ 실패 핸들러
+                .authorizationEndpoint(authEndpoint -> authEndpoint
+                        .authorizationRequestResolver(customResolver) // ✅ 커스텀 Resolver 등록
+                )
+                .successHandler(oAuth2SuccessHandler) // ✅ 성공 핸들러
+                .failureHandler(oAuth2FailureHandler) // ✅ 실패 핸들러
         );
 
         return http.build();
@@ -226,8 +236,8 @@ public class SecurityConfig {
 
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000")); // 프론트 주소
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedOrigins(List.of("http://localhost:5173")); // 프론트 주소
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // 쿠키 허용
         config.setExposedHeaders(List.of("Authorization"));
@@ -235,5 +245,4 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
         return source;
     }
-
 }

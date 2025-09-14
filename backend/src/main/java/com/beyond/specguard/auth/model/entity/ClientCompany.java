@@ -1,5 +1,6 @@
 package com.beyond.specguard.auth.model.entity;
 
+import com.beyond.specguard.company.management.model.dto.request.UpdateCompanyRequestDto;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -45,8 +46,19 @@ public class ClientCompany {
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<ClientUser> users = new ArrayList<>();
+
+    public void update(UpdateCompanyRequestDto dto) {
+        if (dto.getName() != null) this.name = dto.getName();
+        if (dto.getManagerName() != null) this.managerName = dto.getManagerName();
+        if (dto.getManagerPosition() != null) this.managerPosition = dto.getManagerPosition();
+        if (dto.getContactEmail() != null) this.contactEmail = dto.getContactEmail();
+        if (dto.getContactMobile() != null) this.contactMobile = dto.getContactMobile();
+    }
+
 }
