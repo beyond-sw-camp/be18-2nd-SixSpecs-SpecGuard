@@ -1,6 +1,6 @@
 package com.beyond.specguard.companytemplate.model.entity;
 
-import com.beyond.specguard.auth.model.entity.ClientCompany;
+import com.beyond.specguard.company.common.model.entity.ClientCompany;
 import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateBasicRequestDto;
 import com.beyond.specguard.companytemplate.model.dto.request.CompanyTemplateDetailRequestDto;
 import jakarta.persistence.CascadeType;
