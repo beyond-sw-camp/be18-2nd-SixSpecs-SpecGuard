@@ -4,9 +4,9 @@ import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import com.beyond.specguard.auth.model.dto.response.TokenResponseDto;
 import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.auth.model.repository.ClientUserRepository;
-import com.beyond.specguard.auth.model.service.common.RedisTokenService;
+import com.beyond.specguard.auth.model.service.RedisTokenService;
 import com.beyond.specguard.common.exception.CustomException;
-import com.beyond.specguard.common.util.JwtUtil;
+import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.common.util.CookieUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +59,7 @@ public class TokenService {
             return new TokenResponseDto(newAccessToken, "AccessToken 발급 성공");
         } catch (Exception e) {
             // DB, Redis 등 내부 처리 오류 시
-            throw new CustomException(AuthErrorCode.INTERNAL_ERROR,e);
+            throw new CustomException(AuthErrorCode.INTERNAL_ERROR);
         }
     }
 }

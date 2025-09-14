@@ -1,6 +1,8 @@
 package com.beyond.specguard.auth.model.filter;
 
 import com.beyond.specguard.auth.model.dto.request.LoginRequestDto;
+import com.beyond.specguard.auth.model.handler.CustomFailureHandler;
+import com.beyond.specguard.auth.model.handler.CustomSuccessHandler;
 import com.beyond.specguard.auth.model.token.ClientAuthenticationToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,8 +18,14 @@ import java.io.IOException;
 
 public class ClientLoginFilter extends UsernamePasswordAuthenticationFilter {
 
-    public ClientLoginFilter(@Qualifier("clientAuthenticationManager") AuthenticationManager clientAuthenticationManager) {
-        super.setAuthenticationManager(clientAuthenticationManager);
+    public ClientLoginFilter(
+            @Qualifier("clientAuthenticationManager") AuthenticationManager clientAuthenticationManager,
+            CustomSuccessHandler customSuccessHandler,
+            CustomFailureHandler customFailureHandler
+    ) {
+        super(clientAuthenticationManager);
+        setAuthenticationSuccessHandler(customSuccessHandler);
+        setAuthenticationFailureHandler(customFailureHandler);
         setFilterProcessesUrl("/api/v1/auth/login"); // 로그인 엔드포인트
     }
 

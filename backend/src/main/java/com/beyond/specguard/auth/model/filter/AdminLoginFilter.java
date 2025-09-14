@@ -1,6 +1,8 @@
 package com.beyond.specguard.auth.model.filter;
 
 import com.beyond.specguard.auth.model.dto.request.LoginRequestDto;
+import com.beyond.specguard.auth.model.handler.CustomFailureHandler;
+import com.beyond.specguard.auth.model.handler.CustomSuccessHandler;
 import com.beyond.specguard.auth.model.token.AdminAuthenticationToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,14 +17,22 @@ import java.io.IOException;
 
 public class AdminLoginFilter extends UsernamePasswordAuthenticationFilter {
 
-    public AdminLoginFilter(@Qualifier("adminAuthenticationManager") AuthenticationManager adminAuthenticationManager) {
+    public AdminLoginFilter(
+            @Qualifier("adminAuthenticationManager") AuthenticationManager adminAuthenticationManager,
+            CustomSuccessHandler customSuccessHandler,
+            CustomFailureHandler customFailureHandler
+    ) {
         super.setAuthenticationManager(adminAuthenticationManager);
+        setAuthenticationSuccessHandler(customSuccessHandler);
+        setAuthenticationFailureHandler(customFailureHandler);
         setFilterProcessesUrl("/admins/auth/login"); // 어드민 전용 로그인 엔드포인트
     }
 
     @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException
-    {
+    public Authentication attemptAuthentication(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws AuthenticationException {
         try {
             LoginRequestDto loginDTO = new ObjectMapper().readValue(request.getInputStream(), LoginRequestDto.class);
             AdminAuthenticationToken authToken =
