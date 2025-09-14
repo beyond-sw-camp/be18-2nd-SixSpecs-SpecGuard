@@ -1,6 +1,6 @@
 package com.beyond.specguard.company.invite.controller;
 
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
+import com.beyond.specguard.company.common.model.service.CustomUserDetails;
 import com.beyond.specguard.company.invite.model.dto.request.InviteRequestDto;
 import com.beyond.specguard.company.invite.model.dto.response.InviteResponseDto;
 import com.beyond.specguard.company.invite.model.service.InviteService;

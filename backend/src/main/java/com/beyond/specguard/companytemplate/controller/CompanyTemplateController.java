@@ -1,7 +1,7 @@
 package com.beyond.specguard.companytemplate.controller;
 
-import com.beyond.specguard.auth.model.entity.ClientUser;
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
+import com.beyond.specguard.company.common.model.entity.ClientUser;
+import com.beyond.specguard.company.common.model.service.CustomUserDetails;
 import com.beyond.specguard.common.validation.Create;
 import com.beyond.specguard.common.validation.Update;
 import com.beyond.specguard.companytemplate.model.dto.command.CreateBasicCompanyTemplateCommand;

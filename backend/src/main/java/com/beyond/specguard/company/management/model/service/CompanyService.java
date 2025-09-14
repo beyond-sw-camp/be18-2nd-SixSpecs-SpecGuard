@@ -2,11 +2,11 @@ package com.beyond.specguard.company.management.model.service;
 
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import com.beyond.specguard.company.management.model.dto.request.UpdateCompanyRequestDto;
-import com.beyond.specguard.auth.model.dto.response.SignupResponseDto;
-import com.beyond.specguard.auth.model.entity.ClientCompany;
-import com.beyond.specguard.auth.model.entity.ClientUser;
-import com.beyond.specguard.auth.model.repository.ClientCompanyRepository;
-import com.beyond.specguard.auth.model.repository.ClientUserRepository;
+import com.beyond.specguard.company.common.model.dto.response.SignupResponseDto;
+import com.beyond.specguard.company.common.model.entity.ClientCompany;
+import com.beyond.specguard.company.common.model.entity.ClientUser;
+import com.beyond.specguard.company.common.model.repository.ClientCompanyRepository;
+import com.beyond.specguard.company.common.model.repository.ClientUserRepository;
 import com.beyond.specguard.common.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

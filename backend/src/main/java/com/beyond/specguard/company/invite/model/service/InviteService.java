@@ -1,10 +1,10 @@
 package com.beyond.specguard.company.invite.model.service;
 
-import com.beyond.specguard.auth.model.entity.ClientCompany;
-import com.beyond.specguard.auth.model.entity.ClientUser;
-import com.beyond.specguard.auth.model.repository.ClientCompanyRepository;
-import com.beyond.specguard.auth.model.repository.ClientUserRepository;
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
+import com.beyond.specguard.company.common.model.entity.ClientCompany;
+import com.beyond.specguard.company.common.model.entity.ClientUser;
+import com.beyond.specguard.company.common.model.repository.ClientCompanyRepository;
+import com.beyond.specguard.company.common.model.repository.ClientUserRepository;
+import com.beyond.specguard.company.common.model.service.CustomUserDetails;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.jwt.JwtUtil;
 import com.beyond.specguard.company.invite.exception.errorcode.InviteErrorCode;

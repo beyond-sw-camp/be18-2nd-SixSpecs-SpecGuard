@@ -1,13 +1,13 @@
 package com.beyond.specguard.resume.controller;
 
 import com.beyond.specguard.common.exception.CustomException;
-import com.beyond.specguard.resume.dto.request.*;
-import com.beyond.specguard.resume.dto.response.CompanyTemplateResponseResponse;
-import com.beyond.specguard.resume.dto.response.ResumeBasicResponse;
-import com.beyond.specguard.resume.dto.response.ResumeResponse;
-import com.beyond.specguard.resume.dto.response.ResumeSubmitResponse;
+import com.beyond.specguard.resume.model.dto.request.*;
+import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseResponse;
+import com.beyond.specguard.resume.model.dto.response.ResumeBasicResponse;
+import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
+import com.beyond.specguard.resume.model.dto.response.ResumeSubmitResponse;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
-import com.beyond.specguard.resume.service.ResumeService;
+import com.beyond.specguard.resume.model.service.ResumeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;

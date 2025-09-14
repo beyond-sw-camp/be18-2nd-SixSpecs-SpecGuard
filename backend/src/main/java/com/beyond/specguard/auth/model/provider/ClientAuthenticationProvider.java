@@ -1,6 +1,6 @@
 package com.beyond.specguard.auth.model.provider;
 
-import com.beyond.specguard.auth.model.service.CustomUserDetailsService;
+import com.beyond.specguard.company.common.model.service.CustomUserDetailsService;
 import com.beyond.specguard.auth.model.token.ClientAuthenticationToken;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
