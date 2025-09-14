@@ -12,7 +12,7 @@ import java.io.IOException;
 
 @Service
 @RequiredArgsConstructor
-public class SendGridService {
+public class InviteSendGridService {
 
     @Value("${sendgrid.api.key}")
     private String sendGridApiKey;
