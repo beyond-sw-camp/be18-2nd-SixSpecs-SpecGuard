@@ -1,7 +1,7 @@
 package com.beyond.specguard.crawling.entity;
 
-import com.beyond.specguard.resume.entity.core.Resume;
-import com.beyond.specguard.resume.entity.core.ResumeLink;
+import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.core.ResumeLink;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

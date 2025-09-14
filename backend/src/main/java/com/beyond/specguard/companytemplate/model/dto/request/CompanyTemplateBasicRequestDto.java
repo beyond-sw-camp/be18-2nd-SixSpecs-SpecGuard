@@ -1,7 +1,7 @@
 package com.beyond.specguard.companytemplate.model.dto.request;
 
-import com.beyond.specguard.auth.model.entity.ClientCompany;
 import com.beyond.specguard.common.validation.Create;
+import com.beyond.specguard.company.common.model.entity.ClientCompany;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;

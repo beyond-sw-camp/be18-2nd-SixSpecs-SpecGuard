@@ -1,12 +1,12 @@
 package com.beyond.specguard.company.invite.model.service;
 
-import com.beyond.specguard.auth.model.entity.ClientCompany;
-import com.beyond.specguard.auth.model.entity.ClientUser;
-import com.beyond.specguard.auth.model.repository.ClientCompanyRepository;
-import com.beyond.specguard.auth.model.repository.ClientUserRepository;
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.jwt.JwtUtil;
+import com.beyond.specguard.company.common.model.entity.ClientCompany;
+import com.beyond.specguard.company.common.model.entity.ClientUser;
+import com.beyond.specguard.company.common.model.repository.ClientCompanyRepository;
+import com.beyond.specguard.company.common.model.repository.ClientUserRepository;
+import com.beyond.specguard.company.common.model.service.CustomUserDetails;
 import com.beyond.specguard.company.invite.exception.errorcode.InviteErrorCode;
 import com.beyond.specguard.company.invite.model.dto.request.InviteRequestDto;
 import com.beyond.specguard.company.invite.model.dto.response.InviteResponseDto;
@@ -25,7 +25,7 @@ public class InviteService {
 
     private final InviteRepository inviteRepository;
     private final ClientCompanyRepository companyRepository;
-    private final SendGridService sendGridService;
+    private final InviteSendGridService inviteSendGridService;
     private final JwtUtil jwtUtil;
     private final ClientUserRepository userRepository;
 
@@ -85,7 +85,7 @@ public class InviteService {
         String inviteUrl = inviteBaseUrl + "?token=" + inviteToken;
 
         // 8. 메일 발송
-        sendGridService.sendInviteEmail(newInvite.getEmail(), inviteUrl);
+        inviteSendGridService.sendInviteEmail(newInvite.getEmail(), inviteUrl);
 
         // 9. 응답 반환
         return InviteResponseDto.builder()
