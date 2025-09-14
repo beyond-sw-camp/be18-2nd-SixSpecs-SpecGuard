@@ -1,17 +1,7 @@
 package com.beyond.specguard.certificate.model.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
+import com.beyond.specguard.resume.model.entity.core.ResumeCertificate;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,21 +23,39 @@ public class CertificateVerification {
     private UUID id; // UUID
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "certificate_id", nullable = false)
+    @JoinColumn(name = "certificate_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private ResumeCertificate resumeCertificate;
 
-    @Setter
     @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
     private Status status;
 
+    @Column(name = "verification_source", length = 50)
     private String verificationSource;
-    @Setter
-    private String errorMessage;
 
     @Setter
+    @Column(name = "error_message", columnDefinition = "TEXT")
+    private String errorMessage;
+
+    @Column(name = "verified_at")
     private LocalDateTime verifiedAt;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public void setStatusSuccess() {
+        this.status = Status.SUCCESS;
+    }
+    public void setStatusFailed() {
+        this.status = Status.FAILED;
+    }
+
+    public void setVerifiedNow() {
+        this.verifiedAt = LocalDateTime.now();
+    }
 
     @PrePersist
     public void onCreate() {

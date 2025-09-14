@@ -1,9 +1,8 @@
 package com.beyond.specguard.certificate.controller;
 
 import com.beyond.specguard.certificate.model.dto.CertificateVerifyResponseDto;
-import com.beyond.specguard.certificate.model.entity.CertificateVerification;
-import com.beyond.specguard.certificate.model.entity.ResumeCertificate;
 import com.beyond.specguard.certificate.model.service.CertificateVerificationCodefService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,35 +13,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
+@Tag(name = "이력서 자격증 검증 테스트 api", description = "테스트 api 입니다.")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/resumes")
+@RequestMapping("/api/v1/verify")
 public class CertificateController {
 
     private final CertificateVerificationCodefService verificationService;
 
-    @PostMapping("/{resumeId}/certificate/{certificateId}/verify")
+    @PostMapping("/resumes/{resumeId}")
     public ResponseEntity<CertificateVerifyResponseDto> verify(
-            @PathVariable UUID resumeId,
-            @PathVariable UUID certificateId
+            @PathVariable UUID resumeId
     ) {
-        // certificateId 로 Certificate 조회했다고 가정
-        // TODO: ResumeCertificate Repository 에서 조회기능 추가
-        ResumeCertificate certificate = ResumeCertificate.builder()
-                        .id(resumeId)
-                        .certificateNumber("2025***************")
-                        .build();
-
-        verificationService.verifyCertificateAsync(certificate);
+        verificationService.verifyCertificateAsync(resumeId);
 
         return ResponseEntity
                 .status(HttpStatus.ACCEPTED)
-                .body(
-                new CertificateVerifyResponseDto(
-                        certificateId,
-                        CertificateVerification.Status.PENDING,
-                        "Verification started"
-                )
-        );
+                .body(verificationService.getCertificateVerifications(resumeId));
     }
 }

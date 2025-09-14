@@ -1,13 +1,14 @@
 package com.beyond.specguard.certificate.model.dto;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 
-@Data
+@Getter
 @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class CodefVerificationRequest {
-    private String organization;
+    @Builder.Default
+    private String organization = "0001";
     private String userName;
     private String docNo;
 }

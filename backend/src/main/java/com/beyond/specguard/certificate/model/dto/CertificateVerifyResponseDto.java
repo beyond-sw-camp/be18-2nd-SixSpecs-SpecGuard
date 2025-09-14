@@ -1,17 +1,14 @@
 package com.beyond.specguard.certificate.model.dto;
 
 import com.beyond.specguard.certificate.model.entity.CertificateVerification;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.util.UUID;
+import java.util.List;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Getter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CertificateVerifyResponseDto {
-    private UUID certificateId;
-    private CertificateVerification.Status status;
-    private String message;
+    private List<CertificateVerification> certificateVerifications;
 }
