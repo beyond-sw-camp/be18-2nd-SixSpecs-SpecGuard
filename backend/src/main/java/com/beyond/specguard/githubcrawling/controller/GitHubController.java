@@ -1,9 +1,8 @@
 package com.beyond.specguard.githubcrawling.controller;
 
-package com.github.github.controller;
 
-import com.github.github.dto.GitHubStatsDto;
-import com.github.github.service.GitHubService;
+import com.beyond.specguard.githubcrawling.model.dto.GitHubStatsDto;
+import com.beyond.specguard.githubcrawling.model.service.GitHubService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
