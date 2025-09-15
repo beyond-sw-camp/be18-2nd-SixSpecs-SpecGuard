@@ -20,7 +20,7 @@ import java.util.Optional;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/verify/email")
+@RequestMapping("/api/v1/verify")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "Email Verification", description = "지원자/기업 이메일 인증 API")
