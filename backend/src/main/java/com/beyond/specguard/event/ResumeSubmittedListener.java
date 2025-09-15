@@ -31,7 +31,7 @@ public class ResumeSubmittedListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleResumeSubmitted(ResumeSubmittedEvent event) {
         UUID resumeId = event.resumeId();
-        log.info("📨 [AFTER_COMMIT] ResumeSubmittedEvent 수신 - resumeId={}", resumeId);
+        log.info(" [AFTER_COMMIT] ResumeSubmittedEvent 수신 - resumeId={}", resumeId);
 
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new IllegalStateException("Resume not found: " + resumeId));
@@ -40,8 +40,8 @@ public class ResumeSubmittedListener {
 
         for (ResumeLink link : links) {
             switch (link.getLinkType()) {
-                case GITHUB -> gitHubService.analyzeGitHubUrl(resumeId, resume, link);
-                default -> log.warn("⚠️ 지원하지 않는 링크 타입 - {}", link.getLinkType());
+                case GITHUB -> gitHubService.analyzeGitHubUrl( resume, link);
+                default -> log.warn(" 지원하지 않는 링크 타입 - {}", link.getLinkType());
             }
         }
     }

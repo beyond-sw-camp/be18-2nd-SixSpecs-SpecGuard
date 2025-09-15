@@ -26,7 +26,7 @@ public class GitHubService {
     private final ObjectMapper objectMapper;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void analyzeGitHubUrl(UUID resumeId, Resume resume, ResumeLink link) {
+    public void analyzeGitHubUrl(Resume resume, ResumeLink link) {
         // crawling_result row 확보 (없으면 생성)
         CrawlingResult result = crawlingResultRepository.findByResumeLink_Id(link.getId())
                 .orElseGet(() -> crawlingResultRepository.save(
@@ -47,10 +47,10 @@ public class GitHubService {
             result.updateContents(objectMapper.writeValueAsString(stats));
             result.updateStatus(CrawlingStatus.COMPLETED);
 
-            log.info("✅ GitHub 크롤링 완료 - resumeId={}, url={}", resumeId, link.getUrl());
+            log.info(" GitHub 크롤링 완료 - resumeId={}, url={}", resume.getId(), link.getUrl());
         } catch (Exception e) {
             result.updateStatus(CrawlingStatus.FAILED);
-            log.error("❌ GitHub 크롤링 실패 - resumeId={}, url={}", resumeId, link.getUrl(), e);
+            log.error(" GitHub 크롤링 실패 - resumeId={}, url={}", resume.getId(), link.getUrl(), e);
         } finally {
             crawlingResultRepository.save(result);
         }
