@@ -1,4 +1,3 @@
-# run.py (python-server 바로 아래)
 import sys, asyncio
 
 def ensure_proactor():

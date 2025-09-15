@@ -186,7 +186,11 @@ async def fetch_post(ctx, url: str) -> Tuple[str, str, List[str], List[str], Opt
     finally:
         await page.close()
 
-async def crawl_all_with_url(base_url: str) -> dict:
+async def _crawl_all_with_url_async(base_url: str) -> dict:
+    """
+    실제 Playwright 크롤링을 수행하는 비동기 함수.
+    이 함수는 Proactor 루프에서 실행되어야 함(아래 _worker_thread에서 보장).
+    """
     handle = _extract_handle_from_url(base_url) or ""
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -203,12 +207,12 @@ async def crawl_all_with_url(base_url: str) -> dict:
             async def _one(u: str):
                 async with sem:
                     try:
-                        t, txt, _langs, tags, pub = await fetch_post(ctx, u)
+                        t, txt, _, tags, pub = await fetch_post(ctx, u)
                         results.append((u, t, txt, tags, pub))
                     except Exception:
                         log.exception("Velog crawl skip: %s", u)
 
-            await asyncio.gather(*[_one(u) for u in links])
+            await asyncio.gather(*(_one(u) for u in links))
 
             posts = []
             for (u, title, text, tags, published) in results:
@@ -224,3 +228,34 @@ async def crawl_all_with_url(base_url: str) -> dict:
             return {"source": "velog", "author": {"handle": handle}, "posts": posts, "post_count": post_count}
         finally:
             await browser.close()
+
+
+def _worker_thread(base_url: str) -> dict:
+    """
+    별도 스레드에서 실행: Windows일 때 Proactor 정책을 강제하고,
+    그 전용 이벤트 루프에서 _crawl_all_with_url_async()를 실행.
+    """
+    import sys, asyncio
+    if sys.platform.startswith("win"):
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    loop = asyncio.new_event_loop()
+    try:
+        asyncio.set_event_loop(loop)
+        return loop.run_until_complete(_crawl_all_with_url_async(base_url))
+    finally:
+        # 잔여 태스크 정리
+        try:
+            loop.run_until_complete(asyncio.sleep(0))
+        except Exception:
+            pass
+        loop.close()
+
+
+async def crawl_all_with_url(base_url: str) -> dict:
+    """
+    서비스에서 호출하는 공개 API.
+    메인 이벤트 루프(Selector일 수도 있음)와 분리하기 위해
+    '스레드 실행자'에서 Playwright를 돌린다.
+    """
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, lambda: _worker_thread(base_url))
