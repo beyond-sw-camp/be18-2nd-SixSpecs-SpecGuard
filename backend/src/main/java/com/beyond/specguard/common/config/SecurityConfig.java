@@ -2,15 +2,15 @@ package com.beyond.specguard.common.config;
 
 import com.beyond.specguard.auth.model.configurer.CommonSecurityConfigurer;
 import com.beyond.specguard.auth.model.filter.AdminLoginFilter;
-import com.beyond.specguard.auth.model.filter.ResumeLoginFilter;
 import com.beyond.specguard.auth.model.filter.ClientLoginFilter;
+import com.beyond.specguard.auth.model.filter.ResumeLoginFilter;
 import com.beyond.specguard.auth.model.handler.local.CustomFailureHandler;
 import com.beyond.specguard.auth.model.handler.local.CustomSuccessHandler;
 import com.beyond.specguard.auth.model.handler.oauth2.OAuth2FailureHandler;
 import com.beyond.specguard.auth.model.handler.oauth2.OAuth2SuccessHandler;
 import com.beyond.specguard.auth.model.provider.AdminAuthenticationProvider;
-import com.beyond.specguard.auth.model.provider.ResumeAuthenticationProvider;
 import com.beyond.specguard.auth.model.provider.ClientAuthenticationProvider;
+import com.beyond.specguard.auth.model.provider.ResumeAuthenticationProvider;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -234,7 +234,7 @@ public class SecurityConfig {
 
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173")); // 프론트 주소
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000")); // 프론트 주소
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // 쿠키 허용

@@ -2,6 +2,7 @@ package com.beyond.specguard.resume.model.dto.response;
 
 import com.beyond.specguard.resume.model.entity.common.enums.ResumeStatus;
 import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.core.ResumeBasic;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
@@ -28,6 +29,8 @@ public record ResumeResponse(
         @Schema(description = "이메일")
         String email,
 
+        ResumeBasic resumeBasic,
+
         @Schema(description = "생성 시각")
         LocalDateTime createdAt,
 
@@ -37,11 +40,12 @@ public record ResumeResponse(
         public static ResumeResponse fromEntity(Resume r) {
                 return ResumeResponse.builder()
                                 .id(r.getId())
-                                .templateId(r.getTemplateId())
+                                .templateId(r.getTemplate().getId())
                                 .status(r.getStatus())
                                 .name(r.getName())
                                 .phone(r.getPhone())
                                 .email(r.getEmail())
+                                .resumeBasic(r.getResumeBasic())
                                 .createdAt(r.getCreatedAt())
                                 .updatedAt(r.getUpdatedAt())
                                 .build();

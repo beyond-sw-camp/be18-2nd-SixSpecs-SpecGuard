@@ -2,6 +2,8 @@ package com.beyond.specguard.resume.model.service;
 
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
+import com.beyond.specguard.companytemplate.exception.ErrorCode.CompanyTemplateErrorCode;
+import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository;
 import com.beyond.specguard.resume.auth.ResumeTempAuth;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
@@ -78,7 +80,10 @@ public class ResumeService {
     //이력서 생성에서 create
     @Transactional
     public ResumeResponse create(ResumeCreateRequest req) {
-        if (req.password() == null || req.password().isBlank()) {
+        CompanyTemplate companyTemplate = companyTemplateRepository.findById(req.templateId())
+                .orElseThrow(() -> new CustomException(CompanyTemplateErrorCode.TEMPLATE_NOT_FOUND));
+
+        if (req.password().isBlank()) {
             throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
 
@@ -86,97 +91,60 @@ public class ResumeService {
             throw new CustomException(ResumeErrorCode.DUPLICATE_EMAIL);
         }
 
-        String encoded = passwordEncoder.encode(req.password().trim());
+        Resume r = req.toEntity(companyTemplate);
+        r.encodePassword(passwordEncoder.encode(req.password().trim()));
 
-        Resume saved = resumeRepository.save(req.toEntity(encoded));
+        Resume saved = resumeRepository.saveAndFlush(r);
 
         return ResumeResponse.fromEntity(saved);
     }
 
     //지원서 단건 조회에서 get
     @Transactional(readOnly = true)
-    public ResumeResponse get(UUID resumeId, String secret) {
-        try {
-            if (!resumeRepository.existsById(resumeId)) {
-                throw new CustomException(ResumeErrorCode.RESUME_NOT_FOUND);
-            }
-            Resume r = tempAuth.authenticate(resumeId, secret);
-            return toResumeResponse(r);
-        } catch (CustomException e) {
-            throw e;
-        }catch (Exception e) {
-            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
+    public ResumeResponse get(UUID resumeId, String username, UUID templateId) {
+        Resume resume = resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
+
+        if (!resume.getEmail().equals(username) || !resume.getTemplate().getId().equals(templateId)) {
+            throw new CustomException(ResumeErrorCode.ACCESS_DENIED);
         }
+
+        return ResumeResponse.fromEntity(resume);
     }
 
     //지원서 목록 조회에서 list
     @Transactional(readOnly = true)
     public Page<ResumeResponse> list(Pageable pageable) {
         try {
-            return resumeRepository.findAll(pageable).map(this::toResumeResponse);
+            return resumeRepository.findAll(pageable).map(ResumeResponse::fromEntity);
         }catch (Exception e) {
             throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 
-
     //이력서 기본 정보 UPDATE/INSERT에서 upsertBasic
     @Transactional
-    public ResumeBasicResponse upsertBasic(UUID resumeId, String secret, ResumeBasicCreateRequest req) {
+    public ResumeBasicResponse upsertBasic(UUID resumeId, UUID templateId, String email, ResumeBasicCreateRequest req) {
         try {
-            // 401/403/404는 tempAuth 내부에서 CustomException으로 던진다고 가정
-            Resume resume = tempAuth.authenticate(resumeId, secret);
+            Resume resume = resumeRepository.findByEmailAndTemplateId(email, templateId)
+                    .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
 
             Optional<ResumeBasic> opt = basicRepository.findByResume_Id(resumeId);
 
-            ResumeBasic basic = opt.orElseGet(() -> basicRepository.save(
-                    ResumeBasic.builder()
-                            .resume(resume)
-                            .englishName(req.englishName())
-                            .gender(req.gender())
-                            .birthDate(req.birthDate())
-                            .nationality(req.nationality())
-                            .applyField(req.applyField())
-                            .profileImageUrl(req.profileImage())
-                            .address(req.address())
-                            .specialty(req.specialty())
-                            .hobbies(req.hobbies())
-                            .build()
-            ));
+            ResumeBasic basic = opt.orElseGet(() -> basicRepository.saveAndFlush(req.toEntity(resume)));
 
             // 수정 경로 (null이면 변경 없음)
             if (opt.isPresent()) {
-                if (req.englishName() != null) basic.changeEnglishName(req.englishName());
-                if (req.gender() != null)      basic.changeGender(req.gender());
-                if (req.birthDate() != null)   basic.changeBirthDate(req.birthDate());
-                if (req.nationality() != null) basic.changeNationality(req.nationality());
-                if (req.applyField() != null)  basic.changeApplyField(req.applyField());
-                if (req.address() != null)     basic.changeAddress(req.address());
-                if (req.specialty() != null)   basic.changeSpecialty(req.specialty());
-                if (req.hobbies() != null)     basic.changeHobbies(req.hobbies());
-                if (req.profileImage() != null) basic.changeProfileImageUrl(req.profileImage());
+                basic.update(req);
             }
 
-            return toBasicResponse(basic, resumeId);
-
-        } catch (CustomException e) {
-            throw e;
+            return ResumeBasicResponse.fromEntity(basic);
 
         } catch (MaxUploadSizeExceededException e) {
             throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
-
-        } catch (Exception e) {
-            if (isFileUploadError(e)) {
-                throw new CustomException(ResumeErrorCode.FILE_UPLOAD_ERROR);
-            }
-            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
         }
+        // TODO: 외부 스토리지 SDK 예외 타입/메시지 기반으로 판단
     }
-    private boolean isFileUploadError(Exception e) {
-        // 외부 스토리지 SDK 예외 타입/메시지 기반으로 판단
-        return false;
-    }
-
 
     //이력서 학력/경력/포트폴리오 링크 정보 UPDATE/INSERT
     @Transactional
@@ -565,10 +533,6 @@ public class ResumeService {
                 .build();
     }
 
-    //Entity -> Dto
-    private ResumeResponse toResumeResponse(Resume r) {
-
-    }
     private ResumeBasicResponse toBasicResponse(ResumeBasic b, UUID resumeId) {
         return new ResumeBasicResponse(
                 b.getId(),

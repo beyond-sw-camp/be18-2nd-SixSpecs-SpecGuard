@@ -1,12 +1,25 @@
 package com.beyond.specguard.resume.model.entity.core;
 
+import com.beyond.specguard.resume.model.dto.request.ResumeBasicCreateRequest;
 import com.beyond.specguard.resume.model.entity.common.BaseEntity;
 import com.beyond.specguard.resume.model.entity.common.enums.Gender;
-import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.time.LocalDate;
 
@@ -20,12 +33,19 @@ import java.time.LocalDate;
         )
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@ToString
 public class ResumeBasic extends BaseEntity {
 
     //일대일
     //resume_id는 FK
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "CHAR(36)", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(
+            name = "resume_id",
+            nullable = false,
+            columnDefinition = "CHAR(36)",
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+    )
+    @JsonIgnore
     private Resume resume;
 
 
@@ -89,5 +109,17 @@ public class ResumeBasic extends BaseEntity {
         this.address = address;
         this.specialty = specialty;
         this.hobbies = hobbies;
+    }
+
+    public void update(ResumeBasicCreateRequest req) {
+        if (req.englishName() != null) this.englishName = req.englishName();
+        if (req.gender() != null)      this.gender = req.gender();
+        if (req.birthDate() != null)   this.birthDate = req.birthDate();
+        if (req.nationality() != null) this.nationality = req.nationality();
+        if (req.applyField() != null)  this.applyField = req.applyField();
+        if (req.address() != null)     this.address = req.address();
+        if (req.specialty() != null)   this.specialty = req.specialty();
+        if (req.hobbies() != null)     this.hobbies = req.hobbies();
+        if (req.profileImage() != null) this.profileImageUrl = req.profileImage();
     }
 }

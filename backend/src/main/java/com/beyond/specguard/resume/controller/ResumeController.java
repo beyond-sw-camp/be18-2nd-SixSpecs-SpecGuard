@@ -13,6 +13,7 @@ import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseRes
 import com.beyond.specguard.resume.model.dto.response.ResumeBasicResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeSubmitResponse;
+import com.beyond.specguard.resume.model.service.ResumeDetails;
 import com.beyond.specguard.resume.model.service.ResumeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,6 +29,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -72,11 +74,15 @@ public class ResumeController {
     @GetMapping("/{resumeId}")
     public ResumeResponse get(
             @PathVariable UUID resumeId,
+            @AuthenticationPrincipal ResumeDetails resumeDetails,
             @Parameter(name = "X-Resume-Secret", in = ParameterIn.HEADER, required = true,
                     description = "원문 비밀번호")
             @RequestHeader("X-Resume-Secret") String secret
     ) {
-        return resumeService.get(resumeId, secret);
+        UUID templateId = resumeDetails.getResume().getTemplate().getId();
+        String email = resumeDetails.getUsername();
+
+        return resumeService.get(resumeId, email, templateId);
     }
 
 
@@ -151,20 +157,14 @@ public class ResumeController {
     @PostMapping("/basic")
     @ResponseStatus(HttpStatus.CREATED)
     public ResumeBasicResponse upsertBasic(
-            @RequestHeader("X-Resume-Id") UUID resumeId,
-            @RequestHeader("X-Resume-Secret") String secret,
+            @AuthenticationPrincipal  ResumeDetails resumeDetails,
             @Valid @RequestBody ResumeBasicCreateRequest req
     ) {
-        if (req.englishName() == null ||
-                req.birthDate() == null ||
-                req.gender() == null ||
-                req.nationality() == null ||
-                req.applyField() == null ||
-                req.profileImage() == null ||
-                req.address() == null) {
-            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
-        }
-        return resumeService.upsertBasic(resumeId, secret, req);
+        UUID templateId = resumeDetails.getResume().getTemplate().getId();
+        String email = resumeDetails.getUsername();
+        UUID resumeId = resumeDetails.getResume().getId();
+
+        return resumeService.upsertBasic(resumeId, templateId, email, req);
     }
 
 

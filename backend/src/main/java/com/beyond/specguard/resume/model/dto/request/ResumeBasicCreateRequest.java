@@ -1,6 +1,8 @@
 package com.beyond.specguard.resume.model.dto.request;
 
 import com.beyond.specguard.resume.model.entity.common.enums.Gender;
+import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.core.ResumeBasic;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,7 +11,7 @@ import java.time.LocalDate;
 
 public record ResumeBasicCreateRequest(
         @Schema(description = "영문 이름", example = "Hong GilDong")
-        @NotNull
+        @NotBlank
         String englishName,
 
         @Schema(description = "성별", example = "M")
@@ -42,4 +44,18 @@ public record ResumeBasicCreateRequest(
         @NotNull
         String profileImage
 ) {
+        public ResumeBasic toEntity(Resume resume) {
+                return ResumeBasic.builder()
+                        .resume(resume)
+                        .englishName(englishName)
+                        .gender(gender)
+                        .birthDate(birthDate)
+                        .nationality(nationality)
+                        .applyField(applyField)
+                        .profileImageUrl(profileImage)
+                        .address(address)
+                        .specialty(specialty)
+                        .hobbies(hobbies)
+                        .build();
+        }
 }

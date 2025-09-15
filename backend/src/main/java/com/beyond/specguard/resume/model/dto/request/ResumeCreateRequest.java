@@ -1,5 +1,6 @@
 package com.beyond.specguard.resume.model.dto.request;
 
+import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import com.beyond.specguard.resume.model.entity.common.enums.ResumeStatus;
 import com.beyond.specguard.resume.model.entity.core.Resume;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -32,14 +33,14 @@ public record ResumeCreateRequest(
         @NotBlank
         String password
 ) {
-        public Resume toEntity(String passwordHash) {
+
+        public Resume toEntity(CompanyTemplate companyTemplate) {
                 return Resume.builder()
-                        .templateId(this.templateId)
+                        .template(companyTemplate)
                         .status(ResumeStatus.DRAFT)
                         .name(name)
                         .phone(phone)
                         .email(email)
-                        .passwordHash(passwordHash)
                         .build();
         }
 }

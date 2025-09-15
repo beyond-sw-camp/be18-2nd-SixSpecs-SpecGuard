@@ -1,40 +1,59 @@
 package com.beyond.specguard.resume.model.entity.core;
 
+import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import com.beyond.specguard.resume.model.entity.common.BaseEntity;
 import com.beyond.specguard.resume.model.entity.common.enums.ResumeStatus;
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Entity
+@Builder
 @Table(name = "resume",
         indexes = {
                 @Index(name = "idx_resume_template", columnList = "template_id")
         })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@ToString
 public class Resume extends BaseEntity {
 
-
     //template_id
-    @Column(name = "template_id", columnDefinition = "CHAR(36)", nullable = false)
-    private UUID templateId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "template_id",
+            columnDefinition = "CHAR(36)",
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+    )
+    private CompanyTemplate template;
 
     //status
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private ResumeStatus status;
-
-    //default 값
-    @PrePersist
-    void prePersist() {
-        if(status == null) status = ResumeStatus.DRAFT;
-    }
+    @Builder.Default
+    private ResumeStatus status = ResumeStatus.DRAFT;
 
     //성명
     @Column(name = "name", nullable = false, length = 50)
@@ -53,14 +72,51 @@ public class Resume extends BaseEntity {
     @Column(name = "password_hash", columnDefinition = "CHAR(64)", nullable = false)
     private String passwordHash;
 
+    @OneToOne(
+            mappedBy = "resume",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private ResumeBasic resumeBasic;
 
-    @Builder
-    public Resume(UUID templateId, ResumeStatus status, String name, String phone, String email, String passwordHash) {
-        this.templateId = templateId;
-        this.status = status;
-        this.name = name;
-        this.phone = phone;
-        this.email = email;
+    @OneToMany(
+            mappedBy = "resume",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    @Builder.Default
+    private List<ResumeCertificate> resumeCertificates = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "resume",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    @Builder.Default
+    private List<ResumeEducation> resumeEducations = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "resume",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    @Builder.Default
+    private List<ResumeExperience> resumeExperiences = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "resume",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    @Builder.Default
+    private List<ResumeLink> resumeLinks = new ArrayList<>();
+
+
+    public void encodePassword(String passwordHash) {
         this.passwordHash = passwordHash;
     }
 
