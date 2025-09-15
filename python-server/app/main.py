@@ -1,4 +1,12 @@
-import platform, sys
+import sys, asyncio 
+if sys.platform.startswith("win"):
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    except Exception:
+        pass
+
+
+import platform
 from fastapi import FastAPI, Request
 from app.core.errors import install_error_handlers
 from app.routers.velog import router as velog_router
@@ -9,6 +17,13 @@ app = FastAPI(title="SpecGuard Velog API", version="1.3.0")
 
 # 전역 에러 핸들러 설치
 install_error_handlers(app)
+
+
+@app.on_event("startup")
+async def _dbg():
+    import asyncio
+    print("EVENT LOOP:", type(asyncio.get_running_loop()).__name__)
+
 
 # JSON UTF-8 강제
 @app.middleware("http")

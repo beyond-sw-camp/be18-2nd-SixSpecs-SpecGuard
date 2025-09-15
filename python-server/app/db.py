@@ -1,6 +1,8 @@
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy import text
+from dotenv import load_dotenv
+load_dotenv()
 
 DB_URL = os.getenv("DB_URL", "mysql+asyncmy://user:pass@localhost:3306/specguard")
 engine = create_async_engine(DB_URL, pool_pre_ping=True, pool_recycle=1800)

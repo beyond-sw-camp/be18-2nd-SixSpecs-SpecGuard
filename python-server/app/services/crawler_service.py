@@ -17,12 +17,27 @@ from app.utils.codec import to_gzip_bytes_from_json, to_gzip_bytes_from_text
 
 RECENT_WINDOW_DAYS = int(os.getenv("RECENT_WINDOW_DAYS", "365"))
 MAX_TEXT_LEN = int(os.getenv("MAX_TEXT_LEN", "200000"))
-RL_TYPE_VELOG      = os.getenv("RL_VELOG_TYPE", "VELOG")
+RL_TYPE_VELOG = os.getenv("RL_VELOG_TYPE", "VELOG")
+LOCAL_TZ = os.getenv("LOCAL_TZ", "Asia/Seoul")
+
+
+def _today_local_date():
+    """환경 타임존 기준 오늘 날짜. 실패 시 로컬 날짜."""
+    try:
+        return datetime.now(ZoneInfo(LOCAL_TZ)).date()
+    except Exception:
+        return datetime.now().date()
+
 
 def _build_recent_activity(posts: list[dict]) -> str:
+    """
+    크롤링된 posts에서 최근 N일(RECENT_WINDOW_DAYS) 내 글만 뽑아
+    'YYYY-MM-DD | [제목]\n본문' 형태로 병합한 큰 텍스트를 만든다.
+    """
     items: list[tuple[str, str, str]] = []
+
     for p in posts:
-        iso = normalize_created_at(p.get("published_at"))
+        iso = normalize_created_at(p.get("published_at"), tz=LOCAL_TZ)
         if not iso:
             continue
         txt = p.get("text") or ""
@@ -30,13 +45,25 @@ def _build_recent_activity(posts: list[dict]) -> str:
             txt = txt[:MAX_TEXT_LEN]
         items.append((iso, p.get("title") or "", txt))
 
-    # 최근 1년 필터
-    cutoff = (datetime.now(ZoneInfo("Asia/Seoul")).date() - timedelta(days=RECENT_WINDOW_DAYS))
-    items = [i for i in items if datetime.fromisoformat(i[0]).date() >= cutoff]
+    # 최근 N일 컷오프
+    cutoff = _today_local_date() - timedelta(days=RECENT_WINDOW_DAYS)
 
+    # 튜플 인덱싱으로 안전 필터
+    filtered: list[tuple[str, str, str]] = []
+    for (d, t, c) in items:
+        try:
+            if datetime.fromisoformat(d).date() >= cutoff:
+                filtered.append((d, t, c))
+        except Exception:
+            # 날짜 파싱 실패시 해당 항목 스킵
+            continue
+
+    if not filtered:
+        return ""
 
     # 문자열 병합
-    return "\n---\n".join([f"{d} | [{t}]\n{c}".strip() for d, t, c in items]) if items else ""
+    return "\n---\n".join([f"{d} | [{t}]\n{c}".strip() for (d, t, c) in filtered])
+
 
 async def ingest_velog_single(resume_id: str, url: str | None):
     url = (url or "").strip()
@@ -48,11 +75,15 @@ async def ingest_velog_single(resume_id: str, url: str | None):
             {"rid": resume_id, "lt": RL_TYPE_VELOG, "url": url},
         )
         row = res.mappings().first()
+
     if not row:
-        raise HTTPException(status_code=404, detail={"errorCode":"NOT_FOUND", "message":"resume_link(row) not found for given resume_id/url"})
+        # 주어진 resume_id/url로 VELOG 유형의 링크 행을 못 찾음
+        raise HTTPException(
+            status_code=404,
+            detail={"errorCode": "NOT_FOUND", "message": "resume_link(row) not found for given resume_id/url"},
+        )
 
     lid = row["id"]
-
 
     # URL 공란이면: NOTEXISTED + 더미 gzip 후 종료
     if not url:
@@ -85,24 +116,26 @@ async def ingest_velog_single(resume_id: str, url: str | None):
             "source": "velog",
             "base_url": url,
             "post_count": post_count,
-            "recent_activity": recent_activity
+            "recent_activity": recent_activity,
         }
         gz = to_gzip_bytes_from_json(payload)
 
         # RUNNING -> COMPLETED + gzip 저장
         async with SessionLocal() as s2:
             await s2.execute(
-                SQL_SAVE_COMPLETED,  {"rid": resume_id, "lid": lid, "contents": gz},
+                SQL_SAVE_COMPLETED,
+                {"rid": resume_id, "lid": lid, "contents": gz},
             )
             await s2.commit()
 
         return {"claimed": True, "status": "COMPLETED", "post_count": post_count}
+
     except Exception as e:
         # RUNNING -> FAILED
         async with SessionLocal() as s3:
-            await s3.execute(SQL_SET_FAILED_IF_RUNNING, {"rid": resume_id, "lid": lid})  # ← lid 사용
+            await s3.execute(SQL_SET_FAILED_IF_RUNNING, {"rid": resume_id, "lid": lid})
             await s3.commit()
         raise HTTPException(
             status_code=500,
-            detail={"errorCode": "CRAWLING_FAILED", "message": str(e)},  # ← errorCode 키 사용
+            detail={"errorCode": "CRAWLING_FAILED", "message": str(e)},
         )

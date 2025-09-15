@@ -1,4 +1,3 @@
-import typing as t
 from fastapi import APIRouter, HTTPException, Path, Body
 from pydantic import BaseModel, Field
 

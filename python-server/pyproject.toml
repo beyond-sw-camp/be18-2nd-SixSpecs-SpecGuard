@@ -16,6 +16,7 @@ dependencies = [
 
     "SQLAlchemy>=2.0,<3.0",
     "asyncmy>=0.2.10,<0.3.0",
+    "tzdata (>=2025.2,<2026.0)",
 ]
 
 [tool.poetry]
