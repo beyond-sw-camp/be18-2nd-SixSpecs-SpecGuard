@@ -1,8 +1,8 @@
 package com.beyond.specguard.companytemplate.model.service;
 
-import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
+import com.beyond.specguard.company.common.model.entity.ClientUser;
 import com.beyond.specguard.companytemplate.exception.ErrorCode.CompanyTemplateErrorCode;
 import com.beyond.specguard.companytemplate.model.dto.command.CreateBasicCompanyTemplateCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.CreateCompanyTemplateFieldCommand;

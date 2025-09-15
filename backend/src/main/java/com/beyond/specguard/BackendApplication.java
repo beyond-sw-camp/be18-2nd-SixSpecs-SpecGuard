@@ -6,6 +6,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableScheduling
 @SpringBootApplication
+@org.springframework.boot.context.properties.ConfigurationPropertiesScan(
+        basePackages = "com.beyond.specguard.common.properties"
+)
 public class BackendApplication {
 
     public static void main(String[] args) {

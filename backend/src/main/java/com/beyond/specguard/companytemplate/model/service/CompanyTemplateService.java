@@ -1,6 +1,6 @@
 package com.beyond.specguard.companytemplate.model.service;
 
-import com.beyond.specguard.auth.model.entity.ClientUser;
+import com.beyond.specguard.company.common.model.entity.ClientUser;
 import com.beyond.specguard.companytemplate.model.dto.command.CreateBasicCompanyTemplateCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.CreateDetailCompanyTemplateCommand;
 import com.beyond.specguard.companytemplate.model.dto.command.SearchTemplateCommand;

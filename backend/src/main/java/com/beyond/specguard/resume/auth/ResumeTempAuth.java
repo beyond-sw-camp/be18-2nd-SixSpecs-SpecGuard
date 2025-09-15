@@ -1,9 +1,9 @@
 package com.beyond.specguard.resume.auth;
 
 import com.beyond.specguard.common.exception.CustomException;
-import com.beyond.specguard.resume.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.core.Resume;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
-import com.beyond.specguard.resume.repository.ResumeRepository;
+import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
