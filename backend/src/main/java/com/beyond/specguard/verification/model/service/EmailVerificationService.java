@@ -60,10 +60,11 @@ public class EmailVerificationService {
         String saved = redis.opsForValue().get(k);
         if (saved == null) return false;
 
-        boolean ok = saved.equals(input);
+        String in = input == null ? "" : input.trim().replaceAll("\\D", "");
+        boolean ok = saved.equals(in);
         if (ok) {
             markVerified(email, target);
-            redis.delete(key(email));
+            redis.delete(k);
         } else {
             String ak = attemptKey(email);
             Long n = redis.opsForValue().increment(ak);
@@ -72,7 +73,8 @@ public class EmailVerificationService {
         return ok;
     }
 
-    private void upsertPending(String email, VerifyTarget t, String ip) {
+    private void upsertPending(String rawEmail, VerifyTarget t, String ip) {
+        final String email = norm(rawEmail);
         if (t == VerifyTarget.APPLICANT) {
             var e = applicantRepo.findByEmail(email).orElseGet(() -> {
                 var x = new ApplicantEmailVerification();
@@ -98,7 +100,8 @@ public class EmailVerificationService {
         }
     }
 
-    private void markVerified(String email, VerifyTarget t) {
+    private void markVerified(String rawEmail, VerifyTarget t) {
+        final String email = norm(rawEmail);
         if (t == VerifyTarget.APPLICANT) {
             var e = applicantRepo.findByEmail(email).orElseThrow();
             e.setStatus(EmailVerifyStatus.VERIFIED);
