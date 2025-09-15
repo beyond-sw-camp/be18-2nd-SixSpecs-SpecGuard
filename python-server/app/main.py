@@ -19,12 +19,6 @@ app = FastAPI(title="SpecGuard Velog API", version="1.3.0")
 install_error_handlers(app)
 
 
-@app.on_event("startup")
-async def _dbg():
-    import asyncio
-    print("EVENT LOOP:", type(asyncio.get_running_loop()).__name__)
-
-
 # JSON UTF-8 강제
 @app.middleware("http")
 async def ensure_utf8_json(request: Request, call_next):

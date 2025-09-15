@@ -6,8 +6,6 @@ from playwright.async_api import async_playwright, TimeoutError as PWTimeout
 from . import CONF, UA
 from app.utils.text import mask_pii, content_hash
 
-log = logging.getLogger(__name__)
-
 DELAY_LOW  = float(os.environ.get("CRAWL_DELAY_LOW_SEC", "0.8"))
 DELAY_HIGH = float(os.environ.get("CRAWL_DELAY_HIGH_SEC", "2.0"))
 MAX_CONCURRENCY = int(os.environ.get("CRAWLER_MAX_CONCURRENCY", "4"))
@@ -210,7 +208,7 @@ async def _crawl_all_with_url_async(base_url: str) -> dict:
                         t, txt, _, tags, pub = await fetch_post(ctx, u)
                         results.append((u, t, txt, tags, pub))
                     except Exception:
-                        log.exception("Velog crawl skip: %s", u)
+                        return
 
             await asyncio.gather(*(_one(u) for u in links))
 
