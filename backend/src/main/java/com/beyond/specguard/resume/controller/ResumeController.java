@@ -24,9 +24,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +36,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -88,65 +86,23 @@ public class ResumeController {
     //지원서 목록 조회
     @Operation(
             summary = "지원서 목록 조회",
-            description = "기업 또는 지원자가 자신이 접근 가능한 지원서 목록을 조회한다."
+            description = "기업이 지원서 목록을 조회한다."
     )
     @GetMapping
     public Page<ResumeResponse> list(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(value = "sort", required = false) List<String> sort
+            @PageableDefault Pageable pageable
     ) {
-        if (page < 0 || size < 1 || size > 100) {
+        if (pageable.getPageSize() > 100) {
             throw new CustomException(ResumeErrorCode.INVALID_PARAMETER);
         }
 
-        Sort sortObj = buildSortOrThrow(sort); // 기본: createdAt,DESC
-        Pageable pageable = PageRequest.of(page, size, sortObj);
-
-        try {
-            return resumeService.list(pageable);
-        } catch (CustomException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
-        }
+        return resumeService.list(pageable);
     }
 
     // 정렬 기준
     private static final Set<String> ALLOWED_SORT = Set.of(
             "createdAt", "updatedAt", "name", "status"
     );
-
-    private Sort buildSortOrThrow(List<String> sort) {
-        // 기본 정렬: createdAt desc
-        if (sort == null || sort.isEmpty()) {
-            return Sort.by(Sort.Direction.DESC, "createdAt");
-        }
-
-        Sort result = Sort.unsorted();
-        for (String token : sort) {
-            if (token == null || token.isBlank()) {
-                throw new CustomException(ResumeErrorCode.INVALID_PARAMETER);
-            }
-            String[] parts = token.split(",");
-            String prop = parts[0].trim();
-
-            if (!ALLOWED_SORT.contains(prop)) {
-                throw new CustomException(ResumeErrorCode.INVALID_PARAMETER);
-            }
-
-            Sort.Direction dir = Sort.Direction.ASC;
-            if (parts.length > 1) {
-                String d = parts[1].trim().toLowerCase();
-                if (!d.equals("asc") && !d.equals("desc")) {
-                    throw new CustomException(ResumeErrorCode.INVALID_PARAMETER);
-                }
-                dir = "desc".equals(d) ? Sort.Direction.DESC : Sort.Direction.ASC;
-            }
-            result = result.and(Sort.by(dir, prop));
-        }
-        return result;
-    }
 
     //이력서 기본 정보 UPDATE/INSERT
     @Operation(

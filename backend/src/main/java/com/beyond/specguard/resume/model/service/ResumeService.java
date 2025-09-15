@@ -115,11 +115,7 @@ public class ResumeService {
     //지원서 목록 조회에서 list
     @Transactional(readOnly = true)
     public Page<ResumeResponse> list(Pageable pageable) {
-        try {
-            return resumeRepository.findAll(pageable).map(ResumeResponse::fromEntity);
-        }catch (Exception e) {
-            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
-        }
+        return resumeRepository.findAll(pageable).map(ResumeResponse::fromEntity);
     }
 
     //이력서 기본 정보 UPDATE/INSERT에서 upsertBasic
