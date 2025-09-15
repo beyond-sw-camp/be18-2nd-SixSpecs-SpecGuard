@@ -1,5 +1,8 @@
 package com.beyond.specguard.resume.model.dto.request;
 
+import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
+import com.beyond.specguard.resume.model.entity.core.CompanyTemplateResponse;
+import com.beyond.specguard.resume.model.entity.core.Resume;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -23,5 +26,14 @@ public record CompanyTemplateResponseCreateRequest(
             @Schema(description = "답변(텍스트)")
             @NotBlank
             String answer
-    ) {}
+    ) {
+        public CompanyTemplateResponse toEntity(Resume resume, CompanyTemplateField companyTemplateField) {
+            return CompanyTemplateResponse.builder()
+                    .id(fieldId)
+                    .resume(resume)
+                    .companyTemplateField(companyTemplateField)
+                    .answer(answer)
+                    .build();
+        }
+    }
 }

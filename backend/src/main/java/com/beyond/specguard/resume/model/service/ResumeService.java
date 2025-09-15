@@ -1,13 +1,12 @@
 package com.beyond.specguard.resume.model.service;
 
 import com.beyond.specguard.common.exception.CustomException;
-import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
 import com.beyond.specguard.companytemplate.exception.ErrorCode.CompanyTemplateErrorCode;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
+import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateFieldRepository;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository;
 import com.beyond.specguard.resume.auth.ResumeTempAuth;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
-import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseCreateRequest;
 import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeAggregateUpdateRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeBasicCreateRequest;
@@ -20,8 +19,6 @@ import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseRes
 import com.beyond.specguard.resume.model.dto.response.ResumeBasicResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeSubmitResponse;
-import com.beyond.specguard.resume.model.entity.common.enums.Gender;
-import com.beyond.specguard.resume.model.entity.common.enums.ResumeStatus;
 import com.beyond.specguard.resume.model.entity.core.CompanyFormSubmission;
 import com.beyond.specguard.resume.model.entity.core.CompanyTemplateResponse;
 import com.beyond.specguard.resume.model.entity.core.Resume;
@@ -76,6 +73,8 @@ public class ResumeService {
     private final PasswordEncoder passwordEncoder;
     private final ResumeTempAuth tempAuth;
     private final LocalFileStorageService storageService;
+    private final CompanyTemplateFieldRepository companyTemplateFieldRepository;
+    private final CompanyTemplateResponseRepository companyTemplateResponseRepository;
 
     //이력서 생성에서 create
     @Transactional
@@ -83,20 +82,23 @@ public class ResumeService {
         CompanyTemplate companyTemplate = companyTemplateRepository.findById(req.templateId())
                 .orElseThrow(() -> new CustomException(CompanyTemplateErrorCode.TEMPLATE_NOT_FOUND));
 
-        if (req.password().isBlank()) {
-            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
-        }
-
         if (resumeRepository.existsByEmailAndTemplateId(req.email(), req.templateId())) {
             throw new CustomException(ResumeErrorCode.DUPLICATE_EMAIL);
         }
 
         Resume r = req.toEntity(companyTemplate);
+
         r.encodePassword(passwordEncoder.encode(req.password().trim()));
 
         Resume saved = resumeRepository.saveAndFlush(r);
 
         return ResumeResponse.fromEntity(saved);
+    }
+
+    private void validateOwnerShip(Resume resume, String username, UUID templateId) {
+        if (!resume.getEmail().equals(username) || !resume.getTemplate().getId().equals(templateId)) {
+            throw new CustomException(ResumeErrorCode.ACCESS_DENIED);
+        }
     }
 
     //지원서 단건 조회에서 get
@@ -105,9 +107,7 @@ public class ResumeService {
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
 
-        if (!resume.getEmail().equals(username) || !resume.getTemplate().getId().equals(templateId)) {
-            throw new CustomException(ResumeErrorCode.ACCESS_DENIED);
-        }
+        validateOwnerShip(resume, username, templateId);
 
         return ResumeResponse.fromEntity(resume);
     }
@@ -124,12 +124,11 @@ public class ResumeService {
 
     //이력서 기본 정보 UPDATE/INSERT에서 upsertBasic
     @Transactional
-    public ResumeBasicResponse upsertBasic(UUID resumeId, UUID templateId, String email, ResumeBasicCreateRequest req) {
+    public ResumeBasicResponse upsertBasic(Resume resume, UUID templateId, String email, ResumeBasicCreateRequest req) {
         try {
-            Resume resume = resumeRepository.findByEmailAndTemplateId(email, templateId)
-                    .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
+            validateOwnerShip(resume, email, templateId);
 
-            Optional<ResumeBasic> opt = basicRepository.findByResume_Id(resumeId);
+            Optional<ResumeBasic> opt = basicRepository.findByResume_Id(resume.getId());
 
             ResumeBasic basic = opt.orElseGet(() -> basicRepository.saveAndFlush(req.toEntity(resume)));
 
@@ -148,55 +147,103 @@ public class ResumeService {
 
     //이력서 학력/경력/포트폴리오 링크 정보 UPDATE/INSERT
     @Transactional
-    public void upsertAggregate(UUID resumeId, String secret, ResumeAggregateUpdateRequest req) {
+    public void upsertAggregate(UUID resumeId, UUID templateId, String email, ResumeAggregateUpdateRequest req) {
+        Resume resume = resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
 
-        Resume resume = tempAuth.authenticate(resumeId, secret);
+        validateOwnerShip(resume, email, templateId);
 
+        if (req.educations() != null) {
+            validateEducationDuplicates(req.educations());
 
-        try {
-            Resume ref = resumeRepository.getReferenceById(resumeId);
+            List<ResumeEducation> updatedFields = new ArrayList<>();
 
-            if (req.educations() != null) {
-                validateEducationDuplicates(req.educations());
+            Map<UUID, ResumeEducationUpsertRequest> dtoMap = req.educations().stream()
+                    .filter(f -> f.id() != null)
+                    .collect(Collectors.toMap(ResumeEducationUpsertRequest::id, f -> f));
 
-                educationRepository.deleteByResume_Id(resumeId);
-                for (var d : req.educations()) {
-                    if (d.schoolName() == null || d.major() == null) {
-                        throw new CustomException(CommonErrorCode.INVALID_REQUEST);
-                    }
-                    educationRepository.save(mapEducation(ref, d));
+            // 6. 업데이트
+            for (ResumeEducation existing : resume.getResumeEducations()) {
+                if (dtoMap.containsKey(existing.getId())) {
+                    existing.update(dtoMap.get(existing.getId()));
+                    updatedFields.add(existing);
                 }
             }
 
-            if (req.experiences() != null) {
-                validateExperienceDuplicates(req.experiences());
-                experienceRepository.deleteByResume_Id(resumeId);
-                for (var d : req.experiences()) {
-                    if (d.companyName() == null || d.position() == null) {
-                        throw new CustomException(CommonErrorCode.INVALID_REQUEST);
-                    }
-                    experienceRepository.save(mapExperience(ref, d));
-                }
-            }
+            List<ResumeEducation> newResumeEducations = req.educations().stream()
+                            .filter(f -> f.id() == null)
+                            .map(e -> e.toEntity(resume))
+                            .toList();
 
+            resume.getResumeEducations().clear();
 
-            if (req.links() != null) {
-                validateLinkDuplicates(req.links());
+            updatedFields.addAll(newResumeEducations);
 
-                linkRepository.deleteByResume_Id(resumeId);
-                for (var d : req.links()) {
-                    if (d.url() == null || d.linkType() == null) {
-                        throw new CustomException(CommonErrorCode.INVALID_REQUEST);
-                    }
-                    linkRepository.save(mapLink(ref, d));
-                }
-            }
-        }catch (CustomException e) {
-            throw e;
-        }catch (Exception e) {
-            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
+            resume.getResumeEducations().addAll(updatedFields);
         }
 
+        if (req.experiences() != null) {
+            validateExperienceDuplicates(req.experiences());
+
+            List<ResumeExperience> updatedFields = new ArrayList<>();
+
+            Map<UUID, ResumeExperienceUpsertRequest> dtoMap = req.experiences().stream()
+                    .filter(f -> f.id() != null)
+                    .collect(Collectors.toMap(ResumeExperienceUpsertRequest::id, f -> f));
+
+            // 6. 업데이트
+            for (ResumeExperience existing : resume.getResumeExperiences()) {
+                if (dtoMap.containsKey(existing.getId())) {
+                    // 업데이트
+                    existing.update(dtoMap.get(existing.getId()));
+                    updatedFields.add(existing);
+                }
+            }
+
+            List<ResumeExperience> newResumeExperience = req.experiences().stream()
+                    .filter(f -> f.id() == null)
+                    .map(e -> e.toEntity(resume))
+                    .toList();
+
+            resume.getResumeExperiences().clear();
+
+            updatedFields.addAll(newResumeExperience);
+
+            resume.getResumeExperiences().addAll(updatedFields);
+        }
+
+
+        if (req.links() != null) {
+            validateLinkDuplicates(req.links());
+
+            List<ResumeLink> updatedFields = new ArrayList<>();
+
+            Map<UUID, ResumeLinkUpsertRequest> dtoMap = req.links().stream()
+                    .filter(f -> f.id() != null)
+                    .collect(Collectors.toMap(ResumeLinkUpsertRequest::id, f -> f));
+
+            // 6. 업데이트
+            for (ResumeLink existing : resume.getResumeLinks()) {
+                if (dtoMap.containsKey(existing.getId())) {
+                    // 업데이트
+                    existing.update(dtoMap.get(existing.getId()));
+                    updatedFields.add(existing);
+                }
+            }
+
+            List<ResumeLink> newResumeLinks = req.links().stream()
+                    .filter(f -> f.id() == null)
+                    .map(l -> l.toEntity(resume))
+                    .toList();
+
+            resume.getResumeLinks().clear();
+
+            updatedFields.addAll(newResumeLinks);
+
+            resume.getResumeLinks().addAll(updatedFields);
+        }
+
+        resumeRepository.saveAndFlush(resume);
     }
 
 
@@ -242,72 +289,93 @@ public class ResumeService {
         }
     }
 
-
-
-
     //이력서 자격증 정보 UPDATE/INSERT upsertCertificates
     @Transactional
-    public void upsertCertificates(UUID resumeId, String secret, List<ResumeCertificateUpsertRequest> certs) {
-        tempAuth.authenticate(resumeId, secret);
-        certificateRepository.deleteByResume_Id(resumeId);
-
+    public void upsertCertificates(UUID resumeId, UUID templateId, String email, List<ResumeCertificateUpsertRequest> certs) {
         if(certs == null || certs.isEmpty()) return;
 
-        Resume ref = resumeRepository.getReferenceById(resumeId);
+        validateResumeCertificate(certs);
 
+        Resume resume = resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
+
+        validateOwnerShip(resume, email, templateId);
+
+        List<ResumeCertificate> updatedFields = new ArrayList<>();
+
+        Map<UUID, ResumeCertificateUpsertRequest> dtoMap = certs.stream()
+                .filter(f -> f.id() != null)
+                .collect(Collectors.toMap(ResumeCertificateUpsertRequest::id, f -> f));
+
+        // 6. 업데이트
+        for (ResumeCertificate existing : resume.getResumeCertificates()) {
+            if (dtoMap.containsKey(existing.getId())) {
+                // 업데이트
+                existing.update(dtoMap.get(existing.getId()));
+                updatedFields.add(existing);
+            }
+        }
+
+        List<ResumeCertificate> newCertificates = certs.stream()
+                .filter(f -> f.id() == null)
+                .map(l -> l.toEntity(resume))
+                .toList();
+
+        resume.getResumeCertificates().clear();
+
+        updatedFields.addAll(newCertificates);
+
+        resume.getResumeCertificates().addAll(updatedFields);
+
+        resumeRepository.saveAndFlush(resume);
+    }
+
+    private void validateResumeCertificate(List<ResumeCertificateUpsertRequest> certs) {
         Set<String> seen = new HashSet<>();
 
         for (var d : certs) {
-            if (d.certificateName() == null || d.certificateNumber() == null) {
-                throw new CustomException(CommonErrorCode.INVALID_REQUEST);
-            }
             String key = d.certificateName().trim().toLowerCase() + "|" + d.certificateNumber().trim().toLowerCase();
             if (!seen.add(key)) {
                 throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
             }
-            certificateRepository.save(mapCertificate(ref, d));
         }
     }
 
     //이력서 자기소개서 답변 UPDATE/INSERT saveTemplateResponses
     @Transactional
-    public CompanyTemplateResponseResponse saveTemplateResponses(UUID resumeId, String secret, CompanyTemplateResponseCreateRequest ctr){
-        Resume resume = tempAuth.authenticate(resumeId, secret);
+    public CompanyTemplateResponseResponse saveTemplateResponses(Resume resume, UUID templateId, String email, CompanyTemplateResponseDraftUpsertRequest req){
+        validateOwnerShip(resume, email, templateId);
 
-        if (!resumeRepository.existsById(resumeId)) {
-            throw new CustomException(ResumeErrorCode.RESUME_NOT_FOUND);
-        }
-        if (ctr == null || ctr.responses() == null) {
-            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
-        }
-        if (ctr.responses().isEmpty()) {
-            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
-        }
+        List<CompanyTemplateResponse> updatedFields = new ArrayList<>();
 
-        List<CompanyTemplateResponse> saved = new ArrayList<>();
-        try{
-            for (var i : ctr.responses()) {
-                var opt = templateResponseRepository.findByResume_IdAndFieldId(resumeId, i.fieldId());
-                CompanyTemplateResponse e = opt.orElseGet(() ->
-                        CompanyTemplateResponse.builder()
-                                .resume(resume)
-                                .fieldId(i.fieldId())
-                                .answer(i.answer())
-                                .build()
-                );
-                if (opt.isPresent()) e.changeAnswer(i.answer());
-                saved.add(templateResponseRepository.save(e));
+        Map<UUID, CompanyTemplateResponseDraftUpsertRequest.Item> dtoMap = req.responses().stream()
+                .filter(f -> f.id() != null)
+                .collect(Collectors.toMap(CompanyTemplateResponseDraftUpsertRequest.Item::id, f -> f));
+
+        // 6. 업데이트
+        for (CompanyTemplateResponse existing : resume.getTemplateResponses()) {
+            if (dtoMap.containsKey(existing.getId())) {
+                // 업데이트
+                existing.update(dtoMap.get(existing.getId()));
+                updatedFields.add(existing);
             }
-        }catch(Exception e){
-            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
         }
-        var items = saved.stream().map(e ->
-                new CompanyTemplateResponseResponse.Item(
-                        e.getId(), resumeId, e.getFieldId(), e.getAnswer(),
-                        e.getCreatedAt(), e.getUpdatedAt()
-                )).toList();
 
-        return new CompanyTemplateResponseResponse(items.size(), items);
+        List<CompanyTemplateResponse> newResponses = req.responses().stream()
+                .filter(f -> f.id() == null)
+                .map(l -> l.toEntity(resume, companyTemplateFieldRepository.getReferenceById(l.fieldId())))
+                .toList();
+
+        resume.getTemplateResponses().clear();
+
+        updatedFields.addAll(newResponses);
+
+        resume.getTemplateResponses().addAll(updatedFields);
+
+        return CompanyTemplateResponseResponse.builder()
+                        .savedCount(updatedFields.size())
+                        .responses(updatedFields.stream().map(CompanyTemplateResponseResponse.Item::fromEntity).toList())
+                        .build();
     }
 
     //자격증 진위 여부 검증 요청 -> 지금은 자격증 존재하면 true
@@ -323,95 +391,26 @@ public class ResumeService {
 
     //최종 제출
     @Transactional
-    public ResumeSubmitResponse submit(UUID resumeId, String secret, UUID companyId) {
-        Resume resume = tempAuth.authenticate(resumeId, secret);
-        if (!resumeRepository.existsById(resumeId)) {
-            throw new CustomException(ResumeErrorCode.RESUME_NOT_FOUND);
-        }
-        if (companyId == null) {
+    public ResumeSubmitResponse submit(Resume resume, UUID companyId) {
+        if (resume.getResumeBasic() == null) {
             throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
-        if (!basicRepository.existsByResume_Id(resumeId)) {
-            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
-        }
-        if (submissionRepository.existsByResume_IdAndCompanyId(resumeId, companyId)) {
+
+        if (submissionRepository.existsByResume_IdAndCompanyId(resume.getId(), companyId)) {
             throw new CustomException(ResumeErrorCode.ALREADY_SUBMITTED);
         }
 
-        CompanyFormSubmission submission = submissionRepository.save(
+        CompanyFormSubmission submission = submissionRepository.saveAndFlush(
                 CompanyFormSubmission.builder()
                         .resume(resume)
                         .companyId(companyId)
                         .build()
         );
 
-        resume.changeStatus(ResumeStatus.PENDING);
+        resume.setStatusPending();
 
-        return new ResumeSubmitResponse(
-                submission.getId(),
-                resume.getId(),
-                companyId,
-                submission.getSubmittedAt(),
-                resume.getStatus()
-        );
+        return ResumeSubmitResponse.fromEntity(submission);
     }
-
-
-    // 커스텀 문항 임시저장 (answer: null/빈 허용)
-    @Transactional
-    public CompanyTemplateResponseResponse saveTemplateResponsesDraft(
-            UUID resumeId, String secret, CompanyTemplateResponseDraftUpsertRequest dr
-    ) {
-        Resume resume = tempAuth.authenticate(resumeId, secret);
-        if (dr == null || dr.responses() == null || dr.responses().isEmpty()) {
-            throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
-        }
-
-        Set<UUID> uniq = new HashSet<>();
-        for (var item : dr.responses()) {
-            if (item == null || item.fieldId() == null) throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
-            if (!uniq.add(item.fieldId())) throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
-        }
-
-
-        Map<UUID, String> answerMap = dr.responses().stream()
-                .collect(Collectors.toMap(
-                        CompanyTemplateResponseDraftUpsertRequest.Item::fieldId,
-                        CompanyTemplateResponseDraftUpsertRequest.Item::answer
-                ));
-
-        List<CompanyTemplateResponse> saved = new ArrayList<>();
-        try {
-            for (UUID fieldId : uniq) {
-                String ans = answerMap.get(fieldId);
-                var opt = templateResponseRepository.findByResume_IdAndFieldId(resumeId, fieldId);
-                CompanyTemplateResponse e = opt.orElseGet(() ->
-                        CompanyTemplateResponse.builder()
-                                .resume(resume)
-                                .fieldId(fieldId)
-                                .answer(ans)   // null/빈 허용
-                                .build()
-                );
-                if (opt.isPresent()) e.changeAnswer(ans);
-                saved.add(templateResponseRepository.save(e));
-            }
-        } catch (CustomException ce) {
-            throw ce;
-        } catch (Exception e) {
-            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
-        }
-
-        var items = saved.stream().map(ent ->
-                new CompanyTemplateResponseResponse.Item(
-                        ent.getId(), resumeId, ent.getFieldId(),
-                        ent.getAnswer(), ent.getCreatedAt(), ent.getUpdatedAt()
-                )
-        ).toList();
-
-        return new CompanyTemplateResponseResponse(items.size(), items);
-    }
-
-
 
     // 프로필 이미지 업로드 -> 로컬 저장 & URL DB 저장/갱신
     @Transactional
@@ -426,7 +425,7 @@ public class ResumeService {
                         ResumeBasic.builder()
                                 .resume(resume)
                                 .englishName(" ")
-                                .gender(Gender.OTHER)
+                                .gender(ResumeBasic.Gender.OTHER)
                                 .birthDate(LocalDate.of(1900, 1, 1))
                                 .nationality(" ")
                                 .applyField(" ")
@@ -483,71 +482,4 @@ public class ResumeService {
         resumeRepository.deleteById(resumeId);
         storageService.deleteAllProfileImages(resumeId);
     }
-
-
-
-
-    //DTO -> Entity 매핑
-    private ResumeEducation mapEducation(Resume r, ResumeEducationUpsertRequest d){
-        return ResumeEducation.builder()
-                .resume(r)
-                .schoolType(d.schoolType())
-                .schoolName(d.schoolName())
-                .major(d.major())
-                .degree(d.degree())
-                .graduationStatus(d.graduationStatus())
-                .admissionType(d.admissionType())
-                .gpa(d.gpa())
-                .maxGpa(d.maxGpa())
-                .startDate(d.startDate())
-                .endDate(d.endDate())
-                .build();
-    }
-    private ResumeExperience mapExperience(Resume r, ResumeExperienceUpsertRequest d){
-        return ResumeExperience.builder()
-                .resume(r)
-                .companyName(d.companyName())
-                .department(d.department())
-                .position(d.position())
-                .responsibilities(d.responsibilities())
-                .employmentStatus(d.employmentStatus())
-                .startDate(d.startDate())
-                .endDate(d.endDate())
-                .build();
-    }
-    private ResumeCertificate mapCertificate(Resume r, ResumeCertificateUpsertRequest d){
-        return ResumeCertificate.builder()
-                .resume(r)
-                .certificateName(d.certificateName())
-                .certificateNumber(d.certificateNumber())
-                .issuer(d.issuer())
-                .issuedDate(d.issuedDate())
-                .certUrl(d.certUrl())
-                .build();
-    }
-    private ResumeLink mapLink(Resume r, ResumeLinkUpsertRequest d){
-        return ResumeLink.builder()
-                .resume(r)
-                .url(d.url())
-                .linkType(d.linkType())
-                .build();
-    }
-
-    private ResumeBasicResponse toBasicResponse(ResumeBasic b, UUID resumeId) {
-        return new ResumeBasicResponse(
-                b.getId(),
-                resumeId,
-                b.getEnglishName(),
-                b.getGender().name(),
-                b.getBirthDate(),
-                b.getNationality(),
-                b.getAddress(),
-                b.getApplyField(),
-                b.getSpecialty(),
-                b.getHobbies(),
-                b.getProfileImageUrl(),
-                b.getCreatedAt()
-        );
-    }
-
 }

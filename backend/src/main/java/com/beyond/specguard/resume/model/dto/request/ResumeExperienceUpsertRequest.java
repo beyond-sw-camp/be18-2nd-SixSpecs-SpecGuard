@@ -1,6 +1,8 @@
 package com.beyond.specguard.resume.model.dto.request;
 
 import com.beyond.specguard.resume.model.entity.common.enums.EmploymentStatus;
+import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.core.ResumeExperience;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -37,4 +39,17 @@ public record ResumeExperienceUpsertRequest(
         @Schema(description = "퇴사일", type = "string", format = "date", example = "2023-06-30")
         LocalDate endDate
 ) {
+    public ResumeExperience toEntity(Resume resume) {
+            return ResumeExperience.builder()
+                    .id(id)
+                    .resume(resume)
+                    .companyName(companyName)
+                    .department(department)
+                    .position(position)
+                    .responsibilities(responsibilities)
+                    .employmentStatus(employmentStatus)
+                    .startDate(startDate)
+                    .endDate(endDate)
+                    .build();
+    }
 }

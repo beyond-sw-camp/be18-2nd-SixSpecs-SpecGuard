@@ -2,7 +2,6 @@ package com.beyond.specguard.resume.controller;
 
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
-import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseCreateRequest;
 import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeAggregateUpdateRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeBasicCreateRequest;
@@ -13,6 +12,7 @@ import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseRes
 import com.beyond.specguard.resume.model.dto.response.ResumeBasicResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeSubmitResponse;
+import com.beyond.specguard.resume.model.entity.core.Resume;
 import com.beyond.specguard.resume.model.service.ResumeDetails;
 import com.beyond.specguard.resume.model.service.ResumeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/resumes")
@@ -74,10 +76,7 @@ public class ResumeController {
     @GetMapping("/{resumeId}")
     public ResumeResponse get(
             @PathVariable UUID resumeId,
-            @AuthenticationPrincipal ResumeDetails resumeDetails,
-            @Parameter(name = "X-Resume-Secret", in = ParameterIn.HEADER, required = true,
-                    description = "원문 비밀번호")
-            @RequestHeader("X-Resume-Secret") String secret
+            @AuthenticationPrincipal ResumeDetails resumeDetails
     ) {
         UUID templateId = resumeDetails.getResume().getTemplate().getId();
         String email = resumeDetails.getUsername();
@@ -162,9 +161,9 @@ public class ResumeController {
     ) {
         UUID templateId = resumeDetails.getResume().getTemplate().getId();
         String email = resumeDetails.getUsername();
-        UUID resumeId = resumeDetails.getResume().getId();
+        Resume resume = resumeDetails.getResume();
 
-        return resumeService.upsertBasic(resumeId, templateId, email, req);
+        return resumeService.upsertBasic(resume, templateId, email, req);
     }
 
 
@@ -176,11 +175,17 @@ public class ResumeController {
     @PostMapping("/edu-exp-link")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void upsertEduExpLink(
-            @RequestHeader("X-Resume-Id") UUID resumeId,
-            @RequestHeader("X-Resume-Secret") String secret,
+            @AuthenticationPrincipal ResumeDetails resumeDetails,
             @Valid @RequestBody ResumeAggregateUpdateRequest req
     ) {
-        resumeService.upsertAggregate(resumeId, secret, req);
+
+        UUID templateId = resumeDetails.getResume().getTemplate().getId();
+        String email = resumeDetails.getUsername();
+        UUID resumeId = resumeDetails.getResume().getId();
+
+        log.info("upsertEduExpLink, templateId : {}, email : {}, resumeId : {}", templateId, email, resumeId);
+
+        resumeService.upsertAggregate(resumeId, templateId, email, req);
     }
 
     //이력서 자격증 정보 UPDATE/INSERT
@@ -191,11 +196,14 @@ public class ResumeController {
     @PostMapping("/certificates")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void upsertCertificates(
-            @RequestHeader("X-Resume-Id") UUID resumeId,
-            @RequestHeader("X-Resume-Secret") String secret,
+            @AuthenticationPrincipal ResumeDetails resumeDetails,
             @Valid @RequestBody List<ResumeCertificateUpsertRequest> certificates
     ) {
-        resumeService.upsertCertificates(resumeId, secret, certificates);
+        UUID templateId = resumeDetails.getResume().getTemplate().getId();
+        String email = resumeDetails.getUsername();
+        UUID resumeId = resumeDetails.getResume().getId();
+
+        resumeService.upsertCertificates(resumeId, templateId, email, certificates);
     }
 
 
@@ -207,11 +215,14 @@ public class ResumeController {
     @PostMapping("/template-responses")
     @ResponseStatus(HttpStatus.CREATED)
     public CompanyTemplateResponseResponse saveTemplateResponses(
-            @RequestHeader("X-Resume-Id") UUID resumeId,
-            @RequestHeader("X-Resume-Secret") String secret,
-            @Valid @RequestBody CompanyTemplateResponseCreateRequest req
+            @AuthenticationPrincipal ResumeDetails resumeDetails,
+            @Valid @RequestBody CompanyTemplateResponseDraftUpsertRequest req
     ) {
-        return resumeService.saveTemplateResponses(resumeId, secret, req);
+        UUID templateId = resumeDetails.getResume().getTemplate().getId();
+        String email = resumeDetails.getUsername();
+        Resume resume = resumeDetails.getResume();
+
+        return resumeService.saveTemplateResponses(resume, templateId, email, req);
     }
 
     @Operation(
@@ -236,39 +247,20 @@ public class ResumeController {
     //최종 제출
     @Operation(
             summary = "이력서 최종 제출",
-            description = "제출 이력(company_form_submission)에 기록하고, 이력서 상태를 PENDING으로 전환합니다.",
-            parameters = {
-                    @Parameter(name = "X-Resume-Id", in = ParameterIn.HEADER, required = true, description = "내 이력서 ID(UUID)"),
-                    @Parameter(name = "X-Resume-Secret", in = ParameterIn.HEADER, required = true, description = "원문 비밀번호(임시 인증)")
-            }
+            description = "제출 이력(company_form_submission)에 기록하고, 이력서 상태를 PENDING으로 전환합니다."
     )
     @PostMapping("/submit")
     @ResponseStatus(HttpStatus.CREATED)
     public ResumeSubmitResponse submit(
-            @RequestHeader("X-Resume-Id") UUID resumeId,
-            @RequestHeader("X-Resume-Secret") String secret,
+            @AuthenticationPrincipal ResumeDetails resumeDetails,
             @Valid @RequestBody ResumeSubmitRequest req
     ) {
-        return resumeService.submit(resumeId, secret, req.companyId());
+        Resume resume = resumeDetails.getResume();
+
+        return resumeService.submit(resume, req.companyId());
     }
 
     public record VerificationResult(boolean verified) {
-    }
-
-    // 커스텀 질문 임시저장
-    //(resume_id, field_id) 기준 upsert
-    @Operation(
-            summary = "이력서 커스텀 문항 임시저장",
-            description = "자기소개서/역량기술서 등 기업 커스텀 문항 답변을 임시저장합니다. - 임시 저장 시 answer는 빈 문자열/NULL 허용"
-    )
-    @PostMapping("/template-responses/draft")
-    @ResponseStatus(HttpStatus.CREATED)
-    public CompanyTemplateResponseResponse saveTemplateResponsesDraft(
-            @RequestHeader("X-Resume-Id") UUID resumeId,
-            @RequestHeader("X-Resume-Secret") String secret,
-            @Valid @org.springframework.web.bind.annotation.RequestBody CompanyTemplateResponseDraftUpsertRequest req
-    ) {
-        return resumeService.saveTemplateResponsesDraft(resumeId, secret, req);
     }
 
 

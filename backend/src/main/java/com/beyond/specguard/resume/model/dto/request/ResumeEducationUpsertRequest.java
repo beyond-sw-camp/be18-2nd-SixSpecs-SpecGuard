@@ -1,11 +1,10 @@
 package com.beyond.specguard.resume.model.dto.request;
 
-import com.beyond.specguard.resume.model.entity.common.enums.AdmissionType;
-import com.beyond.specguard.resume.model.entity.common.enums.Degree;
-import com.beyond.specguard.resume.model.entity.common.enums.GraduationStatus;
-import com.beyond.specguard.resume.model.entity.common.enums.SchoolType;
+import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.core.ResumeEducation;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -16,7 +15,7 @@ public record ResumeEducationUpsertRequest(
 
         @Schema(description = "학교 구분", example = "UNIV")
         @NotNull
-        SchoolType schoolType,
+        ResumeEducation.SchoolType schoolType,
 
         @Schema(description = "학교명", example = "서울대학교")
         @NotBlank
@@ -28,15 +27,15 @@ public record ResumeEducationUpsertRequest(
 
         @Schema(description = "학위", example = "BACHELOR")
         @NotNull
-        Degree degree,
+        ResumeEducation.Degree degree,
 
         @Schema(description = "졸업 구분", example = "GRADUATED")
         @NotNull
-        GraduationStatus graduationStatus,
+        ResumeEducation.GraduationStatus graduationStatus,
 
         @Schema(description = "입학 유형", example = "REGULAR")
         @NotNull
-        AdmissionType admissionType,
+        ResumeEducation.AdmissionType admissionType,
 
         @Schema(description = "평점", example = "3.8")
         @NotNull
@@ -53,4 +52,21 @@ public record ResumeEducationUpsertRequest(
         @Schema(description = "졸업/종료일", type = "string", format = "date", example = "2019-02-28")
         LocalDate endDate
 ) {
+        public ResumeEducation toEntity(Resume resume) {
+                return ResumeEducation.builder()
+                        .id(id)
+                        .resume(resume)
+                        .admissionType(admissionType)
+                        .gpa(gpa)
+                        .maxGpa(maxGpa)
+                        .degree(degree)
+                        .graduationStatus(graduationStatus)
+                        .admissionType(admissionType)
+                        .startDate(startDate)
+                        .endDate(endDate)
+                        .schoolType(schoolType)
+                        .schoolName(schoolName)
+                        .major(major)
+                        .build();
+        }
 }

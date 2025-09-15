@@ -1,14 +1,31 @@
 package com.beyond.specguard.resume.model.entity.core;
 
-import com.beyond.specguard.resume.model.entity.common.BaseEntity;
-import jakarta.persistence.*;
+import com.beyond.specguard.resume.model.dto.request.ResumeCertificateUpsertRequest;
+import jakarta.persistence.Column;
+import jakarta.persistence.ConstraintMode;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 import org.hibernate.validator.constraints.URL;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Entity
@@ -16,8 +33,15 @@ import java.time.LocalDate;
         name = "resume_certificate"
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ResumeCertificate extends BaseEntity {
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class ResumeCertificate {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false)
+    private UUID id;
 
     //다대일
     //resume_id는 FK
@@ -48,14 +72,19 @@ public class ResumeCertificate extends BaseEntity {
     @Column(name = "cert_url", nullable = true, columnDefinition = "TEXT")
     private String certUrl;
 
+    @CreationTimestamp
+    @Column(name ="created_at", updatable = false)
+    private LocalDateTime createdAt;
 
-    @Builder
-    public ResumeCertificate( Resume resume, String certificateName, String certificateNumber, String issuer, LocalDate issuedDate, String certUrl) {
-        this.resume = resume;
-        this.certificateName = certificateName;
-        this.certificateNumber = certificateNumber;
-        this.issuer = issuer;
-        this.issuedDate = issuedDate;
-        this.certUrl = certUrl;
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    public void update(ResumeCertificateUpsertRequest req) {
+        if (req.certificateName() != null) this.certificateName = req.certificateName();
+        if (req.certificateNumber() != null) this.certificateNumber = req.certificateNumber();
+        if (req.issuer() != null) this.issuer = req.issuer();
+        if (req.issuedDate() != null) this.issuedDate = req.issuedDate();
+        if (req.certUrl() != null) this.certUrl = req.certUrl();
     }
 }

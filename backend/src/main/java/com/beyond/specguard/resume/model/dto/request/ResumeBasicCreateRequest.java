@@ -1,6 +1,5 @@
 package com.beyond.specguard.resume.model.dto.request;
 
-import com.beyond.specguard.resume.model.entity.common.enums.Gender;
 import com.beyond.specguard.resume.model.entity.core.Resume;
 import com.beyond.specguard.resume.model.entity.core.ResumeBasic;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -16,7 +15,7 @@ public record ResumeBasicCreateRequest(
 
         @Schema(description = "성별", example = "M")
         @NotNull
-        Gender gender,
+        ResumeBasic.Gender gender,
 
         @Schema(description = "생년월일", type = "string", format = "date", example = "1995-03-10")
         @NotNull

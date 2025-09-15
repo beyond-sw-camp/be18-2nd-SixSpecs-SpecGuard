@@ -1,7 +1,6 @@
 package com.beyond.specguard.resume.model.entity.core;
 
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
-import com.beyond.specguard.resume.model.entity.common.BaseEntity;
 import com.beyond.specguard.resume.model.entity.common.enums.ResumeStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -11,6 +10,9 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -24,9 +26,15 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Entity
@@ -38,7 +46,13 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString
-public class Resume extends BaseEntity {
+public class Resume {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "id", columnDefinition = "CHAR(36)", nullable = false)
+    private UUID id;
 
     //template_id
     @ManyToOne(fetch = FetchType.LAZY)
@@ -71,6 +85,15 @@ public class Resume extends BaseEntity {
     //해쉬화된 패스워드
     @Column(name = "password_hash", columnDefinition = "CHAR(64)", nullable = false)
     private String passwordHash;
+
+    @CreationTimestamp
+    @Column(name ="created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
 
     @OneToOne(
             mappedBy = "resume",
@@ -116,11 +139,22 @@ public class Resume extends BaseEntity {
     private List<ResumeLink> resumeLinks = new ArrayList<>();
 
 
+    @OneToMany(
+            mappedBy = "resume",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    @Builder.Default
+    private List<CompanyTemplateResponse> templateResponses = new ArrayList<>();
+
     public void encodePassword(String passwordHash) {
         this.passwordHash = passwordHash;
     }
 
-    public void changeStatus(ResumeStatus status) { this.status = status; }
+    public void setStatusPending() {
+        this.status = ResumeStatus.PENDING;
+    }
 
     public enum Role {
         APPLICANT;

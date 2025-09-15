@@ -20,7 +20,7 @@ public record ResumeCreateRequest(
         @NotBlank
         String name,
 
-        @Schema(description = "연락처", example = "010-1234-5678")
+        @Schema(description = "연락처", example = "01012345678")
         @NotBlank
         String phone,
 
