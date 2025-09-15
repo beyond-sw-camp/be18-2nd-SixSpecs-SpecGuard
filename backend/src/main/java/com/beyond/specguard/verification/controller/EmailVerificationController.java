@@ -2,75 +2,71 @@ package com.beyond.specguard.verification.controller;
 
 import com.beyond.specguard.verification.model.dto.VerifyDto;
 import com.beyond.specguard.verification.model.service.EmailVerificationService;
+import com.beyond.specguard.verification.model.type.VerifyTarget;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 
-import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/verify/email")
 @RequiredArgsConstructor
-@Tag(name = "Email Verification", description = "지원자 회원가입 시 이메일 인증 API")
+@Validated
+@Tag(name = "Email Verification", description = "지원자/기업 이메일 인증 API")
 public class EmailVerificationController {
 
     private final EmailVerificationService svc;
 
-    @Operation(
-            summary = "인증코드 요청",
-            description = "지원자가 이메일을 입력하면 인증코드(OTP)를 발송합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "202", description = "인증코드 발송 요청 수락",
-                            content = @Content(schema = @Schema(implementation = VerifyDto.EmailRequest.class))),
-                    @ApiResponse(responseCode = "400", description = "잘못된 요청")
-            }
-    )
-    @PostMapping("/request")
-    public ResponseEntity<Void> request(@RequestBody VerifyDto.EmailRequest req) throws IOException {
-        log.info("verify.request email={}", req.email()); // POJO면 req.getEmail()
-        if (req.email() == null || req.email().isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-        svc.requestCode(req.email());
+    private static VerifyTarget parse(String type) {
+        return "company".equalsIgnoreCase(type) ? VerifyTarget.COMPANY : VerifyTarget.APPLICANT;
+    }
+
+    @Operation(summary = "인증코드 요청")
+    @PostMapping("/{type}/request") // type = applicant | company
+    public ResponseEntity<Void> request(
+            @PathVariable String type,
+            @Valid @RequestBody VerifyDto.EmailRequest req,
+            HttpServletRequest http
+    ) {
+        log.info("verify.request type={} email={}", type, req.email());
+        String ip = Optional.ofNullable(http.getHeader("X-Forwarded-For"))
+                .orElseGet(http::getRemoteAddr);
+        svc.requestCode(req.email(), parse(type), ip);
         return ResponseEntity.accepted().build();
     }
 
-    @Operation(
-            summary = "인증코드 검증",
-            description = "이메일과 인증코드를 검증합니다."
-    )
-    @PostMapping("/confirm")
-    public ResponseEntity<VerifyDto.VerifyResult> confirm(@RequestBody VerifyDto.EmailConfirm req) {
-        boolean ok = svc.verify(req.email(), req.code()); // POJO일 경우 getEmail(), getCode()
-        if (ok) return ResponseEntity.ok(VerifyDto.VerifyResult.ok());
-        return ResponseEntity.ok(new VerifyDto.VerifyResult("FAIL", "not verified"));
+    @Operation(summary = "인증코드 검증")
+    @PostMapping("/{type}/confirm") // type = applicant | company
+    public ResponseEntity<VerifyDto.VerifyResult> confirm(
+            @PathVariable String type,
+            @Valid @RequestBody VerifyDto.EmailConfirm req
+    ) {
+        boolean ok = svc.verify(req.email(), req.code(), parse(type));
+        return ResponseEntity.ok(ok ? VerifyDto.VerifyResult.ok()
+                : new VerifyDto.VerifyResult("FAIL", "not verified"));
     }
 
-
-
-    //임시 확인용
-    @GetMapping("/api/v1/verify/email/_redis")
-    public Map<String,Object> redisInfo(
-            org.springframework.data.redis.core.StringRedisTemplate redis) {
-        var f = (org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory)
-                redis.getConnectionFactory();
+    // ===== 디버그 =====
+    @GetMapping("/_redis")
+    public Map<String,Object> redisInfo(StringRedisTemplate redis) {
+        var f = (LettuceConnectionFactory) redis.getConnectionFactory();
         return Map.of("host", f.getHostName(), "port", f.getPort(), "db", f.getDatabase());
     }
 
-    @GetMapping("/api/v1/verify/email/_peek")
-    public Map<String,Object> peek(
-            @RequestParam String email,
-            org.springframework.data.redis.core.StringRedisTemplate redis) {
+    @GetMapping("/_peek")
+    public Map<String,Object> peek(@RequestParam String email, StringRedisTemplate redis) {
         var k = "verif:email:" + email.toLowerCase();
         return Map.of("key", k, "val", redis.opsForValue().get(k), "ttl", redis.getExpire(k));
     }
 }
-
