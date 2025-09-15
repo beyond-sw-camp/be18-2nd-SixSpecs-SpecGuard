@@ -25,31 +25,31 @@ public class VerifySendGridService {
     @Value("${verify.mail.from-name:${sendgrid.mail.from-name}}")
     private String fromName;
 
-    public void sendCodeEmail(String toEmail, String code, long ttlSeconds) throws IOException {
-        Email from = new Email(fromEmail, fromName);
-        Email to = new Email(toEmail);
-        String subject = "[SpecGuard] 이메일 인증코드";
-        String body = """
-        <h3>이메일 인증코드</h3>
-        <p>아래 코드를 입력하세요. 유효시간 %d초</p>
-        <div style="font-size:24px;font-weight:700">%s</div>
-        """.formatted(ttlSeconds, code);
-
-        Content content = new Content("text/html", body);
-        Mail mail = new Mail(from, subject, to, content);
-
-        SendGrid sg = new SendGrid(apiKey);
-        Request req = new Request();
+    public void sendCodeEmail(String toEmail, String code, long ttlSeconds) {
         try {
+            Email from = new Email(fromEmail, fromName);
+            Email to = new Email(toEmail);
+            String subject = "[SpecGuard] 이메일 인증코드";
+            String body = """
+            <h3>이메일 인증코드</h3>
+            <p>아래 코드를 입력하세요. 유효시간 %d초</p>
+            <div style="font-size:24px;font-weight:700">%s</div>
+            """.formatted(ttlSeconds, code);
+
+            Content content = new Content("text/html", body);
+            Mail mail = new Mail(from, subject, to, content);
+
+            SendGrid sg = new SendGrid(apiKey);
+            Request req = new Request();
             req.setMethod(Method.POST);
             req.setEndpoint("mail/send");
             req.setBody(mail.build());
-            sg.api(req);
-        } catch (IOException e) {
-            throw new RuntimeException("Verification 메일 발송 실패", e);
+
+            Response res = sg.api(req);
+            log.info("SendGrid status={}, body={}", res.getStatusCode(), res.getBody());
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
         }
-        Response res = sg.api(req);
-        log.info("SendGrid status={}, body={}", res.getStatusCode(), res.getBody());
     }
 
 }
