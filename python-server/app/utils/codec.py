@@ -1,4 +1,4 @@
-import gzip, json, base64
+import gzip, json
 
 def to_gzip_bytes_from_json(data: dict) -> bytes:
     raw = json.dumps(data, ensure_ascii=False).encode("utf-8")

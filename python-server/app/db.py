@@ -55,7 +55,7 @@ SET {CR_COL_CONTENTS} = :contents,
     updated_at       = CURRENT_TIMESTAMP
 WHERE {CR_COL_RID}  = :rid
   AND {CR_COL_RLID} = :lid
-  AND {CR_COL_STATUS} NOT IN ('COMPLETED','FAILED','NOTEXISTED')
+  AND {CR_COL_STATUS} = 'PENDING'
 """)
 
 # RUNNING -> COMPLETED (성공 저장)
