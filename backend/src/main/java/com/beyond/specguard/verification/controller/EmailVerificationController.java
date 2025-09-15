@@ -1,6 +1,9 @@
 package com.beyond.specguard.verification.controller;
 
 import com.beyond.specguard.verification.model.dto.VerifyDto;
+import com.beyond.specguard.verification.model.entity.EmailVerifyStatus;
+import com.beyond.specguard.verification.model.repository.ApplicantEmailVerificationRepo;
+import com.beyond.specguard.verification.model.repository.CompanyEmailVerificationRepo;
 import com.beyond.specguard.verification.model.service.EmailVerificationService;
 import com.beyond.specguard.verification.model.type.VerifyTarget;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +31,9 @@ public class EmailVerificationController {
 
     private final EmailVerificationService svc;
 
+    private final CompanyEmailVerificationRepo companyRepo;
+    private final ApplicantEmailVerificationRepo applicantRepo;
+    private static String norm(String e){ return e==null? null : e.trim().toLowerCase(); }
     private static VerifyTarget parse(String type) {
         return "company".equalsIgnoreCase(type) ? VerifyTarget.COMPANY : VerifyTarget.APPLICANT;
     }
@@ -56,6 +62,19 @@ public class EmailVerificationController {
         return ResponseEntity.ok(ok ? VerifyDto.VerifyResult.ok()
                 : new VerifyDto.VerifyResult("FAIL", "not verified"));
     }
+
+    @GetMapping("/{type}/status")
+    public Map<String, Object> status(@PathVariable String type, @RequestParam String email){
+        String em = norm(email);
+        boolean verified = switch (parse(type)) {
+            case COMPANY   -> companyRepo.findByEmail(em)
+                    .map(v -> v.getStatus()==EmailVerifyStatus.VERIFIED).orElse(false);
+            case APPLICANT -> applicantRepo.findByEmail(em)
+                    .map(v -> v.getStatus()== EmailVerifyStatus.VERIFIED).orElse(false);
+        };
+        return Map.of("verified", verified);
+    }
+
 
     // ===== 디버그 =====
     @GetMapping("/_redis")
