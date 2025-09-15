@@ -1,7 +1,6 @@
-package com.beyond.specguard.resume.model.entity.core;
+package com.beyond.specguard.resume.model.entity;
 
 import com.beyond.specguard.resume.model.dto.request.ResumeExperienceUpsertRequest;
-import com.beyond.specguard.resume.model.entity.common.enums.EmploymentStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.ConstraintMode;
@@ -103,5 +102,12 @@ public class ResumeExperience {
         if (req.startDate() != null) this.startDate = req.startDate();
         if (req.endDate() != null) this.endDate = req.endDate();
         if (req.responsibilities() != null) this.responsibilities = req.responsibilities();
+    }
+
+    public enum EmploymentStatus {
+        EMPLOYED,
+        RESIGNED,
+        CONTRACT_ENDED,
+        ON_LEAVE
     }
 }

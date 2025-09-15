@@ -1,6 +1,6 @@
 package com.beyond.specguard.resume.model.repository;
 
-import com.beyond.specguard.resume.model.entity.core.CompanyTemplateResponse;
+import com.beyond.specguard.resume.model.entity.CompanyTemplateResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

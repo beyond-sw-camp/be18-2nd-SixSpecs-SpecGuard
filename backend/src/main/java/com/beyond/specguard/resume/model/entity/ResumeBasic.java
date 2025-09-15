@@ -1,4 +1,4 @@
-package com.beyond.specguard.resume.model.entity.core;
+package com.beyond.specguard.resume.model.entity;
 
 import com.beyond.specguard.resume.model.dto.request.ResumeBasicCreateRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;

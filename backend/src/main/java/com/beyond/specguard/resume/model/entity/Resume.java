@@ -1,7 +1,6 @@
-package com.beyond.specguard.resume.model.entity.core;
+package com.beyond.specguard.resume.model.entity;
 
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
-import com.beyond.specguard.resume.model.entity.common.enums.ResumeStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.ConstraintMode;
@@ -158,5 +157,17 @@ public class Resume {
 
     public enum Role {
         APPLICANT;
+    }
+
+    public enum ResumeStatus {
+        DRAFT,
+        PENDING,
+        PROCESSING,
+        COMPLETED,
+        REVIEWED,
+        REJECTED,
+        ACCEPTED,
+        WITHDRAWN,
+        FAILED
     }
 }

@@ -1,6 +1,6 @@
 package com.beyond.specguard.resume.model.dto.response;
 
-import com.beyond.specguard.resume.model.entity.core.ResumeBasic;
+import com.beyond.specguard.resume.model.entity.ResumeBasic;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 

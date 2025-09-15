@@ -1,7 +1,7 @@
 package com.beyond.specguard.resume.auth;
 
 import com.beyond.specguard.common.exception.CustomException;
-import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;

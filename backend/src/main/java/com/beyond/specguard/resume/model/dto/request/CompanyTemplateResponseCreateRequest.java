@@ -1,8 +1,8 @@
 package com.beyond.specguard.resume.model.dto.request;
 
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
-import com.beyond.specguard.resume.model.entity.core.CompanyTemplateResponse;
-import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.CompanyTemplateResponse;
+import com.beyond.specguard.resume.model.entity.Resume;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

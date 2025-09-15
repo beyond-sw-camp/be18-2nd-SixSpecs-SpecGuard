@@ -1,8 +1,7 @@
 package com.beyond.specguard.resume.model.dto.request;
 
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
-import com.beyond.specguard.resume.model.entity.common.enums.ResumeStatus;
-import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.Resume;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -37,7 +36,7 @@ public record ResumeCreateRequest(
         public Resume toEntity(CompanyTemplate companyTemplate) {
                 return Resume.builder()
                         .template(companyTemplate)
-                        .status(ResumeStatus.DRAFT)
+                        .status(Resume.ResumeStatus.DRAFT)
                         .name(name)
                         .phone(phone)
                         .email(email)

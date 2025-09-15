@@ -1,11 +1,10 @@
 package com.beyond.specguard.resume.model.dto.response;
 
-import com.beyond.specguard.resume.model.entity.common.enums.ResumeStatus;
-import com.beyond.specguard.resume.model.entity.core.Resume;
-import com.beyond.specguard.resume.model.entity.core.ResumeBasic;
-import com.beyond.specguard.resume.model.entity.core.ResumeEducation;
-import com.beyond.specguard.resume.model.entity.core.ResumeExperience;
-import com.beyond.specguard.resume.model.entity.core.ResumeLink;
+import com.beyond.specguard.resume.model.entity.Resume;
+import com.beyond.specguard.resume.model.entity.ResumeBasic;
+import com.beyond.specguard.resume.model.entity.ResumeEducation;
+import com.beyond.specguard.resume.model.entity.ResumeExperience;
+import com.beyond.specguard.resume.model.entity.ResumeLink;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -23,7 +22,7 @@ public record ResumeResponse(
         UUID templateId,
 
         @Schema(description = "상태")
-        ResumeStatus status,
+        Resume.ResumeStatus status,
 
         @Schema(description = "성명")
         String name,

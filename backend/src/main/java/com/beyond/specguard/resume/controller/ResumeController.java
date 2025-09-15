@@ -12,7 +12,7 @@ import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseRes
 import com.beyond.specguard.resume.model.dto.response.ResumeBasicResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeSubmitResponse;
-import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.service.ResumeDetails;
 import com.beyond.specguard.resume.model.service.ResumeService;
 import io.swagger.v3.oas.annotations.Operation;

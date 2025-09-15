@@ -1,4 +1,4 @@
-package com.beyond.specguard.resume.model.entity.core;
+package com.beyond.specguard.resume.model.entity;
 
 import com.beyond.specguard.resume.model.dto.request.ResumeCertificateUpsertRequest;
 import jakarta.persistence.Column;

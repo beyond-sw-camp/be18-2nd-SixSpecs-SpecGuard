@@ -1,6 +1,5 @@
-package com.beyond.specguard.resume.model.entity.core;
+package com.beyond.specguard.resume.model.entity;
 
-import com.beyond.specguard.resume.model.entity.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
