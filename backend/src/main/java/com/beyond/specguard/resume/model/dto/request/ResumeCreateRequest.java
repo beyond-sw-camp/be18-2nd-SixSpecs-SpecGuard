@@ -1,5 +1,7 @@
 package com.beyond.specguard.resume.model.dto.request;
 
+import com.beyond.specguard.resume.model.entity.common.enums.ResumeStatus;
+import com.beyond.specguard.resume.model.entity.core.Resume;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -28,6 +30,16 @@ public record ResumeCreateRequest(
 
         @Schema(description = "원문 비밀번호(서버에서 해시 저장)")
         @NotBlank
-        String passwordHash
+        String password
 ) {
+        public Resume toEntity(String passwordHash) {
+                return Resume.builder()
+                        .templateId(this.templateId)
+                        .status(ResumeStatus.DRAFT)
+                        .name(name)
+                        .phone(phone)
+                        .email(email)
+                        .passwordHash(passwordHash)
+                        .build();
+        }
 }

@@ -4,16 +4,38 @@ import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository;
 import com.beyond.specguard.resume.auth.ResumeTempAuth;
-import com.beyond.specguard.resume.model.dto.request.*;
+import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
+import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseCreateRequest;
+import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
+import com.beyond.specguard.resume.model.dto.request.ResumeAggregateUpdateRequest;
+import com.beyond.specguard.resume.model.dto.request.ResumeBasicCreateRequest;
+import com.beyond.specguard.resume.model.dto.request.ResumeCertificateUpsertRequest;
+import com.beyond.specguard.resume.model.dto.request.ResumeCreateRequest;
+import com.beyond.specguard.resume.model.dto.request.ResumeEducationUpsertRequest;
+import com.beyond.specguard.resume.model.dto.request.ResumeExperienceUpsertRequest;
+import com.beyond.specguard.resume.model.dto.request.ResumeLinkUpsertRequest;
 import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeBasicResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeSubmitResponse;
 import com.beyond.specguard.resume.model.entity.common.enums.Gender;
 import com.beyond.specguard.resume.model.entity.common.enums.ResumeStatus;
-import com.beyond.specguard.resume.model.entity.core.*;
-import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
-import com.beyond.specguard.resume.model.repository.*;
+import com.beyond.specguard.resume.model.entity.core.CompanyFormSubmission;
+import com.beyond.specguard.resume.model.entity.core.CompanyTemplateResponse;
+import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.core.ResumeBasic;
+import com.beyond.specguard.resume.model.entity.core.ResumeCertificate;
+import com.beyond.specguard.resume.model.entity.core.ResumeEducation;
+import com.beyond.specguard.resume.model.entity.core.ResumeExperience;
+import com.beyond.specguard.resume.model.entity.core.ResumeLink;
+import com.beyond.specguard.resume.model.repository.CompanyFormSubmissionRepository;
+import com.beyond.specguard.resume.model.repository.CompanyTemplateResponseRepository;
+import com.beyond.specguard.resume.model.repository.ResumeBasicRepository;
+import com.beyond.specguard.resume.model.repository.ResumeCertificateRepository;
+import com.beyond.specguard.resume.model.repository.ResumeEducationRepository;
+import com.beyond.specguard.resume.model.repository.ResumeExperienceRepository;
+import com.beyond.specguard.resume.model.repository.ResumeLinkRepository;
+import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,7 +49,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 
@@ -47,35 +75,22 @@ public class ResumeService {
     private final ResumeTempAuth tempAuth;
     private final LocalFileStorageService storageService;
 
-
-
     //이력서 생성에서 create
     @Transactional
     public ResumeResponse create(ResumeCreateRequest req) {
-        if (req.passwordHash() == null || req.passwordHash().isBlank()) {
+        if (req.password() == null || req.password().isBlank()) {
             throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
-        if (resumeRepository.existsByEmail(req.email())) {
+
+        if (resumeRepository.existsByEmailAndTemplateId(req.email(), req.templateId())) {
             throw new CustomException(ResumeErrorCode.DUPLICATE_EMAIL);
         }
 
-        String encoded = passwordEncoder.encode(req.passwordHash().trim());
+        String encoded = passwordEncoder.encode(req.password().trim());
 
-        try {
-            Resume saved = resumeRepository.save(
-                    Resume.builder()
-                            .templateId(req.templateId())
-                            .status(ResumeStatus.DRAFT)
-                            .name(req.name())
-                            .phone(req.phone())
-                            .email(req.email())
-                            .passwordHash(encoded)
-                            .build()
-            );
-            return toResumeResponse(saved);
-        }catch (Exception e) {
-            throw new CustomException(ResumeErrorCode.INTERNAL_SERVER_ERROR);
-        }
+        Resume saved = resumeRepository.save(req.toEntity(encoded));
+
+        return ResumeResponse.fromEntity(saved);
     }
 
     //지원서 단건 조회에서 get
@@ -552,16 +567,7 @@ public class ResumeService {
 
     //Entity -> Dto
     private ResumeResponse toResumeResponse(Resume r) {
-        return new ResumeResponse(
-                r.getId(),
-                r.getTemplateId(),
-                r.getStatus(),
-                r.getName(),
-                r.getPhone(),
-                r.getEmail(),
-                r.getCreatedAt(),
-                r.getUpdatedAt()
-        );
+
     }
     private ResumeBasicResponse toBasicResponse(ResumeBasic b, UUID resumeId) {
         return new ResumeBasicResponse(

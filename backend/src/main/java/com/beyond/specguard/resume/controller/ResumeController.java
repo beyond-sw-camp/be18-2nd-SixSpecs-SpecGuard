@@ -1,12 +1,18 @@
 package com.beyond.specguard.resume.controller;
 
 import com.beyond.specguard.common.exception.CustomException;
-import com.beyond.specguard.resume.model.dto.request.*;
+import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
+import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseCreateRequest;
+import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
+import com.beyond.specguard.resume.model.dto.request.ResumeAggregateUpdateRequest;
+import com.beyond.specguard.resume.model.dto.request.ResumeBasicCreateRequest;
+import com.beyond.specguard.resume.model.dto.request.ResumeCertificateUpsertRequest;
+import com.beyond.specguard.resume.model.dto.request.ResumeCreateRequest;
+import com.beyond.specguard.resume.model.dto.request.ResumeSubmitRequest;
 import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeBasicResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeSubmitResponse;
-import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.model.service.ResumeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -22,7 +28,16 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -43,7 +58,9 @@ public class ResumeController {
     )
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ResumeResponse create(@Valid @RequestBody ResumeCreateRequest req) {
+    public ResumeResponse create(
+            @Valid @RequestBody ResumeCreateRequest req
+    ) {
         return resumeService.create(req);
     }
 
