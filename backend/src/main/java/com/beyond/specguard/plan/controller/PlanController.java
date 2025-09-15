@@ -10,7 +10,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
@@ -21,16 +27,14 @@ public class PlanController {
     private final PlanService planService;
 
     // 생성
-    @PostMapping
-    @RequestMapping("/admins/plans")
+    @PostMapping("/admins/plans")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PlanResponseDto> createPlan(@Valid @RequestBody PlanRequestDto request) {
         return ResponseEntity.status(201).body(planService.createPlan(request));
     }
 
     // 수정
-    @RequestMapping("/admins/plans")
-    @PutMapping("/{id}")
+    @PutMapping("/admins/plans/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PlanResponseDto> updatePlan(
             @PathVariable UUID id,
@@ -39,24 +43,21 @@ public class PlanController {
     }
 
     // 삭제
-    @RequestMapping("/admins/plans")
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/admins/plans/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletePlan(@PathVariable UUID id) {
         planService.deletePlan(id);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{id}")
-    @RequestMapping("/api/v1/plans")
+    @GetMapping("/api/v1/plans/{id}")
     public ResponseEntity<PlanResponseDto> getPlan(
             @PathVariable UUID id
     ) {
         return ResponseEntity.ok(planService.getPlan(id));
     }
 
-    @GetMapping
-    @RequestMapping("/api/v1/plans")
+    @GetMapping("/api/v1/plans")
     public ResponseEntity<PlanListResponseDto> getPlans(
             @PageableDefault Pageable pageable
     ) {

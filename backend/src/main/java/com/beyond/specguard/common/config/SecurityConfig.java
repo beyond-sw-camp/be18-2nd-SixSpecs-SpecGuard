@@ -2,15 +2,15 @@ package com.beyond.specguard.common.config;
 
 import com.beyond.specguard.auth.model.configurer.CommonSecurityConfigurer;
 import com.beyond.specguard.auth.model.filter.AdminLoginFilter;
-import com.beyond.specguard.auth.model.filter.ResumeLoginFilter;
 import com.beyond.specguard.auth.model.filter.ClientLoginFilter;
+import com.beyond.specguard.auth.model.filter.ResumeLoginFilter;
 import com.beyond.specguard.auth.model.handler.local.CustomFailureHandler;
 import com.beyond.specguard.auth.model.handler.local.CustomSuccessHandler;
 import com.beyond.specguard.auth.model.handler.oauth2.OAuth2FailureHandler;
 import com.beyond.specguard.auth.model.handler.oauth2.OAuth2SuccessHandler;
 import com.beyond.specguard.auth.model.provider.AdminAuthenticationProvider;
-import com.beyond.specguard.auth.model.provider.ResumeAuthenticationProvider;
 import com.beyond.specguard.auth.model.provider.ClientAuthenticationProvider;
+import com.beyond.specguard.auth.model.provider.ResumeAuthenticationProvider;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +23,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -39,6 +40,7 @@ import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
 
     // Login Handlers
@@ -85,7 +87,8 @@ public class SecurityConfig {
 
     private static final String[] APPLICANT_AUTH_WHITE_LIST = {
             "/api/v1/resumes/login",
-            "/api/v1/resumes"
+            "/api/v1/resumes",
+            "/api/v1/resumes/verify/email/**"
     };
 
     @Bean
