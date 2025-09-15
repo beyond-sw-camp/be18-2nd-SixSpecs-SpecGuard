@@ -82,7 +82,8 @@ public class SecurityConfig {
             // SpringDocs OpenApi Swagger API
             "/swagger-ui/**", "/v3/api-docs/**",
             "/admins/auth/login",
-            "/admins/auth/token/refresh"
+            "/admins/auth/token/refresh",
+            "/api/v1/plans/**"
     };
 
     private static final String[] APPLICANT_AUTH_WHITE_LIST = {
@@ -169,6 +170,7 @@ public class SecurityConfig {
         http.securityMatcher("/api/**")
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(AUTH_WHITE_LIST).permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/plans/**").permitAll()
                 .requestMatchers("/api/v1/invite/**").hasRole("OWNER")
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/company/**").hasRole("OWNER")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/company/**").hasRole("OWNER")
