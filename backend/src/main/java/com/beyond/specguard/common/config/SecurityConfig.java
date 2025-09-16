@@ -118,7 +118,7 @@ public class SecurityConfig {
      * Admin 전용 SecurityFilterChain
      */
     @Bean
-    @Order(1)
+    @Order(2)
     public SecurityFilterChain adminSecurityFilterChain(
             HttpSecurity http,
             @Qualifier("adminAuthenticationManager") AuthenticationManager adminAuthenticationManager,
@@ -189,7 +189,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(2)
+    @Order(1)
     public SecurityFilterChain resumeSecurityFilterChain(
             HttpSecurity http,
             @Qualifier("resumeAuthenticationManager") AuthenticationManager resumeAuthenticationManager

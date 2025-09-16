@@ -24,6 +24,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -138,6 +139,7 @@ public class Resume {
     private List<ResumeLink> resumeLinks = new ArrayList<>();
 
 
+    @Setter
     @OneToMany(
             mappedBy = "resume",
             cascade = CascadeType.ALL,

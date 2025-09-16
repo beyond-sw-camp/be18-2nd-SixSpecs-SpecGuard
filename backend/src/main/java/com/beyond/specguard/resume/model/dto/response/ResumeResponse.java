@@ -1,5 +1,7 @@
 package com.beyond.specguard.resume.model.dto.response;
 
+import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
+import com.beyond.specguard.resume.model.entity.CompanyTemplateResponse;
 import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.entity.ResumeBasic;
 import com.beyond.specguard.resume.model.entity.ResumeEducation;
@@ -45,6 +47,12 @@ public record ResumeResponse(
         @JsonProperty("educations")
         List<ResumeEducation> resumeEducations,
 
+        @JsonProperty("fields")
+        List<CompanyTemplateField> templateFields,
+
+        @JsonProperty("templateResponses")
+        List<CompanyTemplateResponse> companyTemplateResponses,
+
         @Schema(description = "생성 시각")
         LocalDateTime createdAt,
 
@@ -63,6 +71,8 @@ public record ResumeResponse(
                                 .resumeExperiences(r.getResumeExperiences())
                                 .resumeLinks(r.getResumeLinks())
                                 .resumeEducations(r.getResumeEducations())
+                                .templateFields(r.getTemplate().getFields())
+                                .companyTemplateResponses(r.getTemplateResponses())
                                 .createdAt(r.getCreatedAt())
                                 .updatedAt(r.getUpdatedAt())
                                 .build();

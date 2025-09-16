@@ -1,8 +1,10 @@
 package com.beyond.specguard.resume.model.service;
 
 import com.beyond.specguard.common.exception.CustomException;
+import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
 import com.beyond.specguard.companytemplate.exception.ErrorCode.CompanyTemplateErrorCode;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
+import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateFieldRepository;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository;
 import com.beyond.specguard.resume.auth.ResumeTempAuth;
@@ -35,7 +37,11 @@ import com.beyond.specguard.resume.model.repository.ResumeEducationRepository;
 import com.beyond.specguard.resume.model.repository.ResumeExperienceRepository;
 import com.beyond.specguard.resume.model.repository.ResumeLinkRepository;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -48,6 +54,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -57,7 +64,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResumeService {
@@ -287,13 +294,10 @@ public class ResumeService {
 
     //이력서 자격증 정보 UPDATE/INSERT upsertCertificates
     @Transactional
-    public void upsertCertificates(UUID resumeId, UUID templateId, String email, List<ResumeCertificateUpsertRequest> certs) {
+    public void upsertCertificates(Resume resume, UUID templateId, String email, List<ResumeCertificateUpsertRequest> certs) {
         if(certs == null || certs.isEmpty()) return;
 
         validateResumeCertificate(certs);
-
-        Resume resume = resumeRepository.findById(resumeId)
-                .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
 
         validateOwnerShip(resume, email, templateId);
 
@@ -337,41 +341,133 @@ public class ResumeService {
         }
     }
 
-    //이력서 자기소개서 답변 UPDATE/INSERT saveTemplateResponses
+    private void validateFieldConstraints(CompanyTemplateField field, String value) {
+        String fieldName = field.getFieldName();
+
+        // 1. 필수 여부
+        if (field.isRequired() && (value == null || value.isBlank())) {
+            throw new CustomException(ResumeErrorCode.REQUIRED_FIELD_MISSING);
+        }
+
+        // null 값이면 (required 아니면) 더 이상 검사할 필요 없음
+        if (value == null || value.isBlank()) return;
+
+        // 2. 타입별 검사
+        switch (field.getFieldType()) {
+            case TEXT -> {
+                if (field.getMinLength() != null && value.length() < field.getMinLength()) {
+                    log.debug("{}, {}, 길이가 짧습니다.", value.length(), field.getMinLength());
+                    throw new CustomException(ResumeErrorCode.FIELD_CONSTRAINT_VIOLATION);
+                }
+
+                if (field.getMaxLength() != null && value.length() > field.getMaxLength()) {
+                    log.debug("{}, {}, 길이가 깁니다.", value.length(), field.getMaxLength());
+                    throw new CustomException(ResumeErrorCode.FIELD_CONSTRAINT_VIOLATION);
+                }
+            }
+            case NUMBER -> {
+                try {
+                    int num = Integer.parseInt(value);
+                    if (field.getMinLength() != null && num < field.getMinLength()) {
+                        log.debug("필드({})는 {} 이상이어야 합니다.", fieldName, field.getMinLength());
+                        throw new CustomException(ResumeErrorCode.FIELD_CONSTRAINT_VIOLATION);
+                    }
+                    if (field.getMaxLength() != null && num > field.getMaxLength()) {
+                        log.debug("필드({})는 {} 이하이어야 합니다.", fieldName, field.getMaxLength());
+                        throw new CustomException(ResumeErrorCode.FIELD_CONSTRAINT_VIOLATION);
+                    }
+                } catch (NumberFormatException e) {
+                    log.debug("필드({})는 숫자만 입력 가능합니다.", fieldName);
+                    throw new CustomException(ResumeErrorCode.FIELD_CONSTRAINT_VIOLATION);
+                }
+            }
+            case DATE -> {
+                try {
+                    LocalDate.parse(value); // 기본 ISO-8601 (yyyy-MM-dd) 포맷
+                } catch (DateTimeParseException e) {
+                    log.debug("필드({})는 유효한 날짜 형식이어야 합니다. (yyyy-MM-dd)", fieldName);
+                    throw new CustomException(ResumeErrorCode.FIELD_CONSTRAINT_VIOLATION);
+                }
+            }
+            case SELECT -> {
+                if (field.getOptions() != null && !field.getOptions().isEmpty()) {
+                    try{
+                        List<String> options = new ObjectMapper().readValue(
+                                field.getOptions(),
+                                new TypeReference<>() {
+                                }
+                        );
+                        if (!options.contains(value)) {
+                            log.debug("필드({})는 허용된 값만 선택 가능합니다. 입력값: {}", fieldName, value);
+                            throw new CustomException(ResumeErrorCode.FIELD_CONSTRAINT_VIOLATION);
+                        }
+                    } catch (JsonProcessingException e) {
+                        log.debug("json parsing error");
+                        throw new CustomException(CommonErrorCode.INVALID_REQUEST);
+                    }
+                }
+            }
+        }
+    }
+
     @Transactional
-    public CompanyTemplateResponseResponse saveTemplateResponses(Resume resume, UUID templateId, String email, CompanyTemplateResponseDraftUpsertRequest req){
+    public CompanyTemplateResponseResponse saveTemplateResponses(
+            Resume resume,
+            UUID templateId,
+            String email,
+            CompanyTemplateResponseDraftUpsertRequest req
+    ) {
         validateOwnerShip(resume, email, templateId);
 
         List<CompanyTemplateResponse> updatedFields = new ArrayList<>();
 
+        // 요청된 response들을 Map<id, dto>로 변환 (업데이트용)
         Map<UUID, CompanyTemplateResponseDraftUpsertRequest.Item> dtoMap = req.responses().stream()
                 .filter(f -> f.id() != null)
                 .collect(Collectors.toMap(CompanyTemplateResponseDraftUpsertRequest.Item::id, f -> f));
 
-        // 6. 업데이트
-        for (CompanyTemplateResponse existing : resume.getTemplateResponses()) {
+        // 기존 응답 가져오기
+        List<CompanyTemplateResponse> existingResponses = templateResponseRepository.findAllByResume_Id(resume.getId());
+
+        // 업데이트 처리
+        for (CompanyTemplateResponse existing : existingResponses) {
             if (dtoMap.containsKey(existing.getId())) {
-                // 업데이트
-                existing.update(dtoMap.get(existing.getId()));
+                CompanyTemplateResponseDraftUpsertRequest.Item dto = dtoMap.get(existing.getId());
+
+                // 필드 검증
+                validateFieldConstraints(existing.getCompanyTemplateField(), dto.answer());
+
+                existing.update(dto); // 값 반영
                 updatedFields.add(existing);
             }
         }
 
+        // 신규 응답 처리
         List<CompanyTemplateResponse> newResponses = req.responses().stream()
                 .filter(f -> f.id() == null)
-                .map(l -> l.toEntity(resume, companyTemplateFieldRepository.getReferenceById(l.fieldId())))
-                .toList();
+                .map(dto -> {
+                    var field = companyTemplateFieldRepository.getReferenceById(dto.fieldId());
 
-        resume.getTemplateResponses().clear();
+                    // 필드 검증
+                    validateFieldConstraints(field, dto.answer());
+
+                    return dto.toEntity(resume, field);
+                })
+                .toList();
 
         updatedFields.addAll(newResponses);
 
-        resume.getTemplateResponses().addAll(updatedFields);
+        // resume 연관관계 업데이트
+        resume.setTemplateResponses(updatedFields);
+
+        companyTemplateResponseRepository.saveAllAndFlush(updatedFields);
 
         return CompanyTemplateResponseResponse.builder()
-                        .savedCount(updatedFields.size())
-                        .responses(updatedFields.stream().map(CompanyTemplateResponseResponse.Item::fromEntity).toList())
-                        .build();
+                .savedCount(updatedFields.size())
+                .responses(updatedFields.stream()
+                        .map(CompanyTemplateResponseResponse.Item::fromEntity)
+                        .toList())
+                .build();
     }
 
     //자격증 진위 여부 검증 요청 -> 지금은 자격증 존재하면 true
@@ -404,6 +500,8 @@ public class ResumeService {
         );
 
         resume.setStatusPending();
+
+        resumeRepository.updateStatus(resume.getId(), resume.getStatus());
 
         return ResumeSubmitResponse.fromEntity(submission);
     }

@@ -1,8 +1,9 @@
 package com.beyond.specguard.auth.model.filter;
 
-import com.beyond.specguard.resume.model.dto.request.ResumeLoginRequestDto;
 import com.beyond.specguard.auth.model.handler.local.CustomFailureHandler;
 import com.beyond.specguard.auth.model.token.ApplicantAuthenticationToken;
+import com.beyond.specguard.resume.model.dto.request.ResumeLoginRequestDto;
+import com.beyond.specguard.resume.model.service.ResumeDetails;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -16,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class ResumeLoginFilter extends UsernamePasswordAuthenticationFilter {
     public ResumeLoginFilter(
@@ -62,6 +64,14 @@ public class ResumeLoginFilter extends UsernamePasswordAuthenticationFilter {
         session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
         response.setStatus(HttpServletResponse.SC_OK);
-        response.getWriter().write("로그인 성공");
+        response.setContentType("application/json"); // JSON 타입 설정
+        response.setCharacterEncoding("UTF-8");
+
+        Map<String, Object> resMap = Map.of(
+                "message", "Login successful",
+                "resumeId", ((ResumeDetails) authResult.getPrincipal()).getResume().getId()
+        );
+
+        new ObjectMapper().writeValue(response.getWriter(), resMap);
     }
 }

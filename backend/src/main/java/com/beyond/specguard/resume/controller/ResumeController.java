@@ -1,6 +1,7 @@
 package com.beyond.specguard.resume.controller;
 
 import com.beyond.specguard.common.exception.CustomException;
+import com.beyond.specguard.companytemplate.model.service.CompanyTemplateService;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeAggregateUpdateRequest;
@@ -51,7 +52,7 @@ import java.util.UUID;
 @RequestMapping("/api/v1/resumes")
 public class ResumeController {
     private final ResumeService resumeService;
-
+    private final CompanyTemplateService companyTemplateService;
 
     //이력서 생성
     @Operation(
@@ -157,9 +158,9 @@ public class ResumeController {
     ) {
         UUID templateId = resumeDetails.getResume().getTemplate().getId();
         String email = resumeDetails.getUsername();
-        UUID resumeId = resumeDetails.getResume().getId();
+        Resume resume = resumeDetails.getResume();
 
-        resumeService.upsertCertificates(resumeId, templateId, email, certificates);
+        resumeService.upsertCertificates(resume, templateId, email, certificates);
     }
 
 
@@ -218,7 +219,6 @@ public class ResumeController {
 
     public record VerificationResult(boolean verified) {
     }
-
 
     // 프로필 이미지 업로드
     @Operation(

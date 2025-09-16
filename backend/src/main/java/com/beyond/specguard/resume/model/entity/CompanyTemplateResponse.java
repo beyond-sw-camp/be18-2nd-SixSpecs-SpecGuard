@@ -2,6 +2,7 @@ package com.beyond.specguard.resume.model.entity;
 
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
 import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
@@ -53,6 +54,7 @@ public class CompanyTemplateResponse {
             columnDefinition = "CHAR(36)",
             foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
     )
+    @JsonIgnore
     private Resume resume;
 
     //field_id
@@ -63,6 +65,7 @@ public class CompanyTemplateResponse {
             columnDefinition = "CHAR(36)",
             foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
     )
+    @JsonIgnore
     private CompanyTemplateField companyTemplateField;
 
     //지원자의 답변
