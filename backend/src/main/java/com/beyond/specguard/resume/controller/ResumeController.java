@@ -15,8 +15,6 @@ import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.service.ResumeDetails;
 import com.beyond.specguard.resume.model.service.ResumeService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -162,25 +160,6 @@ public class ResumeController {
 
         return resumeService.saveTemplateResponses(resume, templateId, email, req);
     }
-
-    @Operation(
-            summary = "자격증 진위 여부 검증",
-            parameters = {
-                    @Parameter(name = "X-Resume-Id", in = ParameterIn.HEADER, required = true, description = "내 이력서 ID(UUID)"),
-                    @Parameter(name = "X-Resume-Secret", in = ParameterIn.HEADER, required = true, description = "원문 비밀번호")
-            }
-    )
-    //자격증 진위 여부 검증 요청
-    @PostMapping("/certificates/{certificateId}/verify")
-    public VerificationResult verifyCertificate(
-            @RequestHeader("X-Resume-Id") UUID resumeId,
-            @RequestHeader("X-Resume-Secret") String secret,
-            @PathVariable UUID certificateId
-    ) {
-        boolean ok = resumeService.verifyCertificate(resumeId, secret, certificateId);
-        return new VerificationResult(ok);
-    }
-
 
     //최종 제출
     @Operation(
