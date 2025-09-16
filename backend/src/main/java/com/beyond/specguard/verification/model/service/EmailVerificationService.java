@@ -1,6 +1,5 @@
 package com.beyond.specguard.verification.model.service;
 
-import com.beyond.specguard.common.config.VerifyConfig;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import com.beyond.specguard.verification.model.entity.ApplicantEmailVerification;
 import com.beyond.specguard.verification.model.entity.CompanyEmailVerification;
@@ -12,11 +11,11 @@ import com.beyond.specguard.verification.model.type.VerifyTarget;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -25,53 +24,44 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EmailVerificationService {
 
+    @Qualifier("verifyCodeTtlSeconds")
+    private final long codeTtlSeconds;
     private final EmailVerifyRedisRepository redisRepo;
     private final VerifySendGridService mailer;
 
     private final ApplicantEmailVerificationRepo applicantRepo;
     private final CompanyEmailVerificationRepo companyRepo;
     private final ResumeRepository resumeRepository;
-    private final VerifyConfig verifyProps;
-
-    private long ttlSeconds;
 
     private static String norm(String e){ return e == null ? null : e.trim().toLowerCase(); }
-    private String key(String email) { return "verif:email:" + email.toLowerCase(); }
-    private String attemptKey(String email) { return "verif:attempt:" + email.toLowerCase(); }
 
     @Transactional
     public void requestCode(String rawEmail, VerifyTarget target, String ip, @Nullable UUID resumeId) {
         final String email = norm(rawEmail);
         final String code  = RandomStringUtils.randomNumeric(6);
-        final String k = key(email);
 
-        long ttl = verifyProps.getTtlSeconds();
-
-        redisRepo.opsForValue().set(k, code, Duration.ofSeconds(ttlSeconds));
-        log.info("verify.set key={} code(last2)=**{} ttl={}", k, code.substring(4), ttlSeconds);
+        // Redis 저장(키/TTL 캡슐화)
+        redisRepo.saveCode(email, code);
+        log.info("verify.set email={} code(last2)=**{} ttl={}", email, code.substring(4), redisRepo.codeTtlSeconds());
 
         upsertPending(rawEmail, target, ip, resumeId);
-        mailer.sendCodeEmail(email, code, ttlSeconds); // unchecked 예외 전파
 
-
+        mailer.sendCodeEmail(email, code, codeTtlSeconds);
     }
 
     @Transactional
     public boolean verify(String rawEmail, String input, VerifyTarget target, @Nullable UUID resumeId) {
         final String email = norm(rawEmail);
-        final String k = key(email);
-        String saved = redisRepo.opsForValue().get(k);
+        String saved = redisRepo.getCode(email);
         if (saved == null) return false;
 
         String in = input == null ? "" : input.trim().replaceAll("\\D", "");
         boolean ok = saved.equals(in);
         if (ok) {
             markVerified(email, target, resumeId);
-            redisRepo.delete(k);
+            redisRepo.deleteCode(email);
         } else {
-            String ak = attemptKey(email);
-            Long n = redisRepo.opsForValue().increment(ak);
-            if (n != null && n == 1L) redisRepo.expire(ak, Duration.ofHours(1));
+            redisRepo.incrAttempt(email);
         }
         return ok;
     }
@@ -79,7 +69,11 @@ public class EmailVerificationService {
     private void upsertPending(String rawEmail, VerifyTarget t, String ip, @Nullable UUID resumeId) {
         final String email = norm(rawEmail);
         if (t == VerifyTarget.APPLICANT) {
-            if (resumeId == null) throw new IllegalArgumentException("resumeId required for applicant");
+            if (resumeId == null) {
+                // 회원가입 단계: DB 저장 생략. 로그만 남김.
+                log.debug("email verify pending (account-scope) email={}", email);
+                return;
+            }
             var e = applicantRepo.findByEmailAndResumeId(email, resumeId).orElseGet(() -> {
                 var x = new ApplicantEmailVerification();
                 x.setEmail(email);
@@ -91,35 +85,36 @@ public class EmailVerificationService {
             e.setLastRequestedAt(LocalDateTime.now());
             e.setLastIp(ip);
             applicantRepo.save(e);
-        } else {
-            var e = companyRepo.findByEmail(email).orElseGet(() -> {
-                var x = new CompanyEmailVerification();
-                x.setEmail(email);
-                return x;
-            });
-            e.setStatus(EmailVerifyStatus.PENDING);
-            e.setAttempts(e.getAttempts() == null ? 1 : e.getAttempts() + 1);
-            e.setLastRequestedAt(LocalDateTime.now());
-            e.setLastIp(ip);
-            companyRepo.save(e);
+            return;
         }
+        var e = companyRepo.findByEmail(email).orElseGet(() -> {
+            var x = new CompanyEmailVerification(); x.setEmail(email); return x;
+        });
+        e.setStatus(EmailVerifyStatus.PENDING);
+        e.setAttempts(e.getAttempts() == null ? 1 : e.getAttempts() + 1);
+        e.setLastRequestedAt(LocalDateTime.now());
+        e.setLastIp(ip);
+        companyRepo.save(e);
     }
 
-    private void markVerified(String rawEmail, VerifyTarget t, @Nullable UUID resumeId) {
-        final String email = norm(rawEmail);
+    private void markVerified(String email, VerifyTarget t, @Nullable UUID resumeId) {
         if (t == VerifyTarget.APPLICANT) {
+            if (resumeId == null) {
+                log.debug("email verified (account-scope) email={}", email);
+                return;
+            }
             var e = applicantRepo.findByEmailAndResumeId(email, resumeId).orElseThrow();
             e.setStatus(EmailVerifyStatus.VERIFIED);
             e.setVerifiedAt(LocalDateTime.now());
             applicantRepo.save(e);
-        } else {
-            var e = companyRepo.findByEmail(email).orElseThrow();
-            e.setStatus(EmailVerifyStatus.VERIFIED);
-            e.setVerifiedAt(LocalDateTime.now());
-            companyRepo.save(e);
+            return;
         }
+        var e = companyRepo.findByEmail(email).orElseThrow();
+        e.setStatus(EmailVerifyStatus.VERIFIED);
+        e.setVerifiedAt(LocalDateTime.now());
+        companyRepo.save(e);
     }
-
 }
+
 
 

@@ -8,5 +8,6 @@ import java.util.UUID;
 
 public interface ApplicantEmailVerificationRepo
         extends JpaRepository<ApplicantEmailVerification, UUID> {
+    Optional<ApplicantEmailVerification> findByEmailAndAccountScopeTrue(String email);
     Optional<ApplicantEmailVerification> findByEmailAndResumeId(String email, UUID resumeId);
 }

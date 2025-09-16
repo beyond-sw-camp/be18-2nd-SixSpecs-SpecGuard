@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
@@ -46,8 +45,6 @@ public class EmailVerificationController {
             @Valid @RequestBody VerifyDto.EmailRequest req,
             HttpServletRequest http) {
         var t = parse(type);
-        if (t == VerifyTarget.APPLICANT && req.resumeId() == null)
-            return ResponseEntity.badRequest().build();
 
         String ip = Optional.ofNullable(http.getHeader("X-Forwarded-For"))
                 .orElseGet(http::getRemoteAddr);
@@ -61,8 +58,6 @@ public class EmailVerificationController {
             @PathVariable String type,
             @Valid @RequestBody VerifyDto.EmailConfirm req) {
         var t = parse(type);
-        if (t == VerifyTarget.APPLICANT && req.resumeId() == null)
-            return ResponseEntity.badRequest().build();
 
         boolean ok = svc.verify(req.email(), req.code(), t, req.resumeId());
         return ResponseEntity.ok(ok ? VerifyDto.VerifyResult.ok()
@@ -70,14 +65,22 @@ public class EmailVerificationController {
     }
 
     @GetMapping("/{type}/status")
-    public Map<String, Object> status(@PathVariable String type, @RequestParam String email, @Nullable UUID resumeId){
+    public Map<String, Object> status(
+            @PathVariable String type,
+            @RequestParam String email,
+            @Nullable UUID resumeId){
         String em = norm(email);
+        var t = parse(type);
 
-        boolean verified = switch (parse(type)) {
-            case COMPANY   -> companyRepo.findByEmail(em)
-                    .map(v -> v.getStatus()==EmailVerifyStatus.VERIFIED).orElse(false);
+        if (t == VerifyTarget.APPLICANT && resumeId == null) {
+            return Map.of("verified", false);
+        }
+
+        boolean verified = switch (t) {
+            case COMPANY -> companyRepo.findByEmail(em)
+                    .map(v -> v.getStatus() == EmailVerifyStatus.VERIFIED).orElse(false);
             case APPLICANT -> applicantRepo.findByEmailAndResumeId(em, resumeId)
-                    .map(v -> v.getStatus()== EmailVerifyStatus.VERIFIED).orElse(false);
+                    .map(v -> v.getStatus() == EmailVerifyStatus.VERIFIED).orElse(false);
         };
         return Map.of("verified", verified);
     }

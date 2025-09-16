@@ -2,7 +2,6 @@ package com.beyond.specguard.verification.model.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 import java.util.UUID;
@@ -16,7 +15,7 @@ public final class VerifyDto {
                     message = "유효한 이메일 형식이 아닙니다.")
             String email,
 
-            @NotNull
+            @Schema(format = "uuid", nullable = true, description = "회원가입 단계에서는 null")
             UUID resumeId) {}
 
     public record EmailConfirm(
@@ -29,7 +28,7 @@ public final class VerifyDto {
             @Pattern(regexp = "^[0-9]{6}$", message = "token must be 6 digits")
             String code,
 
-            @NotNull
+            @Schema(format = "uuid", nullable = true)
             UUID resumeId) {}
 
     // status: SUCCESS/FAIL/BLOCKED/EXPIRED/TOO_MANY_ATTEMPTS
