@@ -5,7 +5,9 @@ import com.beyond.specguard.resume.model.entity.core.ResumeLink;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -38,14 +40,9 @@ public class CrawlingResult {
     )
     private ResumeLink resumeLink;
 
-    // Resume와도 1:1 (나중에 manytoone으로 수정할꺼임)
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "resume_id",
-            nullable = false,
-            columnDefinition = "CHAR(36)",
-            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-    )
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "resume_id", nullable = false, columnDefinition = "CHAR(36)", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Resume resume;
 
     @Enumerated(EnumType.STRING)
