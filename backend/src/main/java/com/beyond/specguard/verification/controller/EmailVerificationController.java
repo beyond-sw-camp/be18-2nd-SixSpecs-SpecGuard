@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -20,6 +21,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -38,37 +40,43 @@ public class EmailVerificationController {
     }
 
     @Operation(summary = "인증코드 요청")
-    @PostMapping("/{type}/request") // type = applicant | company
+    @PostMapping("/{type}/request")
     public ResponseEntity<Void> request(
             @PathVariable String type,
             @Valid @RequestBody VerifyDto.EmailRequest req,
-            HttpServletRequest http
-    ) {
-        log.info("verify.request type={} email={}", type, req.email());
+            HttpServletRequest http) {
+        var t = parse(type);
+        if (t == VerifyTarget.APPLICANT && req.resumeId() == null)
+            return ResponseEntity.badRequest().build();
+
         String ip = Optional.ofNullable(http.getHeader("X-Forwarded-For"))
                 .orElseGet(http::getRemoteAddr);
-        svc.requestCode(req.email(), parse(type), ip);
+        svc.requestCode(req.email(), t, ip, req.resumeId());
         return ResponseEntity.accepted().build();
     }
 
     @Operation(summary = "인증코드 검증")
-    @PostMapping("/{type}/confirm") // type = applicant | company
+    @PostMapping("/{type}/confirm")
     public ResponseEntity<VerifyDto.VerifyResult> confirm(
             @PathVariable String type,
-            @Valid @RequestBody VerifyDto.EmailConfirm req
-    ) {
-        boolean ok = svc.verify(req.email(), req.code(), parse(type));
+            @Valid @RequestBody VerifyDto.EmailConfirm req) {
+        var t = parse(type);
+        if (t == VerifyTarget.APPLICANT && req.resumeId() == null)
+            return ResponseEntity.badRequest().build();
+
+        boolean ok = svc.verify(req.email(), req.code(), t, req.resumeId());
         return ResponseEntity.ok(ok ? VerifyDto.VerifyResult.ok()
-                : new VerifyDto.VerifyResult("FAIL", "not verified"));
+                : new VerifyDto.VerifyResult("FAIL","not verified"));
     }
 
     @GetMapping("/{type}/status")
-    public Map<String, Object> status(@PathVariable String type, @RequestParam String email){
+    public Map<String, Object> status(@PathVariable String type, @RequestParam String email, @Nullable UUID resumeId){
         String em = norm(email);
+
         boolean verified = switch (parse(type)) {
             case COMPANY   -> companyRepo.findByEmail(em)
                     .map(v -> v.getStatus()==EmailVerifyStatus.VERIFIED).orElse(false);
-            case APPLICANT -> applicantRepo.findByEmail(em)
+            case APPLICANT -> applicantRepo.findByEmailAndResumeId(em, resumeId)
                     .map(v -> v.getStatus()== EmailVerifyStatus.VERIFIED).orElse(false);
         };
         return Map.of("verified", verified);
