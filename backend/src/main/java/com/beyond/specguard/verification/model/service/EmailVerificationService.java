@@ -25,8 +25,6 @@ import java.util.UUID;
 import static io.lettuce.core.KillArgs.Builder.id;
 
 @Slf4j
-@Getter
-@Setter
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationService {
@@ -87,7 +85,7 @@ public class EmailVerificationService {
             var e = applicantRepo.findByEmailAndResumeId(email, resumeId).orElseGet(() -> {
                 var x = new ApplicantEmailVerification();
                 x.setEmail(email);
-//                x.setResume(resumeRepository.getReferenceById(resumeId));
+                x.setResume(resumeRepository.getReferenceById(resumeId));
                 return x;
             });
             e.setStatus(EmailVerifyStatus.PENDING);
@@ -123,6 +121,7 @@ public class EmailVerificationService {
             companyRepo.save(e);
         }
     }
+
 }
 
 

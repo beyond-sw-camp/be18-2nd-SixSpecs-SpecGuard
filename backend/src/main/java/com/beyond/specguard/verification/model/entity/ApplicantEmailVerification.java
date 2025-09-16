@@ -21,4 +21,12 @@ public class ApplicantEmailVerification extends EmailVerificationBase {
                 nullable = false,
                 foreignKey = @ForeignKey(name = "fk_applicant_verif_resume"))
         private Resume resume;
+
+        public Resume getResume() {
+                return resume;
+        }
+
+        public void setResume(Resume resume) {
+                this.resume = resume;
+        }
 }

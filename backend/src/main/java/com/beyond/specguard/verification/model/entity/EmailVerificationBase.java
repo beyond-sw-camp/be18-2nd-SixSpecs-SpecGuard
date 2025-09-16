@@ -1,5 +1,6 @@
 package com.beyond.specguard.verification.model.entity;
 
+import com.beyond.specguard.resume.model.entity.core.Resume;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
