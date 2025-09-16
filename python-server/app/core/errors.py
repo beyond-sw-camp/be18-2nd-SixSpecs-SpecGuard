@@ -6,8 +6,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 #서비스 에러코드 매핑 
 ERROR_CODE_BY_STATUS = {
     400: "INVALID_INPUT_VALUE",
-    401: "UNAUTHORIZED",
-    403: "ACCESS_DENIED",
     404: "NOT_FOUND",
     422: "VALIDATION_ERROR",
     500: "INTERNAL_SERVER_ERROR",
@@ -17,7 +15,7 @@ ERROR_CODE_BY_STATUS = {
 def _pack(status: int, message: str, code: str | None = None) -> dict:
     return {
         "status": status,
-        "error": code or ERROR_CODE_BY_STATUS.get(status, "ERROR"),
+        "errorCode": code or ERROR_CODE_BY_STATUS.get(status, "ERROR"),
         "message": message,
     }
 
@@ -33,21 +31,17 @@ def install_error_handlers(app: FastAPI) -> None:
     async def on_http_exc(request: Request, exc: HTTPException):
         det = exc.detail
         if isinstance(det, dict):
-            return JSONResponse(
-                status_code=exc.status_code,
-                content=_pack(exc.status_code, det.get("message", ""), det.get("error")),
-            )
+            msg = det.get("message") or det.get("detail") or ""
+            code = det.get("errorCode") or det.get("error") or ERROR_CODE_BY_STATUS.get(exc.status_code, "ERROR")
+            return JSONResponse(status_code=exc.status_code, content=_pack(exc.status_code, msg, code))
         return JSONResponse(
             status_code=exc.status_code,
-            content=_pack(exc.status_code, str(det)),
+            content=_pack(exc.status_code, str(det), ERROR_CODE_BY_STATUS.get(exc.status_code, "ERROR")),
         )
 
     @app.exception_handler(Exception)
     async def on_unhandled(request: Request, exc: Exception):
-        return JSONResponse(
-            status_code=500,
-            content=_pack(500, "서버 내부 에러"),
-        )
+        return JSONResponse(status_code=500, content=_pack(500, "서버 내부 에러"))
     
     @app.exception_handler(StarletteHTTPException)
     async def on_starlette_http_exc(request: Request, exc: StarletteHTTPException):
