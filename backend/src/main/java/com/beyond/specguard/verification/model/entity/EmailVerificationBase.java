@@ -3,14 +3,17 @@ package com.beyond.specguard.verification.model.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @MappedSuperclass
 @Getter
 @Setter
 @NoArgsConstructor
 public abstract class EmailVerificationBase {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(length = 36)
+    private UUID id;
 
     @Column(nullable=false, unique=true, length=255)
     private String email;
