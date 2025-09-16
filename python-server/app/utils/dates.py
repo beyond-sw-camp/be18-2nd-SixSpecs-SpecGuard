@@ -1,8 +1,12 @@
 from __future__ import annotations
 from typing import Optional
 import re
+import os
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+
+# 환경변수로 기본 타임존 지정(없으면 Asia/Seoul)
+DEFAULT_TZ = os.getenv("LOCAL_TZ", "Asia/Seoul")
 
 # 절대 날짜 패턴
 _ABS_PATTERNS = [
@@ -24,6 +28,16 @@ _SPECIAL = {
     "방금": 0,
 }
 
+
+def _now_in_tz(tz_name: Optional[str] = None) -> datetime:
+    """지정 타임존의 현재 시각을 반환. 실패 시 로컬 시간으로 폴백."""
+    try:
+        zone = ZoneInfo(tz_name or DEFAULT_TZ)
+        return datetime.now(zone)
+    except Exception:
+        return datetime.now()
+
+
 def normalize_created_at(
     raw: Optional[str],
     *,
@@ -31,13 +45,14 @@ def normalize_created_at(
     now: Optional[datetime] = None,
 ) -> Optional[str]:
     """
-    Velog 등에서 가져온 게시 시각 문자열을 'YYYY-MM-DD'로 정규화.
-    - tz: 기본 'Asia/Seoul'
+    게시 시각 문자열을 'YYYY-MM-DD'로 정규화.
+    - tz: 기본 DEFAULT_TZ(환경변수 LOCAL_TZ), 실패 시 로컬시간 폴백
     - now: 테스트 주입용 (미지정 시 현재 시각)
     """
     if not raw:
         return None
     s = raw.strip()
+
     # 1) 절대 날짜
     for pat in _ABS_PATTERNS:
         m = pat.search(s)
@@ -48,8 +63,7 @@ def normalize_created_at(
             except ValueError:
                 return None
 
-    zone = ZoneInfo(tz or "Asia/Seoul")
-    base = now.astimezone(zone) if now else datetime.now(zone)
+    base = (now or _now_in_tz(tz))
 
     # 2) 특수 단어
     for key, delta_days in _SPECIAL.items():
