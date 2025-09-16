@@ -48,7 +48,7 @@ public class EmailVerificationController {
 
         String ip = Optional.ofNullable(http.getHeader("X-Forwarded-For"))
                 .orElseGet(http::getRemoteAddr);
-        svc.requestCode(req.email(), t, ip, req.resumeId());
+        svc.requestCode(req.email(), t, ip, req.resumeId(), req.companyId());
         return ResponseEntity.accepted().build();
     }
 
@@ -59,7 +59,7 @@ public class EmailVerificationController {
             @Valid @RequestBody VerifyDto.EmailConfirm req) {
         var t = parse(type);
 
-        boolean ok = svc.verify(req.email(), req.code(), t, req.resumeId());
+        boolean ok = svc.verify(req.email(), req.code(), t, req.resumeId(), req.companyId());
         return ResponseEntity.ok(ok ? VerifyDto.VerifyResult.ok()
                 : new VerifyDto.VerifyResult("FAIL","not verified"));
     }
@@ -68,18 +68,22 @@ public class EmailVerificationController {
     public Map<String, Object> status(
             @PathVariable String type,
             @RequestParam String email,
-            @Nullable UUID resumeId){
+            @RequestParam(required = false) UUID resumeId,
+            @RequestParam(required = false) UUID companyId) {
+
         String em = norm(email);
         var t = parse(type);
 
-        if (t == VerifyTarget.APPLICANT && resumeId == null) {
-            return Map.of("verified", false);
-        }
-
         boolean verified = switch (t) {
-            case COMPANY -> companyRepo.findByEmail(em)
+            case COMPANY -> (companyId == null)
+                    ? companyRepo.findByEmailAndAccountScopeTrue(em)
+                    .map(v -> v.getStatus() == EmailVerifyStatus.VERIFIED).orElse(false)
+                    : companyRepo.findByEmailAndCompanyId(em, companyId)
                     .map(v -> v.getStatus() == EmailVerifyStatus.VERIFIED).orElse(false);
-            case APPLICANT -> applicantRepo.findByEmailAndResumeId(em, resumeId)
+
+            case APPLICANT -> (resumeId == null)   // 요구하신 규칙 유지
+                    ? false
+                    : applicantRepo.findByEmailAndResumeId(em, resumeId)
                     .map(v -> v.getStatus() == EmailVerifyStatus.VERIFIED).orElse(false);
         };
         return Map.of("verified", verified);

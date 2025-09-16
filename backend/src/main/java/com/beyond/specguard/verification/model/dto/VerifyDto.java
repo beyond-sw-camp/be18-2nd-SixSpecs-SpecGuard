@@ -16,7 +16,10 @@ public final class VerifyDto {
             String email,
 
             @Schema(format = "uuid", nullable = true, description = "회원가입 단계에서는 null")
-            UUID resumeId) {}
+            UUID resumeId,
+
+            @Schema(format = "uuid", nullable = true, description = "회원가입 단계에서는 null")
+            UUID companyId) {}
 
     public record EmailConfirm(
             @Schema(example = "specguard@specguard.com")
@@ -29,7 +32,10 @@ public final class VerifyDto {
             String code,
 
             @Schema(format = "uuid", nullable = true)
-            UUID resumeId) {}
+            UUID resumeId,
+
+            @Schema(format = "uuid", nullable = true)
+            UUID companyId) {}
 
     // status: SUCCESS/FAIL/BLOCKED/EXPIRED/TOO_MANY_ATTEMPTS
     public record VerifyResult(String status, String message) {
