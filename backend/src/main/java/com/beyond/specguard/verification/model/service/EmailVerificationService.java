@@ -1,5 +1,6 @@
 package com.beyond.specguard.verification.model.service;
 
+import com.beyond.specguard.common.config.VerifyPropertiesConfig;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import com.beyond.specguard.verification.model.entity.ApplicantEmailVerification;
 import com.beyond.specguard.verification.model.entity.CompanyEmailVerification;
@@ -7,12 +8,9 @@ import com.beyond.specguard.verification.model.entity.EmailVerifyStatus;
 import com.beyond.specguard.verification.model.repository.ApplicantEmailVerificationRepo;
 import com.beyond.specguard.verification.model.repository.CompanyEmailVerificationRepo;
 import com.beyond.specguard.verification.model.type.VerifyTarget;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -22,7 +20,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static io.lettuce.core.KillArgs.Builder.id;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Slf4j
 @Service
@@ -35,8 +33,8 @@ public class EmailVerificationService {
     private final ApplicantEmailVerificationRepo applicantRepo;
     private final CompanyEmailVerificationRepo companyRepo;
     private final ResumeRepository resumeRepository;
+    private final VerifyPropertiesConfig verifyProps;
 
-    @Value("${verify.ttl-seconds:300}")
     private long ttlSeconds;
 
     private static String norm(String e){ return e == null ? null : e.trim().toLowerCase(); }
@@ -48,6 +46,8 @@ public class EmailVerificationService {
         final String email = norm(rawEmail);
         final String code  = RandomStringUtils.randomNumeric(6);
         final String k = key(email);
+
+        long ttl = verifyProps.getTtlSeconds();
 
         redis.opsForValue().set(k, code, Duration.ofSeconds(ttlSeconds));
         log.info("verify.set key={} code(last2)=**{} ttl={}", k, code.substring(4), ttlSeconds);
