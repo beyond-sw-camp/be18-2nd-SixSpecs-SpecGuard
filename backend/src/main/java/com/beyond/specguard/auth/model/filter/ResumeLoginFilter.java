@@ -3,7 +3,6 @@ package com.beyond.specguard.auth.model.filter;
 import com.beyond.specguard.auth.model.handler.local.CustomFailureHandler;
 import com.beyond.specguard.auth.model.token.ApplicantAuthenticationToken;
 import com.beyond.specguard.resume.model.dto.request.ResumeLoginRequestDto;
-import com.beyond.specguard.resume.model.service.ResumeDetails;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -68,8 +67,7 @@ public class ResumeLoginFilter extends UsernamePasswordAuthenticationFilter {
         response.setCharacterEncoding("UTF-8");
 
         Map<String, Object> resMap = Map.of(
-                "message", "Login successful",
-                "resumeId", ((ResumeDetails) authResult.getPrincipal()).getResume().getId()
+                "message", "Login successful"
         );
 
         new ObjectMapper().writeValue(response.getWriter(), resMap);

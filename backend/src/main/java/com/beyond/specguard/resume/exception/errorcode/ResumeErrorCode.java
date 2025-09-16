@@ -19,7 +19,7 @@ public enum ResumeErrorCode implements ErrorCode {
     ACCESS_DENIED(
             HttpStatus.FORBIDDEN,
             "ACCESS_DENIED",
-            "기업 사용자가 아닙니다."
+            "접근이 불가능합니다."
     ),
     VERIFICATION_ALREADY_IN_PROGRESS(
             HttpStatus.CONFLICT,

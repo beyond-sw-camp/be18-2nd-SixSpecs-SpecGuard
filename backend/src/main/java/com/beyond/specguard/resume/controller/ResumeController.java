@@ -1,8 +1,6 @@
 package com.beyond.specguard.resume.controller;
 
-import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.companytemplate.model.service.CompanyTemplateService;
-import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeAggregateUpdateRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeBasicCreateRequest;
@@ -24,9 +22,6 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -84,21 +79,7 @@ public class ResumeController {
     }
 
 
-    //지원서 목록 조회
-    @Operation(
-            summary = "지원서 목록 조회",
-            description = "기업이 지원서 목록을 조회한다."
-    )
-    @GetMapping
-    public Page<ResumeResponse> list(
-            @PageableDefault Pageable pageable
-    ) {
-        if (pageable.getPageSize() > 100) {
-            throw new CustomException(ResumeErrorCode.INVALID_PARAMETER);
-        }
 
-        return resumeService.list(pageable);
-    }
 
     // 정렬 기준
     private static final Set<String> ALLOWED_SORT = Set.of(

@@ -2,6 +2,7 @@ package com.beyond.specguard.resume.model.service;
 
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
+import com.beyond.specguard.company.common.model.entity.ClientUser;
 import com.beyond.specguard.companytemplate.exception.ErrorCode.CompanyTemplateErrorCode;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
@@ -19,6 +20,7 @@ import com.beyond.specguard.resume.model.dto.request.ResumeExperienceUpsertReque
 import com.beyond.specguard.resume.model.dto.request.ResumeLinkUpsertRequest;
 import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeBasicResponse;
+import com.beyond.specguard.resume.model.dto.response.ResumeListResponseDto;
 import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeSubmitResponse;
 import com.beyond.specguard.resume.model.entity.CompanyFormSubmission;
@@ -37,6 +39,7 @@ import com.beyond.specguard.resume.model.repository.ResumeEducationRepository;
 import com.beyond.specguard.resume.model.repository.ResumeExperienceRepository;
 import com.beyond.specguard.resume.model.repository.ResumeLinkRepository;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
+import com.beyond.specguard.resume.model.spec.ResumeSpecification;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,6 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -121,8 +125,29 @@ public class ResumeService {
 
     //지원서 목록 조회에서 list
     @Transactional(readOnly = true)
-    public Page<ResumeResponse> list(Pageable pageable) {
-        return resumeRepository.findAll(pageable).map(ResumeResponse::fromEntity);
+    public ResumeListResponseDto list(Pageable pageable, ClientUser clientUser, Resume.ResumeStatus status, String name, String email) {
+        UUID companyId = clientUser.getCompany().getId();
+
+        Specification<Resume> spec = Specification.allOf(
+                ResumeSpecification.hasCompany(companyId),
+                ResumeSpecification.hasStatus(status),
+                ResumeSpecification.nameContains(name),
+                ResumeSpecification.emailContains(email)
+        );
+
+        long totalElements = resumeRepository.count(spec);
+
+        // long totalCounts =  resumeRepository.count();
+        Page<Resume> response = resumeRepository.findAll(spec, pageable);
+
+        Page<ResumeListResponseDto.Item> results = response.map(ResumeListResponseDto.Item::fromEntity);
+        return ResumeListResponseDto.builder()
+                .totalElements(totalElements)
+                .totalPages(results.getTotalPages())
+                .pageNumber(results.getNumber())
+                .pageSize(results.getSize())
+                .contents(results.getContent())
+                .build();
     }
 
     //이력서 기본 정보 UPDATE/INSERT에서 upsertBasic

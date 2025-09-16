@@ -3,6 +3,7 @@ package com.beyond.specguard.resume.model.repository;
 import com.beyond.specguard.resume.model.entity.Resume;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ResumeRepository extends JpaRepository<Resume, UUID> {
+public interface ResumeRepository extends JpaRepository<Resume, UUID>, JpaSpecificationExecutor<Resume> {
     boolean existsByEmail(String email);
     @Query("""
         select r.id
@@ -32,4 +33,5 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Resume r set r.status = :status where r.id = :resumeId")
     void updateStatus(@Param("resumeId") UUID id, @Param("status") Resume.ResumeStatus status);
+
 }
