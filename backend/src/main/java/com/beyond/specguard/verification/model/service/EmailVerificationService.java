@@ -1,17 +1,17 @@
 package com.beyond.specguard.verification.model.service;
 
-import com.beyond.specguard.common.config.VerifyPropertiesConfig;
+import com.beyond.specguard.common.config.VerifyConfig;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import com.beyond.specguard.verification.model.entity.ApplicantEmailVerification;
 import com.beyond.specguard.verification.model.entity.CompanyEmailVerification;
 import com.beyond.specguard.verification.model.entity.EmailVerifyStatus;
 import com.beyond.specguard.verification.model.repository.ApplicantEmailVerificationRepo;
 import com.beyond.specguard.verification.model.repository.CompanyEmailVerificationRepo;
+import com.beyond.specguard.verification.model.repository.EmailVerifyRedisRepository;
 import com.beyond.specguard.verification.model.type.VerifyTarget;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,20 +20,18 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationService {
 
-    private final StringRedisTemplate redis;
+    private final EmailVerifyRedisRepository redisRepo;
     private final VerifySendGridService mailer;
 
     private final ApplicantEmailVerificationRepo applicantRepo;
     private final CompanyEmailVerificationRepo companyRepo;
     private final ResumeRepository resumeRepository;
-    private final VerifyPropertiesConfig verifyProps;
+    private final VerifyConfig verifyProps;
 
     private long ttlSeconds;
 
@@ -49,7 +47,7 @@ public class EmailVerificationService {
 
         long ttl = verifyProps.getTtlSeconds();
 
-        redis.opsForValue().set(k, code, Duration.ofSeconds(ttlSeconds));
+        redisRepo.opsForValue().set(k, code, Duration.ofSeconds(ttlSeconds));
         log.info("verify.set key={} code(last2)=**{} ttl={}", k, code.substring(4), ttlSeconds);
 
         upsertPending(rawEmail, target, ip, resumeId);
@@ -62,18 +60,18 @@ public class EmailVerificationService {
     public boolean verify(String rawEmail, String input, VerifyTarget target, @Nullable UUID resumeId) {
         final String email = norm(rawEmail);
         final String k = key(email);
-        String saved = redis.opsForValue().get(k);
+        String saved = redisRepo.opsForValue().get(k);
         if (saved == null) return false;
 
         String in = input == null ? "" : input.trim().replaceAll("\\D", "");
         boolean ok = saved.equals(in);
         if (ok) {
             markVerified(email, target, resumeId);
-            redis.delete(k);
+            redisRepo.delete(k);
         } else {
             String ak = attemptKey(email);
-            Long n = redis.opsForValue().increment(ak);
-            if (n != null && n == 1L) redis.expire(ak, Duration.ofHours(1));
+            Long n = redisRepo.opsForValue().increment(ak);
+            if (n != null && n == 1L) redisRepo.expire(ak, Duration.ofHours(1));
         }
         return ok;
     }

@@ -1,6 +1,6 @@
 package com.beyond.specguard;
 
-import com.beyond.specguard.common.config.VerifyPropertiesConfig;
+import com.beyond.specguard.common.config.VerifyConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -11,7 +11,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @org.springframework.boot.context.properties.ConfigurationPropertiesScan(
         basePackages = "com.beyond.specguard.common.properties"
 )
-@EnableConfigurationProperties(VerifyPropertiesConfig.class)
 public class BackendApplication {
 
     public static void main(String[] args) {
