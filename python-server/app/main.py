@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from config import settings
+from app.config import settings
 from app.routes import summary, keywords   # ✅ keywords 라우터 추가
 import requests
 
@@ -9,8 +9,8 @@ app = FastAPI()
 API_KEY = settings.GEMINI_API_KEY.get_secret_value()
 
 # 라우터 등록
-app.include_router(summary.router, prefix="/api/v1/nlp")
-app.include_router(keywords.router, prefix="/api/v1/nlp")
+app.include_router(summary.router)
+app.include_router(keywords.router)
 
 @app.get("/")
 def root():
