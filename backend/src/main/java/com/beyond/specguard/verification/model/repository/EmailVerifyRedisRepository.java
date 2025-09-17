@@ -1,25 +1,17 @@
 package com.beyond.specguard.verification.model.repository;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.Duration;
 
+@RequiredArgsConstructor
 public class EmailVerifyRedisRepository {
     private final StringRedisTemplate redis;
     private final long codeTtlSeconds;
     private final long attemptTtlSeconds;
     private final String codePrefix;
     private final String attemptPrefix;
-
-    public EmailVerifyRedisRepository(StringRedisTemplate redis,
-                                      long codeTtlSeconds, long attemptTtlSeconds,
-                                      String codePrefix, String attemptPrefix) {
-        this.redis = redis;
-        this.codeTtlSeconds = codeTtlSeconds;
-        this.attemptTtlSeconds = attemptTtlSeconds;
-        this.codePrefix = codePrefix;
-        this.attemptPrefix = attemptPrefix;
-    }
 
     private String codeKey(String email){ return codePrefix + email.toLowerCase(); }
     private String attemptKey(String email){ return attemptPrefix + email.toLowerCase(); }
