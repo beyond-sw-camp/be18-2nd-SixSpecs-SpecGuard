@@ -26,4 +26,6 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID> {
     List<UUID> findUnsubmittedIdsByTemplateIds(List<UUID> templateIds, Pageable pageable);
 
     Optional<Resume> findByEmailAndTemplateId(String email, UUID templateUuid);
+
+    UUID id(UUID id);
 }

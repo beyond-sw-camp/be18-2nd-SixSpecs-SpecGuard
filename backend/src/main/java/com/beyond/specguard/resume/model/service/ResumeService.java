@@ -3,6 +3,7 @@ package com.beyond.specguard.resume.model.service;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository;
+import com.beyond.specguard.event.ResumeSubmittedEvent;
 import com.beyond.specguard.resume.auth.ResumeTempAuth;
 import com.beyond.specguard.resume.model.dto.request.*;
 import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseResponse;
@@ -15,6 +16,7 @@ import com.beyond.specguard.resume.model.entity.core.*;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.model.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -46,7 +48,7 @@ public class ResumeService {
     private final PasswordEncoder passwordEncoder;
     private final ResumeTempAuth tempAuth;
     private final LocalFileStorageService storageService;
-
+    private final ApplicationEventPublisher eventPublisher;
 
 
     //이력서 생성에서 create
@@ -363,6 +365,11 @@ public class ResumeService {
         );
 
         resume.changeStatus(ResumeStatus.PENDING);
+
+        eventPublisher.publishEvent(
+                new ResumeSubmittedEvent(resume.getId(), resume.getTemplateId())
+        );
+
 
         return new ResumeSubmitResponse(
                 submission.getId(),
