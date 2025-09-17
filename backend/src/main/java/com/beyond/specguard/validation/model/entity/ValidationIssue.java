@@ -1,4 +1,4 @@
-package com.beyond.specguard.result.model.entity;
+package com.beyond.specguard.validation.model.entity;
 
 
 import jakarta.persistence.*;

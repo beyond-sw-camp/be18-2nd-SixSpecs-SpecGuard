@@ -1,8 +1,8 @@
-package com.beyond.specguard.result.model.entity;
+package com.beyond.specguard.validation.model.entity;
 
-import com.beyond.specguard.resume.model.entity.core.Resume;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -50,8 +50,9 @@ public class ValidationResultLog {
     @Column(name = "validated_at", nullable = false)
     private LocalDateTime validatedAt;
 
-    @Column(name = "decision_comment", columnDefinition = "TEXT", nullable = true)
-    private String decisionComment;
+    @UpdateTimestamp
+    @Column(name = "description_comment", columnDefinition = "TEXT", nullable = true)
+    private String descriptionComment;
 
 
 

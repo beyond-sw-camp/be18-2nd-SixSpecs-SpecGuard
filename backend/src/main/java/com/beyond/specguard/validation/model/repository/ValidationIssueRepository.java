@@ -1,6 +1,6 @@
-package com.beyond.specguard.result.model.repository;
+package com.beyond.specguard.validation.model.repository;
 
-import com.beyond.specguard.result.model.entity.ValidationIssue;
+import com.beyond.specguard.validation.model.entity.ValidationIssue;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;

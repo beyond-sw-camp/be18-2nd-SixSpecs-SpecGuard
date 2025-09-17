@@ -1,4 +1,4 @@
-package com.beyond.specguard.result.exception.errorcode;
+package com.beyond.specguard.validation.exception.errorcode;
 
 import com.beyond.specguard.common.exception.errorcode.ErrorCode;
 import lombok.Getter;
