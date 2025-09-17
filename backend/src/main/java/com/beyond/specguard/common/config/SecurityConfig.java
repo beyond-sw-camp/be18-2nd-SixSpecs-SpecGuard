@@ -73,7 +73,10 @@ public class SecurityConfig {
             "/api/v1/auth",
 
             //resume
-            "/api/v1/resumes/**"
+            "/api/v1/resumes/**",
+
+            // verification
+            "/api/v1/verify/**"
     };
 
     private final static String[] ADMIN_AUTH_WHITE_LIST = {
