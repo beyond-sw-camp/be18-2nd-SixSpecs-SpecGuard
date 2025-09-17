@@ -9,8 +9,6 @@ import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateFieldRepository;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository;
 import com.beyond.specguard.event.ResumeSubmittedEvent;
-import com.beyond.specguard.resume.auth.ResumeTempAuth;
-import com.beyond.specguard.resume.model.dto.request.*;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeAggregateUpdateRequest;
@@ -47,6 +45,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -546,7 +545,7 @@ public class ResumeService {
         resume.setStatusPending();
 
         eventPublisher.publishEvent(
-                new ResumeSubmittedEvent(resume.getId(), resume.getTemplateId())
+                new ResumeSubmittedEvent(resume.getId(), resume.getTemplate().getId())
         );
 
         resumeRepository.updateStatus(resume.getId(), resume.getStatus());
