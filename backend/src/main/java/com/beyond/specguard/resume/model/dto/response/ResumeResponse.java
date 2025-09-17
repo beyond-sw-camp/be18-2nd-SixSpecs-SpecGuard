@@ -1,12 +1,7 @@
 package com.beyond.specguard.resume.model.dto.response;
 
-import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
-import com.beyond.specguard.resume.model.entity.CompanyTemplateResponse;
+import com.beyond.specguard.companytemplate.model.dto.response.TemplateFieldResponseDto;
 import com.beyond.specguard.resume.model.entity.Resume;
-import com.beyond.specguard.resume.model.entity.ResumeBasic;
-import com.beyond.specguard.resume.model.entity.ResumeEducation;
-import com.beyond.specguard.resume.model.entity.ResumeExperience;
-import com.beyond.specguard.resume.model.entity.ResumeLink;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -36,22 +31,22 @@ public record ResumeResponse(
         String email,
 
         @JsonProperty("basic")
-        ResumeBasic resumeBasic,
+        ResumeBasicResponse resumeBasic,
 
         @JsonProperty("experiences")
-        List<ResumeExperience> resumeExperiences,
+        List<ResumeExperienceResponseDto> resumeExperiences,
 
         @JsonProperty("links")
-        List<ResumeLink> resumeLinks,
+        List<ResumeLinkResponseDto> resumeLinks,
 
         @JsonProperty("educations")
-        List<ResumeEducation> resumeEducations,
+        List<ResumeEducationResponseDto> resumeEducations,
 
         @JsonProperty("fields")
-        List<CompanyTemplateField> templateFields,
+        List<TemplateFieldResponseDto> templateFields,
 
         @JsonProperty("templateResponses")
-        List<CompanyTemplateResponse> companyTemplateResponses,
+        List<CompanyTemplateResponseResponse.Item> companyTemplateResponses,
 
         @Schema(description = "생성 시각")
         LocalDateTime createdAt,
@@ -67,12 +62,12 @@ public record ResumeResponse(
                                 .name(r.getName())
                                 .phone(r.getPhone())
                                 .email(r.getEmail())
-                                .resumeBasic(r.getResumeBasic())
-                                .resumeExperiences(r.getResumeExperiences())
-                                .resumeLinks(r.getResumeLinks())
-                                .resumeEducations(r.getResumeEducations())
-                                .templateFields(r.getTemplate().getFields())
-                                .companyTemplateResponses(r.getTemplateResponses())
+                                .resumeBasic(r.getResumeBasic() == null ? null : ResumeBasicResponse.fromEntity(r.getResumeBasic()))
+                                .resumeExperiences(r.getResumeExperiences().stream().map(ResumeExperienceResponseDto::fromEntity).toList())
+                                .resumeLinks(r.getResumeLinks().stream().map(ResumeLinkResponseDto::fromEntity).toList())
+                                .resumeEducations(r.getResumeEducations().stream().map(ResumeEducationResponseDto::fromEntity).toList())
+                                .templateFields(r.getTemplate().getFields().stream().map(TemplateFieldResponseDto::fromEntity).toList())
+                                .companyTemplateResponses(r.getTemplateResponses().stream().map(CompanyTemplateResponseResponse.Item::fromEntity).toList())
                                 .createdAt(r.getCreatedAt())
                                 .updatedAt(r.getUpdatedAt())
                                 .build();

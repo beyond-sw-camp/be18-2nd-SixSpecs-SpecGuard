@@ -120,7 +120,6 @@ public class ResumeBasic {
         if (req.address() != null)     this.address = req.address();
         if (req.specialty() != null)   this.specialty = req.specialty();
         if (req.hobbies() != null)     this.hobbies = req.hobbies();
-        if (req.profileImage() != null) this.profileImageUrl = req.profileImage();
     }
 
     public enum Gender {

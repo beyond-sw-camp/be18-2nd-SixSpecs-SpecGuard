@@ -69,7 +69,7 @@ public class CompanyTemplateResponseDto {
                     .templateId(template.getId())
                     .endDate(template.getEndDate())
                     .startDate(template.getStartDate())
-                    .fields(template.getFields().stream().map(TemplateFieldResponseDto::new).toList())
+                    .fields(template.getFields().stream().map(TemplateFieldResponseDto::fromEntity).toList())
                     .build();
 
         }

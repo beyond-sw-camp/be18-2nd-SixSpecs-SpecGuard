@@ -25,14 +25,16 @@ public class TemplateFieldResponseDto {
     private Integer minLength;
     private Integer maxLength;
 
-    public TemplateFieldResponseDto (CompanyTemplateField template) {
-        this.id = template.getId();
-        this.fieldName = template.getFieldName();
-        this.fieldType = template.getFieldType();
-        this.isRequired = template.isRequired();
-        this.fieldOrder = template.getFieldOrder();
-        this.options = template.getOptions();
-        this.minLength = template.getMinLength();
-        this.maxLength = template.getMaxLength();
+    public static TemplateFieldResponseDto fromEntity(CompanyTemplateField field) {
+        return TemplateFieldResponseDto.builder()
+                .id(field.getId())
+                .fieldName(field.getFieldName())
+                .fieldType(field.getFieldType())
+                .isRequired(field.isRequired())
+                .fieldOrder(field.getFieldOrder())
+                .options(field.getOptions())
+                .minLength(field.getMinLength())
+                .maxLength(field.getMaxLength())
+                .build();
     }
 }

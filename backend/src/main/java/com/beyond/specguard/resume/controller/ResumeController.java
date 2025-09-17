@@ -28,13 +28,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -76,6 +76,22 @@ public class ResumeController {
         return resumeService.get(resumeId, email, templateId);
     }
 
+    //지원서 단건 조회
+    @Operation(
+            summary = "지원서 단건 조회",
+            description = "특정 지원서(resume.id) 단건 조회."
+    )
+    @GetMapping
+    public ResumeResponse getResume(
+            @AuthenticationPrincipal ResumeDetails resumeDetails
+    ) {
+        UUID templateId = resumeDetails.getResume().getTemplate().getId();
+        String email = resumeDetails.getUsername();
+        UUID resumeId = resumeDetails.getResume().getId();
+
+        return resumeService.get(resumeId, email, templateId);
+    }
+
 
 
 
@@ -89,17 +105,18 @@ public class ResumeController {
             summary = "이력서 기본 정보 생성",
             description = "지원자가 이력서의 기본 정보를 최초 작성 및 임시저장한다."
     )
-    @PostMapping("/basic")
+    @PostMapping(value = "/basic", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public ResumeBasicResponse upsertBasic(
             @AuthenticationPrincipal  ResumeDetails resumeDetails,
-            @Valid @RequestBody ResumeBasicCreateRequest req
-    ) {
+            @RequestPart("basic") @Valid ResumeBasicCreateRequest req,
+            @RequestPart(value = "profileImage", required = true) MultipartFile profileImage
+    ) throws IOException {
         UUID templateId = resumeDetails.getResume().getTemplate().getId();
         String email = resumeDetails.getUsername();
         Resume resume = resumeDetails.getResume();
 
-        return resumeService.upsertBasic(resume, templateId, email, req);
+        return resumeService.upsertBasic(resume, templateId, email, req, profileImage);
     }
 
 
@@ -175,24 +192,6 @@ public class ResumeController {
         Resume resume = resumeDetails.getResume();
 
         return resumeService.submit(resume, req.companyId());
-    }
-
-    public record VerificationResult(boolean verified) {
-    }
-
-    // 프로필 이미지 업로드
-    @Operation(
-            summary = "프로필 이미지 업로드",
-            description = "multipart/form-data로 이미지를 업로드하여 로컬 저장하고, profile_image_url을 갱신합니다."
-    )
-    @PostMapping(value = "/basic/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResumeBasicResponse uploadProfileImage(
-            @RequestHeader("X-Resume-Id") UUID resumeId,
-            @RequestHeader("X-Resume-Secret") String secret,
-            @RequestPart("file") MultipartFile file
-    ) {
-        return resumeService.uploadProfileImage(resumeId, secret, file);
     }
 
     // 세션 기반의 로그아웃

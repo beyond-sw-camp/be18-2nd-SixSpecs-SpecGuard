@@ -13,6 +13,7 @@ import com.beyond.specguard.auth.model.provider.ClientAuthenticationProvider;
 import com.beyond.specguard.auth.model.provider.ResumeAuthenticationProvider;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
+import com.beyond.specguard.resume.model.service.ResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -193,8 +194,8 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain resumeSecurityFilterChain(
             HttpSecurity http,
-            @Qualifier("resumeAuthenticationManager") AuthenticationManager resumeAuthenticationManager
-    ) throws Exception {
+            @Qualifier("resumeAuthenticationManager") AuthenticationManager resumeAuthenticationManager,
+            ResumeService resumeService) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
@@ -218,7 +219,7 @@ public class SecurityConfig {
                 .accessDeniedHandler(restAccessDeniedHandler)   // 403
                 );
 
-        ResumeLoginFilter loginFilter = new ResumeLoginFilter(resumeAuthenticationManager, customFailureHandler);
+        ResumeLoginFilter loginFilter = new ResumeLoginFilter(resumeAuthenticationManager, customFailureHandler, resumeService);
         http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

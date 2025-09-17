@@ -16,6 +16,7 @@ public record CompanyTemplateResponseResponse(
         @Schema(description = "저장 결과 목록")
         List<Item> responses
 ) {
+
     @Builder
     public record Item(
             UUID id,

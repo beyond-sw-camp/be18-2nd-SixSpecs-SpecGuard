@@ -37,11 +37,7 @@ public record ResumeBasicCreateRequest(
         String specialty,
 
         @Schema(description = "취미", example = "등산, 독서")
-        String hobbies,
-
-        @Schema(description = "프로필 이미지 파일")
-        @NotNull
-        String profileImage
+        String hobbies
 ) {
         public ResumeBasic toEntity(Resume resume) {
                 return ResumeBasic.builder()
@@ -51,7 +47,6 @@ public record ResumeBasicCreateRequest(
                         .birthDate(birthDate)
                         .nationality(nationality)
                         .applyField(applyField)
-                        .profileImageUrl(profileImage)
                         .address(address)
                         .specialty(specialty)
                         .hobbies(hobbies)

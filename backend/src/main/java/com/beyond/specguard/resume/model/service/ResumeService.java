@@ -86,6 +86,7 @@ public class ResumeService {
     private final LocalFileStorageService storageService;
     private final CompanyTemplateFieldRepository companyTemplateFieldRepository;
     private final CompanyTemplateResponseRepository companyTemplateResponseRepository;
+    private final ResumeBasicRepository resumeBasicRepository;
 
     //이력서 생성에서 create
     @Transactional
@@ -116,11 +117,22 @@ public class ResumeService {
     @Transactional(readOnly = true)
     public ResumeResponse get(UUID resumeId, String username, UUID templateId) {
         Resume resume = resumeRepository.findById(resumeId)
-                .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
+                        .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
 
         validateOwnerShip(resume, username, templateId);
 
         return ResumeResponse.fromEntity(resume);
+    }
+
+    @Transactional
+    public Map<String, Object> loginAndGetResume(UUID resumeId) {
+        Resume resume = resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
+
+        return Map.of(
+                "message", "Login successful",
+                "resume", ResumeResponse.fromEntity(resume)
+        );
     }
 
     //지원서 목록 조회에서 list
@@ -152,13 +164,19 @@ public class ResumeService {
 
     //이력서 기본 정보 UPDATE/INSERT에서 upsertBasic
     @Transactional
-    public ResumeBasicResponse upsertBasic(Resume resume, UUID templateId, String email, ResumeBasicCreateRequest req) {
+    public ResumeBasicResponse upsertBasic(Resume resume, UUID templateId, String email, ResumeBasicCreateRequest req, MultipartFile profileImage) {
         try {
             validateOwnerShip(resume, email, templateId);
 
             Optional<ResumeBasic> opt = basicRepository.findByResume_Id(resume.getId());
 
             ResumeBasic basic = opt.orElseGet(() -> basicRepository.saveAndFlush(req.toEntity(resume)));
+
+            // 파일이 있으면 업로드
+            if (profileImage != null && !profileImage.isEmpty()) {
+                String url = storageService.saveProfileImage(resume.getId(), profileImage);
+                basic.changeProfileImageUrl(url); // 엔티티 필드에 URL 저장
+            }
 
             // 수정 경로 (null이면 변경 없음)
             if (opt.isPresent()) {
@@ -529,37 +547,6 @@ public class ResumeService {
         resumeRepository.updateStatus(resume.getId(), resume.getStatus());
 
         return ResumeSubmitResponse.fromEntity(submission);
-    }
-
-    // 프로필 이미지 업로드 -> 로컬 저장 & URL DB 저장/갱신
-    @Transactional
-    public ResumeBasicResponse uploadProfileImage(UUID resumeId, String secret, MultipartFile file) {
-        Resume resume = tempAuth.authenticate(resumeId, secret);
-        if (file == null) throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
-
-        String url = storageService.saveProfileImage(resumeId, file);
-
-        ResumeBasic basic = basicRepository.findByResume_Id(resumeId)
-                .orElseGet(() -> basicRepository.save(
-                        ResumeBasic.builder()
-                                .resume(resume)
-                                .englishName(" ")
-                                .gender(ResumeBasic.Gender.OTHER)
-                                .birthDate(LocalDate.of(1900, 1, 1))
-                                .nationality(" ")
-                                .applyField(" ")
-                                .address(" ")
-                                .profileImageUrl(url)
-                                .build()
-                ));
-        basic.changeProfileImageUrl(url);
-
-        return new ResumeBasicResponse(
-                basic.getId(), resumeId, basic.getEnglishName(), basic.getGender().name(),
-                basic.getBirthDate(), basic.getNationality(), basic.getAddress(),
-                basic.getApplyField(), basic.getSpecialty(), basic.getHobbies(),
-                basic.getProfileImageUrl(), basic.getCreatedAt()
-        );
     }
 
 

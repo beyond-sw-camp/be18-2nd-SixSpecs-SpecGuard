@@ -13,8 +13,6 @@ import java.util.UUID;
 public record ResumeBasicResponse(
         @Schema(description = "기본정보 ID (UUID 문자열)")
         UUID id,
-        @Schema(description = "이력서 ID (UUID 문자열)")
-        UUID resumeId,
 
         String englishName,
 
@@ -41,7 +39,6 @@ public record ResumeBasicResponse(
         public static ResumeBasicResponse fromEntity(ResumeBasic resumeBasic) {
                 return ResumeBasicResponse.builder()
                         .id(resumeBasic.getId())
-                        .resumeId(resumeBasic.getResume().getId())
                         .englishName(resumeBasic.getEnglishName())
                         .gender(resumeBasic.getGender().name())
                         .birthDate(resumeBasic.getBirthDate())
