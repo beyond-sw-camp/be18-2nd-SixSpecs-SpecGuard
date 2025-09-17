@@ -86,7 +86,7 @@ public class EmailVerificationService {
                 log.debug("email verify pending (account-scope) email={}", email);
                 return;
             }
-            var e = applicantRepo.findByEmailAndResumeId(email, resumeId)
+            ApplicantEmailVerification e = applicantRepo.findByEmailAndResumeId(email, resumeId)
                     .orElseGet(() -> ApplicantEmailVerification.forResume(
                             email, resumeRepository.getReferenceById(resumeId)));
             e.markPending(ip, now);
@@ -96,13 +96,13 @@ public class EmailVerificationService {
 
         if (t == VerifyTarget.COMPANY) {
             if (companyId == null) {
-                var e = companyRepo.findByEmailAndAccountScopeTrue(email)
+                CompanyEmailVerification e = companyRepo.findByEmailAndAccountScopeTrue(email)
                         .orElseGet(() -> CompanyEmailVerification.forAccountScope(email));
                 e.markPending(ip, now);
                 companyRepo.save(e);
                 return;
             }
-            var e = companyRepo.findByEmailAndCompanyId(email, companyId)
+            CompanyEmailVerification e = companyRepo.findByEmailAndCompanyId(email, companyId)
                     .orElseGet(() -> CompanyEmailVerification.forCompany(
                             email, clientCompanyRepository.getReferenceById(companyId)));
             e.markPending(ip, now);
@@ -121,7 +121,7 @@ public class EmailVerificationService {
                 log.debug("email verified (account-scope) email={}", email);
                 return;
             }
-            var e = applicantRepo.findByEmailAndResumeId(email, resumeId).orElseThrow();
+            ApplicantEmailVerification e = applicantRepo.findByEmailAndResumeId(email, resumeId).orElseThrow();
             e.markVerified(now);
             applicantRepo.save(e);
             return;
@@ -129,13 +129,13 @@ public class EmailVerificationService {
 
         if (t == VerifyTarget.COMPANY) {
             if (companyId == null) {
-                var e = companyRepo.findByEmailAndAccountScopeTrue(email)
+                CompanyEmailVerification e = companyRepo.findByEmailAndAccountScopeTrue(email)
                         .orElseGet(() -> CompanyEmailVerification.forAccountScope(email));
                 e.markVerified(now);
                 companyRepo.save(e);
                 return;
             }
-            var e = companyRepo.findByEmailAndCompanyId(email, companyId).orElseThrow();
+            CompanyEmailVerification e = companyRepo.findByEmailAndCompanyId(email, companyId).orElseThrow();
             e.markVerified(now);
             companyRepo.save(e);
         }
