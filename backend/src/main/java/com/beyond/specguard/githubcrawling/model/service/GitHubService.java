@@ -45,7 +45,7 @@ public class GitHubService {
 
             // 응답 직렬화
             try {
-                result.updateContents(objectMapper.writeValueAsString(stats));
+                //result.updateContents(objectMapper.writeValueAsString(stats));
             } catch (Exception e) {
                 throw new GitException(GitErrorCode.GITHUB_PARSE_ERROR);
             }
