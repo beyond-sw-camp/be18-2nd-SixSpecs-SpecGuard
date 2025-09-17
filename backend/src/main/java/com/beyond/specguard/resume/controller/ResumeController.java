@@ -1,6 +1,5 @@
 package com.beyond.specguard.resume.controller;
 
-import com.beyond.specguard.companytemplate.model.service.CompanyTemplateService;
 import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeAggregateUpdateRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeBasicCreateRequest;
@@ -36,7 +35,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -45,7 +43,6 @@ import java.util.UUID;
 @RequestMapping("/api/v1/resumes")
 public class ResumeController {
     private final ResumeService resumeService;
-    private final CompanyTemplateService companyTemplateService;
 
     //이력서 생성
     @Operation(
@@ -92,14 +89,6 @@ public class ResumeController {
         return resumeService.get(resumeId, email, templateId);
     }
 
-
-
-
-    // 정렬 기준
-    private static final Set<String> ALLOWED_SORT = Set.of(
-            "createdAt", "updatedAt", "name", "status"
-    );
-
     //이력서 기본 정보 UPDATE/INSERT
     @Operation(
             summary = "이력서 기본 정보 생성",
@@ -114,9 +103,9 @@ public class ResumeController {
     ) throws IOException {
         UUID templateId = resumeDetails.getResume().getTemplate().getId();
         String email = resumeDetails.getUsername();
-        Resume resume = resumeDetails.getResume();
+        UUID resumeId = resumeDetails.getResume().getId();
 
-        return resumeService.upsertBasic(resume, templateId, email, req, profileImage);
+        return resumeService.upsertBasic(resumeId, templateId, email, req, profileImage);
     }
 
 
@@ -154,9 +143,9 @@ public class ResumeController {
     ) {
         UUID templateId = resumeDetails.getResume().getTemplate().getId();
         String email = resumeDetails.getUsername();
-        Resume resume = resumeDetails.getResume();
+        UUID resumeId = resumeDetails.getResume().getId();
 
-        resumeService.upsertCertificates(resume, templateId, email, certificates);
+        resumeService.upsertCertificates(resumeId, templateId, email, certificates);
     }
 
 
