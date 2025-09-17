@@ -79,12 +79,10 @@ public class EvaluationWeight {
         GITHUB_TOPIC_MATCH,
         GITHUB_CONSISTENCY,
         NOTION_PROJECT_COUNT,
-        NOTION_DETAIL_DEPTH,
         NOTION_KEYWORD_MATCH,
         VELOG_POST_COUNT,
         VELOG_RECENT_ACTIVITY,
         VELOG_KEYWORD_MATCH,
-        CAREER_MATCH,
         CERTIFICATE_MATCH;
 
         @JsonCreator
