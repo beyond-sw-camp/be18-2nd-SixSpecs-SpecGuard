@@ -1,15 +1,25 @@
 package com.beyond.specguard.certificate.model.dto;
 
-import lombok.Data;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@Data
+@Getter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CodefVerificationResponse {
     private Result result;
     private DataDto data;
 
-    @Data
+    @Getter
+    @Builder
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
     public static class Result {
         private String code;
         private String extraMessage;
@@ -17,7 +27,10 @@ public class CodefVerificationResponse {
         private String transactionId;
     }
 
-    @Data
+    @Getter
+    @Builder
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
     public static class DataDto {
         private String resIssueYN;
         private String resResultDesc;
@@ -33,7 +46,10 @@ public class CodefVerificationResponse {
         private List<ResItem> resItemList;
     }
 
-    @Data
+    @Getter
+    @Builder
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @NoArgsConstructor(access = AccessLevel.PROTECTED)
     public static class ResItem {
         private String resItemName;
         private String resPassDate;
