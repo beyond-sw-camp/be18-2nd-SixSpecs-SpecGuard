@@ -1,17 +1,18 @@
-package com.beyond.specguard.event;
-
+package com.beyond.specguard.event.listener;
 
 import com.beyond.specguard.crawling.entity.CrawlingResult;
 import com.beyond.specguard.crawling.repository.CrawlingResultRepository;
+import com.beyond.specguard.event.client.PythonCrawlerClient;
+import com.beyond.specguard.event.ResumeSubmittedEvent;
 import com.beyond.specguard.githubcrawling.model.service.GitHubService;
 import com.beyond.specguard.resume.model.entity.common.enums.LinkType;
 import com.beyond.specguard.resume.model.entity.core.Resume;
 import com.beyond.specguard.resume.model.entity.core.ResumeLink;
 import com.beyond.specguard.resume.model.repository.ResumeLinkRepository;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -44,16 +45,28 @@ public class ResumeSubmittedListener {
         List<ResumeLink> links = resumeLinkRepository.findByResume_Id(resumeId);
 
         for (ResumeLink link : links) {
-            CrawlingResult result = crawlingResultRepository.findByResumeLink_Id(link.getId())
-                    .orElseGet(() -> crawlingResultRepository.save(
-                            CrawlingResult.builder()
-                                    .resume(resume)
-                                    .resumeLink(link)
-                                    .crawlingStatus(CrawlingResult.CrawlingStatus.PENDING)
-                                    .build()
-                    ));
+            CrawlingResult result = null;
 
             try {
+                //  CrawlingResult 안전 조회/생성
+                result = crawlingResultRepository.findByResumeLink_Id(link.getId())
+                        .orElseGet(() -> {
+                            try {
+                                return crawlingResultRepository.save(
+                                        CrawlingResult.builder()
+                                                .resume(resume)
+                                                .resumeLink(link)
+                                                .crawlingStatus(CrawlingResult.CrawlingStatus.PENDING)
+                                                .build()
+                                );
+                            } catch (DataIntegrityViolationException e) {
+                                // 다른 트랜잭션이 먼저 생성했음 동시성 터져버림 에러던지고 → 다시 조회
+                                log.warn("동시성 충돌: resumeLinkId={} 이미 CrawlingResult 생성됨", link.getId());
+                                return crawlingResultRepository.findByResumeLink_Id(link.getId())
+                                        .orElseThrow(() -> new IllegalStateException("ResumeLink는 있는데 CrawlingResult 없음"));
+                            }
+                        });
+
                 crawlingResultRepository.save(result);
 
                 switch (link.getLinkType()) {
@@ -65,7 +78,6 @@ public class ResumeSubmittedListener {
                         Map<String, Object> velogData = pythonCrawlerClient.callVelogApi(resumeId, link.getUrl());
 
                         log.info("[VELOG] Python API 응답: {}", velogData);
-
                         // Python이 상태/contents 저장 담당 → Spring은 건드리지 않음
                     }
 
@@ -77,10 +89,13 @@ public class ResumeSubmittedListener {
                 }
 
             } catch (Exception e) {
-                result.updateStatus(CrawlingResult.CrawlingStatus.FAILED);
+                if (result != null) {
+                    result.updateStatus(CrawlingResult.CrawlingStatus.FAILED);
+                    crawlingResultRepository.save(result);
+                }
                 log.error("크롤링 실패 resumeId={}, url={}", resumeId, link.getUrl(), e);
             } finally {
-                if (link.getLinkType() == LinkType.GITHUB) {
+                if (link.getLinkType() == LinkType.GITHUB && result != null) {
                     crawlingResultRepository.save(result);
                 }
             }

@@ -1,6 +1,5 @@
-package com.beyond.specguard.event;
+package com.beyond.specguard.event.client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -15,7 +14,6 @@ import java.util.UUID;
 @Slf4j
 public class PythonCrawlerClient {
     private final WebClient pythonWebClient;
-    private final ObjectMapper objectMapper;
 
     public Map<String, Object> callVelogApi(UUID resumeId, String url) {
         String endpoint = String.format("/ingest/resumes/%s/velog/start", resumeId);
