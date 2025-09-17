@@ -8,6 +8,9 @@ import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateFieldRepository;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository;
+import com.beyond.specguard.event.ResumeSubmittedEvent;
+import com.beyond.specguard.resume.auth.ResumeTempAuth;
+import com.beyond.specguard.resume.model.dto.request.*;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeAggregateUpdateRequest;
@@ -82,6 +85,8 @@ public class ResumeService {
     private final CompanyTemplateRepository companyTemplateRepository;
     private final PasswordEncoder passwordEncoder;
     private final LocalFileStorageService storageService;
+    private final ApplicationEventPublisher eventPublisher;
+
     private final CompanyTemplateFieldRepository companyTemplateFieldRepository;
     private final CompanyTemplateResponseRepository companyTemplateResponseRepository;
 
@@ -539,6 +544,10 @@ public class ResumeService {
         );
 
         resume.setStatusPending();
+
+        eventPublisher.publishEvent(
+                new ResumeSubmittedEvent(resume.getId(), resume.getTemplateId())
+        );
 
         resumeRepository.updateStatus(resume.getId(), resume.getStatus());
 
