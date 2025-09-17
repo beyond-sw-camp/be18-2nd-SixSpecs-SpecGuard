@@ -62,6 +62,10 @@ dependencies {
 
     //스케줄러
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+    //정합성
+    implementation("org.apache.commons:commons-text:1.11.0")
+    implementation("org.springframework.boot:spring-boot-configuration-processor")
 }
 
 
