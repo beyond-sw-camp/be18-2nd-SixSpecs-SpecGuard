@@ -18,15 +18,15 @@ class SummaryResponse(BaseModel):
 @router.post("/summary", response_model=SummaryResponse)
 async def summarize_text(request: SummaryRequest):
     """
-    입력받은 이력서/포트폴리오/자소서 전문을 요약하는 API
+    입력받은 자소서 전문을 요약하는 API
     """
 
     # 1) type 검증
-    if request.type not in ["resume", "portfolio", "cover_letter"]:
+    if request.type not in ["cover_letter"]:
         raise HTTPException(
             status_code=400,
             detail={"error": "INVALID_TYPE",
-                    "message": "지원하지 않는 type 값입니다. (resume, portfolio, cover_letter 중 선택)"}
+                    "message": "지원하지 않는 type 값입니다. (cover_letter(자소서)만 요약합니다.)"}
         )
 
     # 2) text 검증

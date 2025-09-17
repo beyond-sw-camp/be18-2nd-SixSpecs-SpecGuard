@@ -10,16 +10,16 @@ router = APIRouter(prefix="/api/v1/nlp", tags=["keywords"])
 @router.post("/keywords", response_model=KeywordResponse)
 async def extract_keywords(request: KeywordRequest):
     """
-    입력받은 이력서/포트폴리오/자소서 전문에서 핵심 키워드를 추출하는 API
+    입력받은 포트폴리오/자소서 전문에서 핵심 키워드를 추출하는 API
     """
 
     # 1) type 검증
-    if request.type not in ["resume", "portfolio", "cover_letter"]:
+    if request.type not in ["cover_letter", "portfolio"]:
         raise HTTPException(
             status_code=400,
             detail={
                 "error": "INVALID_TYPE",
-                "message": "지원하지 않는 type 값입니다. (resume, portfolio, cover_letter 중 선택)"
+                "message": "지원하지 않는 type 값입니다. (portfolio(포트폴리오), cover_letter(자소서) 중 선택)"
             }
         )
 
@@ -35,10 +35,13 @@ async def extract_keywords(request: KeywordRequest):
 
     # 3) 프롬프트 생성
     prompt = f"""
-    다음 {request.type} 텍스트에서 핵심 키워드 5개를 뽑아줘.
+    다음 {request.type} 텍스트에서 기술 키워드 위주로 최대한 많이 뽑아줘.
     - 출력은 JSON 배열 형식으로만 반환해.
     - 예시: ["AI", "자율주행", "IoT", "라즈베리파이", "MQTT"]
     - 코드 블록 표시(````json`, ```), 설명 문장, 줄바꿈 같은 건 절대 포함하지 마.
+    - 자소서 내용에서 지원자의 활동 위주의 키워드로 뽑아야해.
+    - 수치화한 내용이 있다면, 그것도 키워드에 포함해줘. 
+    - 기업 사업 관련 키워드는 넣지 말아줘.
     텍스트: {request.text.strip()}
     """
 
