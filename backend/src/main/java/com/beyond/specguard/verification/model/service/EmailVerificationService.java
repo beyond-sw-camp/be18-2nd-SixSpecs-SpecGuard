@@ -1,5 +1,6 @@
 package com.beyond.specguard.verification.model.service;
 
+import com.beyond.specguard.common.config.VerifyConfig;
 import com.beyond.specguard.company.common.model.repository.ClientCompanyRepository;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import com.beyond.specguard.verification.model.entity.ApplicantEmailVerification;
@@ -25,9 +26,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EmailVerificationService {
 
-    @Qualifier("verifyCodeTtlSeconds")
-    private final long codeTtlSeconds;
+//    @Qualifier("verifyCodeTtlSeconds")
+//    private final long codeTtlSeconds;
     private final EmailVerifyRedisRepository redisRepo;
+    private final VerifyConfig verifyConfig;
     private final VerifySendGridService mailer;
 
     private final ApplicantEmailVerificationRepo applicantRepo;
@@ -48,11 +50,12 @@ public class EmailVerificationService {
 
         // Redis 저장(키/TTL 캡슐화)
         redisRepo.saveCode(email, code);
-        log.info("verify.set email={} code(last2)=**{} ttl={}", email, code.substring(4), redisRepo.codeTtlSeconds());
+        log.info("verify.set email={} code(last2)=**{} ttl={}",
+                email, code.substring(4), verifyConfig.getTtlSeconds());
 
         upsertPending(rawEmail, target, ip, resumeId, companyId);
 
-        mailer.sendCodeEmail(email, code, codeTtlSeconds);
+        mailer.sendCodeEmail(email, code, verifyConfig.getTtlSeconds());
     }
 
     @Transactional
