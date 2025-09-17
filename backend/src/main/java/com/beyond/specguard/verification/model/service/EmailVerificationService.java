@@ -55,7 +55,8 @@ public class EmailVerificationService {
 
         upsertPending(rawEmail, target, ip, resumeId, companyId);
 
-        mailer.sendCodeEmail(email, code, verifyConfig.getTtlSeconds());
+        mailer.sendCodeEmail(email, code, verifyConfig.getTtlSeconds()
+        );
     }
 
     @Transactional

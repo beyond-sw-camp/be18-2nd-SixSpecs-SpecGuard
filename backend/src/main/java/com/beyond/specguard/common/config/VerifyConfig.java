@@ -11,15 +11,15 @@ import com.beyond.specguard.verification.model.repository.EmailVerifyRedisReposi
 @Configuration
 @Getter
 public class VerifyConfig {
-    @Value("${verify.ttl-seconds:300}")
+    @Value("${verify.ttl-seconds}")
     private long ttlSeconds;
 
-    @Value("${verify.redis.code-prefix:verif:email:}")
+    @Value("${verify.redis.code-prefix}")
     private String codePrefix;
 
-    @Value("${verify.redis.attempt-prefix:verif:attempt:}")
+    @Value("${verify.redis.attempt-prefix}")
     private String attemptPrefix;
 
-    @Value("${verify.redis.attempt-ttl-seconds:3600}")
+    @Value("${verify.redis.attempt-ttl-seconds}")
     private long attemptTtlSeconds;
 }

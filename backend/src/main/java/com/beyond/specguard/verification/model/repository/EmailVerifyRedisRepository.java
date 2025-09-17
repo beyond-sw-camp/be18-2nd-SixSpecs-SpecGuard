@@ -12,10 +12,6 @@ import java.time.Duration;
 public class EmailVerifyRedisRepository {
     private final StringRedisTemplate redis;
     private final VerifyConfig verifyConfig;
-//    private final long codeTtlSeconds;
-//    private final long attemptTtlSeconds;
-//    private final String codePrefix;
-//    private final String attemptPrefix;
 
     private String codeKey(String email){
         return verifyConfig.getCodePrefix()+ email.toLowerCase();
