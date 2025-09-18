@@ -1,7 +1,7 @@
 package com.beyond.specguard.evaluationprofile.controller;
 
-import com.beyond.specguard.auth.model.entity.ClientUser;
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
+import com.beyond.specguard.company.common.model.entity.ClientUser;
+import com.beyond.specguard.company.common.model.service.CustomUserDetails;
 import com.beyond.specguard.evaluationprofile.model.dto.command.CreateEvaluationProfileCommand;
 import com.beyond.specguard.evaluationprofile.model.dto.command.GetEvaluationProfileCommand;
 import com.beyond.specguard.evaluationprofile.model.dto.command.SearchEvaluationProfileCommand;

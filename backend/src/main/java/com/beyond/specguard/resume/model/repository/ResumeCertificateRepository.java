@@ -10,4 +10,5 @@ public interface ResumeCertificateRepository extends JpaRepository<ResumeCertifi
     Optional<ResumeCertificate> findByIdAndResume_Id(UUID id, UUID resumeId);
     void deleteByResume_Id(UUID resumeId);
 
+    List<ResumeCertificate> findAllByResumeId(UUID resumeId);
 }

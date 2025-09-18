@@ -1,6 +1,6 @@
 package com.beyond.specguard.evaluationprofile.model.repository;
 
-import com.beyond.specguard.auth.model.entity.ClientCompany;
+import com.beyond.specguard.company.common.model.entity.ClientCompany;
 import com.beyond.specguard.evaluationprofile.model.entity.EvaluationProfile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

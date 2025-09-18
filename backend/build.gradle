@@ -62,6 +62,9 @@ dependencies {
 
     //스케줄러
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+    // --- codef (자격증 검증) ---
+    implementation 'io.codef.api:easycodef-java:1.0.6'
 }
 
 
