@@ -1,6 +1,6 @@
 package com.beyond.specguard.evaluationprofile.model.entity;
 
-import com.beyond.specguard.auth.model.entity.ClientCompany;
+import com.beyond.specguard.company.common.model.entity.ClientCompany;
 import com.beyond.specguard.evaluationprofile.model.dto.request.EvaluationProfileRequestDto;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

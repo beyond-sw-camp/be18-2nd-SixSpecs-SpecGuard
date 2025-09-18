@@ -1,7 +1,7 @@
 package com.beyond.specguard.crawling.entity;
 
-import com.beyond.specguard.resume.model.entity.core.Resume;
-import com.beyond.specguard.resume.model.entity.core.ResumeLink;
+import com.beyond.specguard.resume.model.entity.Resume;
+import com.beyond.specguard.resume.model.entity.ResumeLink;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
