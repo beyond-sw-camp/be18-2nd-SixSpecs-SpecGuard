@@ -35,7 +35,7 @@ import java.util.UUID;
                 columnNames = {"resume_id"}
         )
 )
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @AllArgsConstructor
 @Builder
