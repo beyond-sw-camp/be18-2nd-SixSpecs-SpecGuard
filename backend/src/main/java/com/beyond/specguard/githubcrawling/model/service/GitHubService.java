@@ -55,14 +55,12 @@ public class GitHubService {
 
             // 응답 직렬화
             try {
-                result.updateContents(objectMapper.writeValueAsString(stats));
+                result.updateContents(objectMapper.writeValueAsString(stats).getBytes());
             } catch (Exception e) {
                 throw new GitException(GitErrorCode.GITHUB_PARSE_ERROR);
             }
 
-            // 직렬화된 JSON 문자열을 변수로 한 번만 잡기
             String serialized = objectMapper.writeValueAsString(stats);
-
 
             byte[] compressed;
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -71,9 +69,12 @@ public class GitHubService {
                 gzipOut.finish();
                 compressed = baos.toByteArray();
             }
-            String compressedBase64 = Base64.getEncoder().encodeToString(compressed);
+
+// LONGBLOB 컬럼에 그대로 저장
+            result.updateContents(compressed);
+
             //압축 결과 저장
-            result.updateContents(compressedBase64);
+            result.updateContents(compressed);
 
             // 5. CrawlingResult 업데이트
             result.updateContents(compressedBase64);
