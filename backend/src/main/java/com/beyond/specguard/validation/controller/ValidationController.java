@@ -31,7 +31,7 @@ public class ValidationController {
 
     private final ValidationResultService validationResultService;
     private final ValidationResultLogService validationResultLogService;
-    private final ValidationIssueService validationIssueService;
+//    private final ValidationIssueService validationIssueService;
 
 
     @Operation(
@@ -48,13 +48,6 @@ public class ValidationController {
         UUID resultId = validationResultService.calculateAndSave(clientUser, request);
         return ResponseEntity.ok(resultId);
     }
-
-
-//    @Operation(
-//            summary = "분석 이력 조회 API",
-//            description = "기업 사용자가 소속 기업 지원자들의 정합성 분석 이력을 조회합니다."
-//    )
-//    @GetMapping("/history")
 
 
 
@@ -76,11 +69,5 @@ public class ValidationController {
     private ClientUser getClientUser(Authentication authentication) {
         return ((CustomUserDetails) authentication.getPrincipal()).getUser();
     }
-
-//    @Operation(
-//            summary = "정합성 점수 저장 API",
-//            description = "NLP 분석 및 외부 포트폴리오 평가를 통해 계산된 지원자의 정합성 점수를 저장합니다."
-//    )
-//    @PostMapping
 
 }

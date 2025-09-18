@@ -1,4 +1,4 @@
-package com.beyond.specguard.validation.utill;
+package com.beyond.specguard.validation.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

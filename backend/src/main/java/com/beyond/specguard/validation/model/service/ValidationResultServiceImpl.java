@@ -4,7 +4,8 @@ import com.beyond.specguard.evaluationprofile.model.entity.EvaluationWeight.Weig
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
 import com.beyond.specguard.company.common.model.entity.ClientUser;
-import com.beyond.specguard.resume.model.entity.common.enums.LinkType;
+import com.beyond.specguard.resume.model.entity.Resume;
+import com.beyond.specguard.resume.model.entity.ResumeLink;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import com.beyond.specguard.validation.model.dto.request.ValidationCalculateRequestDto;
 import com.beyond.specguard.validation.model.entity.ValidationResult;
@@ -12,12 +13,14 @@ import com.beyond.specguard.validation.model.entity.ValidationResultLog;
 import com.beyond.specguard.validation.model.repository.CalculateQueryRepository;
 import com.beyond.specguard.validation.model.repository.ValidationResultLogRepository;
 import com.beyond.specguard.validation.model.repository.ValidationResultRepository;
-import com.beyond.specguard.validation.utill.KeywordUtils;
+import com.beyond.specguard.validation.util.KeywordUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -31,6 +34,9 @@ public class ValidationResultServiceImpl implements ValidationResultService{
     private final CalculateQueryRepository calculateQueryRepository;
     private final ResumeRepository resumeRepository;
 
+    @PersistenceContext
+    private EntityManager em;
+
     private static final ObjectMapper OM = new ObjectMapper();
 
     // 정규화 상한
@@ -39,7 +45,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
     private static final double VELOG_POST_MAX = 100.0;
 
     private void validateWriteRole(ClientUser.Role role) {
-        if (!EnumSet.of(ClientUser.Role.OWNER, ClientUser.Role.MANAGER, ClientUser.Role.VIEWER).contains(role)) {
+        if (!EnumSet.of(ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role)) {
             throw new CustomException(CommonErrorCode.ACCESS_DENIED);
         }
     }
@@ -64,19 +70,19 @@ public class ValidationResultServiceImpl implements ValidationResultService{
         //    - count:    Velog 게시글 수
         Set<String> ghKeywords = new LinkedHashSet<>();
         Set<String> ghTech     = new LinkedHashSet<>();
-        for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, LinkType.GITHUB.name())) {
+        for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.GITHUB.name())) {
             ghKeywords.addAll(KeywordUtils.parseKeywords(pc));
             ghTech.addAll(KeywordUtils.parseTech(pc));
         }
 
         Set<String> notionKeywords = new LinkedHashSet<>();
-        for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, LinkType.NOTION.name())) {
+        for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.NOTION.name())) {
             notionKeywords.addAll(KeywordUtils.parseKeywords(pc));
         }
 
         Set<String> velogKeywords = new LinkedHashSet<>();
         int velogPostCount = 0;
-        for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, LinkType.VELOG.name())) {
+        for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.VELOG.name())) {
             velogKeywords.addAll(KeywordUtils.parseKeywords(pc));
             velogPostCount += KeywordUtils.parseCount(pc); // 여러 링크면 합산
         }
@@ -104,7 +110,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
 
         // 6) 가중치 적용 (존재하는 지표만 합산)
 
-        Map<EvaluationWeight.WeightType, Double> metrics = new EnumMap<>(WeightType.class);
+        Map<WeightType, Double> metrics = new EnumMap<>(WeightType.class);
         metrics.put(WeightType.GITHUB_REPO_COUNT,     githubRepoScore);
         metrics.put(WeightType.GITHUB_COMMIT_COUNT,   githubCommitScore);
         metrics.put(WeightType.GITHUB_KEYWORD_MATCH,  githubKeywordMatch);
@@ -140,10 +146,10 @@ public class ValidationResultServiceImpl implements ValidationResultService{
         double finalScore = (weightTotal == 0.0) ? 0.0 : clamp01(weightedSum / weightTotal);
 
         // 7) 저장 (빌더만)
+        Resume resumeRef = em.getReference(Resume.class, resumeId);
         ValidationResult result = validationResultRepository.save(
                 ValidationResult.builder()
-                        .resumeId(resumeId)
-                        .validationIssueId(null)
+                        .resume(resumeRef)
                         .validationScore(finalScore)
                         .createdAt(LocalDateTime.now())
                         .build()
@@ -179,13 +185,12 @@ public class ValidationResultServiceImpl implements ValidationResultService{
                         .validationScore(finalScore)
                         .keywordList(keywordListJson)
                         .mismatchFields(null)
-                        .descriptionComment(request.getDescriptionComment())
                         .validatedAt(LocalDateTime.now())
                         .build()
         );
 
         // 8) 상태 전환 COMPLETED → VALIDATED
-        resumeRepository.updateStatus(resumeId, "VALIDATED");
+        resumeRepository.updateStatus(resumeId, Resume.ResumeStatus.VALIDATED);
 
         return result.getId();
     }

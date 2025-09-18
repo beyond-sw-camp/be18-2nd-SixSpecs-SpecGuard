@@ -1,6 +1,7 @@
 package com.beyond.specguard.validation.model.entity;
 
-import com.beyond.specguard.resume.model.entity.core.Resume;
+
+import com.beyond.specguard.resume.model.entity.Resume;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

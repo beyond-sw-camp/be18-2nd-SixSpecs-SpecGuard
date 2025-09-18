@@ -21,7 +21,6 @@ import java.util.UUID;
 @Slf4j
 public class ValidationResultLogServiceImpl implements ValidationResultLogService{
     private final ValidationResultLogRepository validationResultLogRepository;
-    private final ValidationResultLogService validationResultLogService;
 
     private void validateReadRole(ClientUser.Role role) {
         if (!EnumSet.of(ClientUser.Role.VIEWER, ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role)) {
