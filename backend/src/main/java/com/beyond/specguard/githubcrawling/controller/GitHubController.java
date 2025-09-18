@@ -1,3 +1,4 @@
+/*
 package com.beyond.specguard.githubcrawling.controller;
 
 
@@ -45,3 +46,4 @@ public class GitHubController {
         return new ResponseEntity<>(gzipBytes, headers, HttpStatus.OK);
     }
 }
+*/

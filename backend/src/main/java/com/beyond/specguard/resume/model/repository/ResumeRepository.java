@@ -1,23 +1,23 @@
 package com.beyond.specguard.resume.model.repository;
 
-import com.beyond.specguard.resume.model.entity.core.Resume;
-import jakarta.persistence.LockModeType;
-import org.springframework.data.domain.Page;
+import com.beyond.specguard.resume.model.entity.Resume;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ResumeRepository extends JpaRepository<Resume, UUID> {
+public interface ResumeRepository extends JpaRepository<Resume, UUID>, JpaSpecificationExecutor<Resume> {
     boolean existsByEmail(String email);
     @Query("""
         select r.id
         from Resume r
-        where r.templateId in :templateIds
+        where r.template.id in :templateIds
           and not exists (
             select 1 from CompanyFormSubmission s
             where s.resume = r
@@ -25,5 +25,15 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID> {
     """)
     List<UUID> findUnsubmittedIdsByTemplateIds(List<UUID> templateIds, Pageable pageable);
 
-    Optional<Resume> findByEmailAndTemplateId(String email, UUID templateUuid);
+    @Query("SELECT r FROM Resume r JOIN FETCH r.template WHERE r.email = :email AND r.template.id = :templateId")
+    Optional<Resume> findByEmailAndTemplateId(@Param("email") String email, @Param("templateId") UUID templateId);
+
+    boolean existsByEmailAndTemplateId(String email, UUID uuid);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Resume r set r.status = :status where r.id = :resumeId")
+    void updateStatus(@Param("resumeId") UUID id, @Param("status") Resume.ResumeStatus status);
+
+
+    UUID id(UUID id);
 }
