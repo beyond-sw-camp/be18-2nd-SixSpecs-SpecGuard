@@ -2,7 +2,9 @@ package com.beyond.specguard.crawling.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -16,31 +18,32 @@ import java.util.UUID;
 public class PortfolioResult {
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "CHAR(36)")
     private UUID id;
 
-    // ✅ CrawlingResult 와 1:1 매핑
+    //  CrawlingResult 와 1:1 매핑
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "crawling_result_id", nullable = false,
             foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private CrawlingResult crawlingResult;
 
+
     @Column(name = "processed_contents", columnDefinition = "JSON")
     private String processedContents;
+
 
     @Enumerated(EnumType.STRING)
     @Column(name = "portfolio_status", nullable = false, length = 20)
     private PortfolioStatus portfolioStatus;
 
-    @Column(name = "created_at", nullable = false,
-            updatable = false,
-            columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false,
-            columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     // 상태 업데이트 유틸 메서드

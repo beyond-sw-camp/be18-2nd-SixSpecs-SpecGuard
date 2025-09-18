@@ -54,7 +54,7 @@ public class CrawlingCompletionScheduler {
                 List<CrawlingResult> results = crawlingResultRepository.findByResume_Id(resumeId);
 
                 // ✅ [NLP 호출 위치]
-                // 여기서 results 중 CrawlingStatus == COMPLETED 인 결과만 골라서
+                // 여기서 results 중 CrawlingStatus == COMPLETED 인 결과만 골라서 대신 resume.status가 procession인거는 또 예외로 돌리면 안됌
                 // NLP 서버에 요청을 보내야 함 (저장은 Python 쪽에서 처리)
                 // ex)
                 // for (CrawlingResult result : results) {
