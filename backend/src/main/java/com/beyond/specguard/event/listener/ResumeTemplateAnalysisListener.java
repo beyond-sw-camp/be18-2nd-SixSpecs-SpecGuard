@@ -1,3 +1,4 @@
+/*
 package com.beyond.specguard.event.listener;
 
 import com.beyond.specguard.event.ResumeSubmittedEvent;
@@ -6,8 +7,8 @@ import com.beyond.specguard.event.dto.KeywordRequest;
 import com.beyond.specguard.event.dto.KeywordResponse;
 import com.beyond.specguard.event.dto.SummaryRequest;
 import com.beyond.specguard.event.dto.SummaryResponse;
-import com.beyond.specguard.resume.model.entity.core.CompanyTemplateResponse;
-import com.beyond.specguard.resume.model.entity.core.CompanyTemplateResponseAnalysis;
+import com.beyond.specguard.resume.model.entity.CompanyTemplateResponse;
+import com.beyond.specguard.resume.model.entity.CompanyTemplateResponseAnalysis;
 import com.beyond.specguard.resume.model.repository.CompanyTemplateResponseAnalysisRepository;
 import com.beyond.specguard.resume.model.repository.CompanyTemplateResponseRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,3 +74,4 @@ public class ResumeTemplateAnalysisListener {
         }
     }
 }
+*/

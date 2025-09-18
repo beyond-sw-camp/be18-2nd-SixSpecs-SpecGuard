@@ -4,9 +4,8 @@ import com.beyond.specguard.crawling.entity.CrawlingResult;
 import com.beyond.specguard.crawling.entity.PortfolioResult;
 import com.beyond.specguard.crawling.repository.CrawlingResultRepository;
 import com.beyond.specguard.crawling.repository.PortfolioResultRepository;
-import com.beyond.specguard.resume.model.entity.common.enums.ResumeStatus;
-import com.beyond.specguard.resume.model.entity.core.CompanyTemplateResponseAnalysis;
-import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.CompanyTemplateResponseAnalysis;
+import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.repository.CompanyTemplateResponseAnalysisRepository;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +53,7 @@ public class CrawlingCompletionScheduler {
                 List<CrawlingResult> results = crawlingResultRepository.findByResume_Id(resumeId);
 
                 // ✅ [NLP 호출 위치]
-                // 여기서 results 중 CrawlingStatus == COMPLETED 인 결과만 골라서 대신 resume.status가 procession인거는 또 예외로 돌리면 안됌
+                // 여기서 results 중 CrawlingStatus == COMPLETED 인 결과만 골라서
                 // NLP 서버에 요청을 보내야 함 (저장은 Python 쪽에서 처리)
                 // ex)
                 // for (CrawlingResult result : results) {
@@ -110,16 +109,16 @@ public class CrawlingCompletionScheduler {
 
         if (anyRunning) {
             //  실행 중인 크롤링이 있으면 전체 상태는 PENDING
-            resume.changeStatus(ResumeStatus.PENDING);
+            resume.changeStatus(Resume.ResumeStatus.PENDING);
         } else if (anyFailed) {
             //  실패 있으면 FAILED
-            resume.changeStatus(ResumeStatus.FAILED);
+            resume.changeStatus(Resume.ResumeStatus.FAILED);
         } else if (allCrawlingCompleted && portfolioCompleted && allNlpProcessed) {
             //  전부 완료된 경우에 PROCESSING
-            resume.changeStatus(ResumeStatus.PROCESSING);
+            resume.changeStatus(Resume.ResumeStatus.PROCESSING);
         } else {
             // 애매한거 전부 PENDING
-            resume.changeStatus(ResumeStatus.PENDING);
+            resume.changeStatus(Resume.ResumeStatus.PENDING);
         }
     }
 }

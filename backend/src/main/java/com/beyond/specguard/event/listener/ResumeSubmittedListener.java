@@ -5,9 +5,8 @@ import com.beyond.specguard.crawling.repository.CrawlingResultRepository;
 import com.beyond.specguard.event.client.PythonCrawlerClient;
 import com.beyond.specguard.event.ResumeSubmittedEvent;
 import com.beyond.specguard.githubcrawling.model.service.GitHubService;
-import com.beyond.specguard.resume.model.entity.common.enums.LinkType;
-import com.beyond.specguard.resume.model.entity.core.Resume;
-import com.beyond.specguard.resume.model.entity.core.ResumeLink;
+import com.beyond.specguard.resume.model.entity.Resume;
+import com.beyond.specguard.resume.model.entity.ResumeLink;
 import com.beyond.specguard.resume.model.repository.ResumeLinkRepository;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
@@ -95,7 +94,7 @@ public class ResumeSubmittedListener {
                 }
                 log.error("크롤링 실패 resumeId={}, url={}", resumeId, link.getUrl(), e);
             } finally {
-                if (link.getLinkType() == LinkType.GITHUB && result != null) {
+                if (link.getLinkType() == ResumeLink.LinkType.GITHUB && result != null) {
                     crawlingResultRepository.save(result);
                 }
             }

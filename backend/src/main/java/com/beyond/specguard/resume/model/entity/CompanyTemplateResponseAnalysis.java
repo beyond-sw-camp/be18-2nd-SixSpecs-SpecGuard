@@ -1,4 +1,4 @@
-package com.beyond.specguard.resume.model.entity.core;
+package com.beyond.specguard.resume.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

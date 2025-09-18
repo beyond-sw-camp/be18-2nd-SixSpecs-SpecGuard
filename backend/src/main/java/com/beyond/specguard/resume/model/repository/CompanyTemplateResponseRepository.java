@@ -15,7 +15,5 @@ public interface CompanyTemplateResponseRepository extends JpaRepository<Company
 
     List<CompanyTemplateResponse> findAllByResume_Id(UUID resumeId);
 
-    List<CompanyTemplateResponse> findAllByResume_Id(UUID id);
-
     // Optional<CompanyTemplateResponse> findByResume_IdAndField_Id(UUID resumeId, UUID fieldId);
 }

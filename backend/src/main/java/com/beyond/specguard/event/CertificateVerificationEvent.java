@@ -1,4 +1,5 @@
 package com.beyond.specguard.event;
 
-public record CertificateVerificationEvent() {
-}
+import java.util.UUID;
+
+public record CertificateVerificationEvent(UUID resumeId) { }
