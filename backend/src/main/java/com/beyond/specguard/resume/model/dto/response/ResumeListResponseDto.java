@@ -23,18 +23,20 @@ public record ResumeListResponseDto(
         Integer pageSize
 ) {
     public record Item(
+            UUID templateId,                 //템플릿 ID
             UUID resumeId,                   // 이력서 식별용 ID
             String applicantName,            // 지원자 이름 (성+이니셜도 가능)
             String email,                     // 이메일 (기업 내부 용도, 마스킹 가능)
             String phone,                     // 전화번호 (마스킹 가능)
-            Resume.ResumeStatus status,              // DRAFT, PENDING, SUBMITTED 등
+            Resume.ResumeStatus status,        // DRAFT, PENDING, SUBMITTED 등
             LocalDateTime lastUpdatedAt,      // 최근 업데이트일
             String highestEducation,          // 최종 학력 예: "서울대학교 컴퓨터공학과 BACHELOR"
             Integer totalExperienceYears,     // 총 경력 연차
             String latestPosition,            // 최근 직급/포지션
             List<String> skills,              // 지원자가 작성한 기술/스킬 리스트
             List<String> certifications,      // 자격증 리스트 (선택적)
-            Boolean hasPortfolio              // 포트폴리오/링크 존재 여부
+            Boolean hasPortfolio,              // 포트폴리오/링크 존재 여부
+            Double validationScore              //정합성 점수
     ) {
         public static Item fromEntity(Resume resume) {
             // 학력, 경력, 포트폴리오, 스킬 등 요약
@@ -69,6 +71,7 @@ public record ResumeListResponseDto(
             Boolean hasPortfolio = !resume.getResumeLinks().isEmpty();
 
             return new Item(
+                    resume.getTemplate().getId(),
                     resume.getId(),
                     resume.getResumeBasic() != null ? resume.getName() : "",
                     resume.getResumeBasic() != null ? resume.getEmail() : "",
@@ -80,7 +83,9 @@ public record ResumeListResponseDto(
                     latestPosition,
                     skills,
                     certifications,
-                    hasPortfolio
+                    hasPortfolio,
+                    resume.getValidationResult().getValidationScore()
+
             );
         }
     }

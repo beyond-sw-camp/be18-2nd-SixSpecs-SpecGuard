@@ -40,6 +40,7 @@ import com.beyond.specguard.resume.model.repository.ResumeExperienceRepository;
 import com.beyond.specguard.resume.model.repository.ResumeLinkRepository;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import com.beyond.specguard.resume.model.spec.ResumeSpecification;
+import com.beyond.specguard.validation.model.repository.ValidationResultRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -85,6 +86,7 @@ public class ResumeService {
     private final PasswordEncoder passwordEncoder;
     private final LocalFileStorageService storageService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ValidationResultRepository  validationResultRepository;
 
     private final CompanyTemplateFieldRepository companyTemplateFieldRepository;
     private final CompanyTemplateResponseRepository companyTemplateResponseRepository;

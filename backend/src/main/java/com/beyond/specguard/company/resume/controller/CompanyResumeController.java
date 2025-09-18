@@ -44,6 +44,6 @@ public class CompanyResumeController {
             throw new CustomException(ResumeErrorCode.INVALID_PARAMETER);
         }
         ClientUser clientUser = customUserDetails.getUser();
-        return resumeService.list(pageable, clientUser, status, name, email);
+        return resumeService.list(pageable, clientUser, status, name, email, validationScore);
     }
 }

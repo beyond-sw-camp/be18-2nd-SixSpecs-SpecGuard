@@ -5,7 +5,7 @@ import com.beyond.specguard.certificate.model.dto.CodefVerificationResponse;
 import com.beyond.specguard.certificate.model.entity.CertificateVerification;
 import com.beyond.specguard.certificate.model.repository.CertificateVerificationRepository;
 import com.beyond.specguard.certificate.util.CertificateNumberUtil;
-import com.beyond.specguard.resume.model.entity.core.ResumeCertificate;
+import com.beyond.specguard.resume.model.entity.ResumeCertificate;
 import com.beyond.specguard.resume.model.repository.ResumeCertificateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
