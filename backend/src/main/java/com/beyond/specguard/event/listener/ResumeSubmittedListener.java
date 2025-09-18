@@ -69,7 +69,11 @@ public class ResumeSubmittedListener {
                 crawlingResultRepository.save(result);
 
                 switch (link.getLinkType()) {
-                    case GITHUB -> gitHubService.analyzeGitHubUrl(result.getId());
+                    case GITHUB -> {
+                        log.info("[GITHUB] GitHub 크롤링 시작 resumeId={}, url={}", resumeId, link.getUrl());
+                        gitHubService.analyzeGitHubUrl(result.getId());
+                    }
+
 
                     case VELOG -> {
                         log.info("[VELOG] Python API 호출 시작 resumeId={}, url={}", resumeId, link.getUrl());
@@ -93,10 +97,6 @@ public class ResumeSubmittedListener {
                     crawlingResultRepository.save(result);
                 }
                 log.error("크롤링 실패 resumeId={}, url={}", resumeId, link.getUrl(), e);
-            } finally {
-                if (link.getLinkType() == ResumeLink.LinkType.GITHUB && result != null) {
-                    crawlingResultRepository.save(result);
-                }
             }
         }
     }

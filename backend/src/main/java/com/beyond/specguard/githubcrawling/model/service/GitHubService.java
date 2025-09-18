@@ -2,7 +2,9 @@ package com.beyond.specguard.githubcrawling.model.service;
 
 import com.beyond.specguard.crawling.entity.CrawlingResult;
 import com.beyond.specguard.crawling.entity.CrawlingResult.CrawlingStatus;
+import com.beyond.specguard.crawling.entity.GitHubResumeSummary;
 import com.beyond.specguard.crawling.repository.CrawlingResultRepository;
+import com.beyond.specguard.crawling.repository.GitHubResumeSummaryRepository;
 import com.beyond.specguard.githubcrawling.exception.GitException;
 import com.beyond.specguard.githubcrawling.exception.errorcode.GitErrorCode;
 import com.beyond.specguard.githubcrawling.model.dto.GitHubStatsDto;
@@ -13,8 +15,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import java.io.ByteArrayOutputStream;
 
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.UUID;
+import java.util.zip.GZIPOutputStream;
 
 @Slf4j
 @Service
@@ -24,9 +31,11 @@ public class GitHubService {
     private final CrawlingResultRepository crawlingResultRepository;
     private final GitHubApiClient gitHubApiClient;
     private final ObjectMapper objectMapper;
+    private final GitHubResumeSummaryRepository summaryRepository;
+
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void analyzeGitHubUrl(UUID resultId) {
+    public GitHubStatsDto analyzeGitHubUrl(UUID resultId) {
         CrawlingResult result = crawlingResultRepository.findById(resultId)
                 .orElseThrow(() -> new IllegalStateException("CrawlingResult not found: " + resultId));
 
@@ -45,12 +54,36 @@ public class GitHubService {
 
             // 응답 직렬화
             try {
-                //result.updateContents(objectMapper.writeValueAsString(stats));
+                result.updateContents(objectMapper.writeValueAsString(stats).getBytes());
             } catch (Exception e) {
                 throw new GitException(GitErrorCode.GITHUB_PARSE_ERROR);
             }
 
+            String serialized = objectMapper.writeValueAsString(stats);
+
+            byte[] compressed;
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                 GZIPOutputStream gzipOut = new GZIPOutputStream(baos)) {
+                gzipOut.write(serialized.getBytes(StandardCharsets.UTF_8));
+                gzipOut.finish();
+                compressed = baos.toByteArray();
+            }
+
+            // 5. CrawlingResult 업데이트
+            result.updateContents(compressed);
             result.updateStatus(CrawlingStatus.COMPLETED);
+
+            // 4. GitHubResumeSummary 저장
+            GitHubResumeSummary summary = GitHubResumeSummary.builder()
+                    .resume(result.getResume())
+                    .repositoryCount(stats.getRepositoryCount())
+                    .languageStats(stats.getLanguageStats())
+                    .commitCount(stats.getCommitCount())
+                    .build();
+            summaryRepository.save(summary);
+
+
+            crawlingResultRepository.save(result);
             log.info(" GitHub 크롤링 완료 - resumeId={}, url={}",
                     result.getResume().getId(), result.getResumeLink().getUrl());
 
@@ -68,8 +101,7 @@ public class GitHubService {
                     result.getResume().getId(), result.getResumeLink().getUrl(), e);
             throw new GitException(GitErrorCode.GITHUB_UNKNOWN);
 
-        } finally {
-            crawlingResultRepository.save(result);
         }
+        return null;
     }
 }
