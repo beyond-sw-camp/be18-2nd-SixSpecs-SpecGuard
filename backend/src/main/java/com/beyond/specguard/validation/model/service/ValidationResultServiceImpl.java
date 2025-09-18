@@ -127,24 +127,42 @@ public class ValidationResultServiceImpl implements ValidationResultService{
         //가중치
         var weights = calculateQueryRepository.findWeightsByResume(resumeId);
 
-        
-        double weightedSum = 0.0;
-        double weightTotal = 0.0;
-        for (var w : weights) {
+
+        //정합성 점수 종합
+        int sourceCount = 9;
+        if(githubRepoScore == 0.0){sourceCount--;}
+        if(githubCommitScore == 0.0){sourceCount--;}
+        if(githubKeywordMatch == 0.0){sourceCount--;}
+        if(githubTopicMatch == 0.0){sourceCount--;}
+        if(notionKeywordMatch == 0.0){sourceCount--;}
+        if(velogKeywordMatch == 0.0){sourceCount--;}
+        if(velogPostScore == 0.0){sourceCount--;}
+        if(velogDateScore == 0.0){sourceCount--;}
+        if(certScore == 0.0){sourceCount--;}
+        double sourceDiversityFactor = Math.log(1+sourceCount) / Math.log(9);
+
+        double rawTotal = 0.0;
+        for(var w : weights){
             WeightType wt;
-            try {
+            try{
                 wt = WeightType.valueOf(w.getWeightType());
-            } catch (Exception e) {
-                log.warn("Unknown weight_type: {}", w.getWeightType());
+            }catch(Exception e){
+                throw new IllegalArgumentException("Invalid weight type: " + w.getWeightType());
+            }
+            if(!metrics.containsKey(wt)){
                 continue;
             }
-            if (!metrics.containsKey(wt)) continue; // 미산출 지표는 모수에서 제외
             double weight = Optional.ofNullable(w.getWeightValue()).orElse(0.0);
             double score  = metrics.get(wt);
-            weightedSum += weight * score;
-            weightTotal += weight;
+            rawTotal += weight * score;
         }
-        double finalScore = (weightTotal == 0.0) ? 0.0 : clamp01(weightedSum / weightTotal);
+
+        double adjustedTotal = rawTotal * sourceDiversityFactor;
+        //TODO percentile 계산
+        double finalScore = adjustedTotal * 100;
+
+
+
 
         // 7) 저장 (빌더만)
         Resume resumeRef = em.getReference(Resume.class, resumeId);
@@ -156,7 +174,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
                         .build()
         );
 
-        // 로그용 요약(JSON) – 이후 UI/디버깅에 유용
+        // 로그용 요약(JSON) –
         String keywordListJson;
         try {
             Map<String,Object> summary = new LinkedHashMap<>();
@@ -167,7 +185,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             summary.put("SCORES",  Map.of(
                     "GITHUB_REPO_COUNT", githubRepoScore,
                     "GITHUB_COMMIT_COUNT", githubCommitScore,
-                    "GITHUB_KETWORD_MATCH", githubKeywordMatch,
+                    "GITHUB_KEYWORD_MATCH", githubKeywordMatch,
                     "GITHUB_TOPIC_MATCH", githubTopicMatch,
                     "NOTION_KEYWORD_MATCH", notionKeywordMatch,
                     "VELOG_KEYWORD_MATCH", velogKeywordMatch,
