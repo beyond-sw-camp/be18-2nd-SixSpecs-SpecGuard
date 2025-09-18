@@ -69,4 +69,10 @@ public class GitHubResumeSummary {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public void updateStats(int repositoryCount, Map<String, Integer> languageStats, int commitCount) {
+        this.repositoryCount = repositoryCount;
+        this.languageStats = languageStats;
+        this.commitCount = commitCount;
+    }
 }
