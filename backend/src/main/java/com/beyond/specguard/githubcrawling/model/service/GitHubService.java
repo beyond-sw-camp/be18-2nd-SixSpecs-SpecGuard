@@ -73,11 +73,8 @@ public class GitHubService {
 // LONGBLOB 컬럼에 그대로 저장
             result.updateContents(compressed);
 
-            //압축 결과 저장
-            result.updateContents(compressed);
-
             // 5. CrawlingResult 업데이트
-            result.updateContents(compressedBase64);
+            result.updateContents(compressed);
             result.updateStatus(CrawlingResult.CrawlingStatus.COMPLETED);
 
             crawlingResultRepository.save(result);

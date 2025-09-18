@@ -35,9 +35,9 @@ import java.util.UUID;
                 columnNames = {"resume_id"}
         )
 )
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class GitHubResumeSummary {
     @Id
