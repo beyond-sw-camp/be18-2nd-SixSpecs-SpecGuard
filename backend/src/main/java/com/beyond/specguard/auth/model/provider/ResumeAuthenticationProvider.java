@@ -3,7 +3,7 @@ package com.beyond.specguard.auth.model.provider;
 import com.beyond.specguard.resume.model.dto.request.ResumeLoginRequestDto;
 import com.beyond.specguard.resume.model.service.ResumeDetails;
 import com.beyond.specguard.auth.model.token.ApplicantAuthenticationToken;
-import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;

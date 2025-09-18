@@ -1,9 +1,8 @@
 package com.beyond.specguard.resume.model.repository;
 
-import com.beyond.specguard.resume.model.entity.core.ResumeCertificate;
+import com.beyond.specguard.resume.model.entity.ResumeCertificate;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 

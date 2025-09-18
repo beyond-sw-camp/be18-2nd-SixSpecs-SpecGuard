@@ -1,5 +1,7 @@
 package com.beyond.specguard.resume.model.dto.request;
 
+import com.beyond.specguard.resume.model.entity.Resume;
+import com.beyond.specguard.resume.model.entity.ResumeCertificate;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -30,4 +32,15 @@ public record ResumeCertificateUpsertRequest(
         @Schema(description = "자격증 URL(선택)", example = "https://verify.example.com/xxx")
         String certUrl
 ) {
+        public ResumeCertificate toEntity(Resume resume) {
+                return ResumeCertificate.builder()
+                        .certificateName(certificateName)
+                        .certificateNumber(certificateNumber)
+                        .issuer(issuer)
+                        .issuedDate(issuedDate)
+                        .certUrl(certUrl)
+                        .id(id)
+                        .resume(resume)
+                        .build();
+        }
 }

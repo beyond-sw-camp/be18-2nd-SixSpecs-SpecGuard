@@ -10,4 +10,6 @@ public interface CompanyTemplateFieldRepository extends JpaRepository<CompanyTem
     List<CompanyTemplateField> findAllByTemplate_Id(UUID templateId);
 
     void deleteAllByTemplate_Id(UUID templateId);
+
+    UUID id(UUID id);
 }
