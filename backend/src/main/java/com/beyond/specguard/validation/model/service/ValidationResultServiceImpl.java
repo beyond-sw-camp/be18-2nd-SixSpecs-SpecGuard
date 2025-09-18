@@ -190,7 +190,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
                     "NOTION_KEYWORD_MATCH", notionKeywordMatch,
                     "VELOG_KEYWORD_MATCH", velogKeywordMatch,
                     "VELOG_POST_COUNT", velogPostScore,
-                    "VELOG_RECENT_ACTIVITY", velogDateCount,
+                    "VELOG_RECENT_ACTIVITY", velogDateScore,
                     "CERTIFICATE_MATCH", certScore,
                     "FINAL", finalScore
             ));

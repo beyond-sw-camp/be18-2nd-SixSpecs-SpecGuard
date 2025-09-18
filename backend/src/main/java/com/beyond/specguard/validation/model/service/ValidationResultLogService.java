@@ -9,5 +9,5 @@ import java.util.UUID;
 
 public interface ValidationResultLogService {
     List<ValidationResultLogResponseDto> getLogsByResumeId(ClientUser clientUser, UUID resumeId);
-
+    ValidationResultLogResponseDto updateComment(ClientUser clientUser, UUID logId, String comment);
 }

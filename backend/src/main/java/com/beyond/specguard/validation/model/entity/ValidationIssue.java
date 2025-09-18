@@ -21,12 +21,14 @@ public class ValidationIssue {
     @Column(length = 36, columnDefinition = "CHAR(36)")
     private UUID id;
 
+    @Enumerated(EnumType.STRING)
     @Column(name="issue_type", nullable = false)
     private IssueType issueType;
 
     @Column(name="issue_description", columnDefinition = "TEXT", nullable = true)
     private String issueDescription;
 
+    @Enumerated(EnumType.STRING)
     @Column(name="severity", nullable = false)
     private Severity severity;
 

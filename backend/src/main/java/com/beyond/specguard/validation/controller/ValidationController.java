@@ -2,6 +2,7 @@ package com.beyond.specguard.validation.controller;
 
 import com.beyond.specguard.company.common.model.entity.ClientUser;
 import com.beyond.specguard.company.common.model.service.CustomUserDetails;
+import com.beyond.specguard.validation.model.dto.request.UpdateValidationCommentRequestDto;
 import com.beyond.specguard.validation.model.dto.request.ValidationCalculateRequestDto;
 import com.beyond.specguard.validation.model.dto.response.ValidationResultLogResponseDto;
 import com.beyond.specguard.validation.model.entity.ValidationResultLog;
@@ -31,7 +32,6 @@ public class ValidationController {
 
     private final ValidationResultService validationResultService;
     private final ValidationResultLogService validationResultLogService;
-//    private final ValidationIssueService validationIssueService;
 
 
     @Operation(
@@ -65,6 +65,28 @@ public class ValidationController {
         var logs = validationResultLogService.getLogsByResumeId(clientUser, resumeId);
         return ResponseEntity.ok(logs);
     }
+
+
+    @Operation(
+            summary = "정합성 로그 코멘트 수정 API",
+            description = "특정 정합성 로그의 Comment를 작성합니다."
+    )
+    @PreAuthorize("hasAnyRole('OWNER','MANAGER')")
+    @PatchMapping("/logs/{logId}/comment")
+    public ResponseEntity<ValidationResultLogResponseDto> updateComment(
+            @PathVariable UUID logId,
+            @Valid @RequestBody UpdateValidationCommentRequestDto request,
+            Authentication authentication
+    ) {
+        ClientUser clientUser = getClientUser(authentication);
+        var dto = validationResultLogService.updateComment(clientUser, logId, request.getComment());
+        return ResponseEntity.ok(dto);
+    }
+
+
+
+
+
 
     private ClientUser getClientUser(Authentication authentication) {
         return ((CustomUserDetails) authentication.getPrincipal()).getUser();

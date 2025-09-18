@@ -7,6 +7,7 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -51,8 +52,15 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
          WHERE rl.resume_id = :resumeId
            AND rl.link_type = 'GITHUB'
         """, nativeQuery = true)
-    Map<String, Object> sumGithubStats(@Param("resumeId") UUID resumeId);
+    Object[] sumGithubStatsRaw(@Param("resumeId") String resumeId);
 
+    default Map<String, Object> sumGithubStats(UUID resumeId) {
+        Object[] row = sumGithubStatsRaw(resumeId.toString());
+        Map<String, Object> m = new HashMap<>();
+        m.put("repoSum",   ((Number) row[0]).intValue());
+        m.put("commitSum", ((Number) row[1]).intValue());
+        return m;
+    }
 
     // 자격증 검증 집계
     @Query(value = """
@@ -63,8 +71,15 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
         JOIN resume_certificate rc ON rc.id = cv.certificate_id
        WHERE rc.resume_id = :resumeId
         """, nativeQuery = true)
-    Map<String, Object> countCertificateVerification(@Param("resumeId") UUID resumeId);
+    Object[] countCertificateVerificationRaw(@Param("resumeId") String resumeId);
 
+    default Map<String, Object> countCertificateVerification(UUID resumeId) {
+        Object[] row = countCertificateVerificationRaw(resumeId.toString());
+        Map<String, Object> m = new HashMap<>();
+        m.put("completed", ((Number) row[0]).intValue());
+        m.put("failed",    ((Number) row[1]).intValue());
+        return m;
+    }
 
     // 가중치 조회: resume → company_template → evaluation_profile → evaluation_weight
     interface WeightRow {

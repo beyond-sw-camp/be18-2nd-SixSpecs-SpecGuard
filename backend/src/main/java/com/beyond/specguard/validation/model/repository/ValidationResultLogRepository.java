@@ -4,6 +4,7 @@ import com.beyond.specguard.validation.model.dto.response.ValidationResultLogRes
 import com.beyond.specguard.validation.model.entity.ValidationResultLog;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
@@ -23,16 +24,21 @@ public interface ValidationResultLogRepository extends JpaRepository<ValidationR
     """)
     List<ValidationResultLogResponseDto> findAllDtosByResumeId(@Param("resumeId") UUID resumeId);
 
-//    //최신 로그 keyword_list(JSON)만 가져오기
-//    @Query(value = """
-//        SELECT l.keyword_list
-//          FROM validation_result_log l
-//          JOIN validation_result vr ON l.validation_result_id = vr.id
-//         WHERE vr.resume_id = :resumeId
-//         ORDER BY l.validated_at DESC
-//         LIMIT 1
-//        """, nativeQuery = true)
-//    Optional<String> findLatestKeywordListJson(@Param("resumeId") UUID resumeId);
 
+    //코멘트
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update ValidationResultLog l set l.descriptionComment = :comment where l.id = :logId")
+    int updateDescriptionComment(@Param("logId") UUID logId, @Param("comment") String comment);
+
+    @Query("""
+    select new com.beyond.specguard.validation.model.dto.response.ValidationResultLogResponseDto(
+        l.id, r.id, l.validationScore, l.validatedAt, l.descriptionComment
+    )
+    from ValidationResultLog l
+    join l.validationResult vr
+    join vr.resume r
+    where l.id = :logId
+    """)
+    Optional<ValidationResultLogResponseDto> findDtoByLogId(@Param("logId") UUID logId);
 
 }
