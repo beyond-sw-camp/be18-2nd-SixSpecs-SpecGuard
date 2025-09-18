@@ -75,10 +75,9 @@ public class EvaluationWeight {
 
     public enum WeightType {
         GITHUB_REPO_COUNT,
-        GITHUB_COMMIT_FREQUENCY,
+        GITHUB_COMMIT_COUNT,
         GITHUB_TOPIC_MATCH,
-        GITHUB_CONSISTENCY,
-        NOTION_PROJECT_COUNT,
+        GITHUB_KEYWORD_MATCH,
         NOTION_KEYWORD_MATCH,
         VELOG_POST_COUNT,
         VELOG_RECENT_ACTIVITY,

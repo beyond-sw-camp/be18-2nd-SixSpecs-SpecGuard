@@ -38,9 +38,6 @@ public class ValidationResultLog {
     @Column(name = "validation_resume_portfolio", nullable = true)
     private Double validationResumePortfolio;
 
-    @Column(name = "summary", columnDefinition = "TEXT", nullable = true)
-    private String summary;
-
     @Column(name = "keyword_list", columnDefinition = "TEXT", nullable = true)
     private String keywordList;
 

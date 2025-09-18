@@ -25,14 +25,12 @@ public class ValidationResultLogResponseDto {
             UUID id,
             UUID resumeId,
             Double validationScore,
-            String summary,
             LocalDateTime validatedAt,
             String descriptionComment
     ) {
         this.id = id;
         this.resumeId = resumeId;
         this.validationScore = validationScore;
-        this.summary = summary;
         this.validatedAt = validatedAt;
         this.descriptionComment = descriptionComment;
     }
