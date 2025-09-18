@@ -19,13 +19,20 @@ public class KeywordUtils {
 
     private static String normalizeToken(String s) {
         if (s == null) return "";
+        //유니코드 정규화
         String x = Normalizer.normalize(s, Normalizer.Form.NFKC).trim();
+        //문장부호 공백 처리
         x = SEP.matcher(x).replaceAll(" ");
+        //공백 하나로
         x = x.replaceAll("\\s+", " ");
+        //소문자로
         return x.toLowerCase(Locale.ROOT);
     }
 
-    /** {"keywords":[...]} 또는 배열/문자열을 키워드 집합으로 */
+    //GITHUB_KEYWORD_MATCH
+    //NOTION_KEYWORD_MATCH
+    //VELOG_KEYWORD_MATCH
+    //{"keywords":[...]} 또는 배열/문자열을 키워드 집합으로
     public static Set<String> parseKeywords(String jsonOrArray) {
         if (jsonOrArray == null || jsonOrArray.isBlank()) return Set.of();
         try {
@@ -54,7 +61,8 @@ public class KeywordUtils {
         }
     }
 
-    /** {"tech":[...]} 또는 배열을 기술셋으로 파싱(GitHub 토픽 매칭) */
+    //GITHUB_TOPIC_MATCH
+    //{"tech":[...]} 또는 배열을 기술셋으로 파싱
     public static Set<String> parseTech(String json) {
         if (json == null || json.isBlank()) return Set.of();
         try {
@@ -76,7 +84,8 @@ public class KeywordUtils {
         }
     }
 
-    /** {"count":[ "12" ]} 같은 포맷을 정수로 (없으면 0) */
+    //VELOG_POST_COUNT
+    // {"count":[ "12" ]} 같은 포맷을 정수로 (없으면 0)
     public static int parseCount(String json) {
         if (json == null || json.isBlank()) return 0;
         try {
@@ -96,7 +105,28 @@ public class KeywordUtils {
         }
     }
 
-    /** 자카드 유사도 */
+    //VELOG_RECENT_ACTIVITY
+    //datecount
+    public static int dateCount(String json) {
+        if (json == null || json.isBlank()) return 0;
+        try{
+            JsonNode root = OM.readTree(json);
+            JsonNode node = root.get("datecount");
+            if(node != null&& node.isArray() && node.size() > 0){
+                JsonNode v = node.get(0);
+                if (v.isInt()) return v.asInt();
+                if (v.isTextual()) {
+                    String digits = v.asText().replaceAll("[^0-9]", "");
+                    if (!digits.isEmpty()) return Integer.parseInt(digits);
+                }
+            }return 0;
+        }catch(Exception e){
+            return 0;
+        }
+    }
+
+    // 자카드 유사도
+    //두 집합의 교집합 크기를 합집합 크기로 나눈 값
     public static double jaccard(Set<String> a, Set<String> b) {
         if (a.isEmpty() && b.isEmpty()) return 1.0;
         if (a.isEmpty() || b.isEmpty()) return 0.0;

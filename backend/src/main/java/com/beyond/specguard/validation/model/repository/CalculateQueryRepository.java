@@ -28,7 +28,7 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
     List<String> findTemplateAnalysisKeywordsJson(@Param("resumeId") UUID resumeId);
 
     // 플랫폼별 포트폴리오 정제 JSON 목록 (최신순)
-    // portfolio_result → crawling_result → resume_link(link_type)
+    // portfolio_result -> crawling_result -> resume_link.link_type
     @Query(value = """
         SELECT pr.processed_contents
           FROM portfolio_result pr
