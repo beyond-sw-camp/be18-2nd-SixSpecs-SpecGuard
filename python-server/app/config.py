@@ -9,6 +9,13 @@ class Settings(BaseSettings):
     UPLOAD_DIR: Path = Path(__file__).resolve().parent / "uploads"         # 업로드 저장 폴더
     ENV: str = "dev"                         # 환경 표기(선택)
 
+    # === MariaDB 환경변수 추가 ===
+    MARIADB_USER: str
+    MARIADB_PASSWORD: str
+    MARIADB_HOST: str
+    MARIADB_PORT: int
+    MARIADB_DB: str
+
     # BaseSettings 동작 설정: .env 사용, 대소문자 구분 X
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
 
