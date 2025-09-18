@@ -141,7 +141,7 @@ public class ResumeService {
 
     //지원서 목록 조회에서 list
     @Transactional(readOnly = true)
-    public ResumeListResponseDto list(Pageable pageable, ClientUser clientUser, Resume.ResumeStatus status, String name, String email) {
+    public ResumeListResponseDto list(UUID templeteId, Pageable pageable, ClientUser clientUser, Resume.ResumeStatus status, String name, String email) {
         UUID companyId = clientUser.getCompany().getId();
 
         Specification<Resume> spec = Specification.allOf(

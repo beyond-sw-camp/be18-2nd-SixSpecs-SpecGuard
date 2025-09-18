@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.UUID;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/company/resumes")
@@ -35,6 +37,7 @@ public class CompanyResumeController {
     @GetMapping("/list")
     public ResumeListResponseDto list(
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            @RequestParam(required = false) UUID templateId,
             @RequestParam(required = false) Resume.ResumeStatus status,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String email,
@@ -44,6 +47,6 @@ public class CompanyResumeController {
             throw new CustomException(ResumeErrorCode.INVALID_PARAMETER);
         }
         ClientUser clientUser = customUserDetails.getUser();
-        return resumeService.list(pageable, clientUser, status, name, email, validationScore);
+        return resumeService.list(templateId, pageable, clientUser, status, name, email);
     }
 }
