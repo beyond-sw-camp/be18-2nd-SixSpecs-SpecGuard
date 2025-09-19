@@ -47,7 +47,7 @@ async def extract_keywrods_with_resume_id(resume_id: str):
         for row in rows:
 
             if row.crawling_status == "FAILED" or row.crawling_status == "NOTEXISTED":
-                insert_failed_data(session, row)
+                await insert_failed_data(session, row)
                 continue
 
 
@@ -68,7 +68,6 @@ async def extract_keywrods_with_resume_id(resume_id: str):
                         "dateCount": int(await extract_dateCount(dumped_data)),
                     }
                 elif row.link_type == "GITHUB":
-                    print("GITHUB")
                     dumped_data = json.dumps(data_json["repoReadme"], indent=2, ensure_ascii=False)
                     processed_data = {
                         "keywords": await extract_keywords(dumped_data),
@@ -88,16 +87,8 @@ async def extract_keywrods_with_resume_id(resume_id: str):
 
             except Exception as e:
                 # 지원하지 않는 타입
-                    processed_data = {}
-                    status = "FAILED"
-                    await session.execute(
-                        SQL_INSERT_PORTFOLIO_RESULT,
-                        {
-                            "crawling_result_id": row.crawling_result_id,
-                            "processed_contents": json.dumps(processed_data, ensure_ascii=False),
-                            "status": status
-                        }
-                    )
+                    print(e)
+                    await insert_failed_data(session, row)
                     continue
             
             # 4. portfolio_result 삽입
@@ -148,7 +139,7 @@ async def extract_dateCount(text: str) -> list:
 
 async def extract_keywords(text: str, type="기술 키워드") -> list:
     prompt = f"""
-    다음 텍스트에서 {type} 위주로 최대한 많이 뽑아줘.
+    다음 텍스트에서 {type} 위주로 모두 뽑아줘.
     - 출력은 JSON 배열 형식으로만 반환해.
     - 예시: ["AI", "백엔드", "Docker", "라즈베리파이", "MQTT"]
     - 코드 블록 표시(````json`, ```), 설명 문장, 줄바꿈 같은 건 절대 포함하지 마.
