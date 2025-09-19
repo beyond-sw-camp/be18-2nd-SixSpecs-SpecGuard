@@ -62,6 +62,9 @@ dependencies {
 
     //스케줄러
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+    // Jsoup (HTML 파싱)
+    implementation 'org.jsoup:jsoup:1.16.1'
 }
 
 

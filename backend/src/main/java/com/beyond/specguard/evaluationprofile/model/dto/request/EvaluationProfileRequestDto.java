@@ -1,6 +1,6 @@
 package com.beyond.specguard.evaluationprofile.model.dto.request;
 
-import com.beyond.specguard.auth.model.entity.ClientCompany;
+import com.beyond.specguard.company.common.model.entity.ClientCompany;
 import com.beyond.specguard.evaluationprofile.model.entity.EvaluationProfile;
 import com.beyond.specguard.evaluationprofile.model.entity.EvaluationWeight;
 import jakarta.validation.constraints.DecimalMax;

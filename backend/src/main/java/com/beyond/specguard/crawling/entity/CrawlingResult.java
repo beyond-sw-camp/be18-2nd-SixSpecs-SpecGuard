@@ -22,7 +22,7 @@ import java.util.UUID;
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class CrawlingResult {
 
     @Id
@@ -51,8 +51,8 @@ public class CrawlingResult {
     private CrawlingStatus crawlingStatus;
 
     @Lob
-    @Column(name = "contents", columnDefinition = "LONGTEXT") // MariaDB 기준
-    private String contents;
+    @Column(name = "contents", columnDefinition = "LONGBLOB") // MariaDB 기준
+    private byte[] contents;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -73,6 +73,7 @@ public class CrawlingResult {
         PENDING,
         RUNNING,
         FAILED,
+        NOTEXSITED,
         COMPLETED
     }
 
@@ -83,7 +84,7 @@ public class CrawlingResult {
         this.crawlingStatus = crawlingStatus != null ? crawlingStatus : CrawlingStatus.PENDING;
     }
 
-    public void updateContents(String contents) {
+    public void updateContents(byte[] contents) {
         this.contents = contents;
     }
 

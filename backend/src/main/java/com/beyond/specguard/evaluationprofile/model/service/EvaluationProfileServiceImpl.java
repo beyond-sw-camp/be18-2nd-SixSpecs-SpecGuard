@@ -1,8 +1,8 @@
 package com.beyond.specguard.evaluationprofile.model.service;
 
-import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
+import com.beyond.specguard.company.common.model.entity.ClientUser;
 import com.beyond.specguard.evaluationprofile.exception.errorcode.EvaluationProfileErrorCode;
 import com.beyond.specguard.evaluationprofile.model.dto.command.CreateEvaluationProfileCommand;
 import com.beyond.specguard.evaluationprofile.model.dto.command.CreateEvaluationWeightCommand;
@@ -110,8 +110,8 @@ public class EvaluationProfileServiceImpl implements EvaluationProfileService {
                 .build();
     }
 
-    @Override
     @Transactional
+    @Override
     public void deleteProfile(ClientUser user, UUID profileId) {
         // 1. 조회
         EvaluationProfile profile = evaluationProfileRepository.findById(profileId)
