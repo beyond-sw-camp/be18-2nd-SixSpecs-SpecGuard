@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UpdateValidationCommentRequestDto {
+public class ValidationLogCommentRequestDto {
 
     @Size(max = 200, message=" 코멘트는 최대 200자까지 작성 가능합니다.")
     private String comment;

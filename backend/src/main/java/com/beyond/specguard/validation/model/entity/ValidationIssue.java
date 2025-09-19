@@ -3,6 +3,8 @@ package com.beyond.specguard.validation.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.UUID;
 
@@ -19,6 +21,7 @@ public class ValidationIssue {
     @Id
     @GeneratedValue(strategy= GenerationType.UUID)
     @Column(length = 36, columnDefinition = "CHAR(36)")
+    @JdbcTypeCode(SqlTypes.CHAR)
     private UUID id;
 
     @Enumerated(EnumType.STRING)

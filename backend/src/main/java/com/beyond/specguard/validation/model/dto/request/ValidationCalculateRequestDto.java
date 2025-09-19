@@ -1,5 +1,6 @@
 package com.beyond.specguard.validation.model.dto.request;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,5 +13,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class ValidationCalculateRequestDto{
+    @NotNull
     private UUID resumeId;
 }

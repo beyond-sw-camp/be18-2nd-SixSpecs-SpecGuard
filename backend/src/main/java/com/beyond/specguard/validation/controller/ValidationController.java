@@ -2,11 +2,9 @@ package com.beyond.specguard.validation.controller;
 
 import com.beyond.specguard.company.common.model.entity.ClientUser;
 import com.beyond.specguard.company.common.model.service.CustomUserDetails;
-import com.beyond.specguard.validation.model.dto.request.UpdateValidationCommentRequestDto;
+import com.beyond.specguard.validation.model.dto.request.ValidationLogCommentRequestDto;
 import com.beyond.specguard.validation.model.dto.request.ValidationCalculateRequestDto;
 import com.beyond.specguard.validation.model.dto.response.ValidationResultLogResponseDto;
-import com.beyond.specguard.validation.model.entity.ValidationResultLog;
-import com.beyond.specguard.validation.model.service.ValidationIssueService;
 import com.beyond.specguard.validation.model.service.ValidationResultLogService;
 import com.beyond.specguard.validation.model.service.ValidationResultService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,7 +12,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -44,7 +41,7 @@ public class ValidationController {
             @Valid @RequestBody ValidationCalculateRequestDto request,
             Authentication authentication
     ) {
-        ClientUser clientUser = ((CustomUserDetails) authentication.getPrincipal()).getUser();
+        ClientUser clientUser = getClientUser(authentication);
         UUID resultId = validationResultService.calculateAndSave(clientUser, request);
         return ResponseEntity.ok(resultId);
     }
@@ -62,8 +59,7 @@ public class ValidationController {
             Authentication authentication
     ) {
         ClientUser clientUser = getClientUser(authentication);
-        var logs = validationResultLogService.getLogsByResumeId(clientUser, resumeId);
-        return ResponseEntity.ok(logs);
+        return ResponseEntity.ok(validationResultLogService.getLogsByResumeId(clientUser, resumeId));
     }
 
 
@@ -73,14 +69,14 @@ public class ValidationController {
     )
     @PreAuthorize("hasAnyRole('OWNER','MANAGER')")
     @PatchMapping("/logs/{logId}/comment")
-    public ResponseEntity<ValidationResultLogResponseDto> updateComment(
+    public ResponseEntity<Void> updateComment(
             @PathVariable UUID logId,
-            @Valid @RequestBody UpdateValidationCommentRequestDto request,
+            @Valid @RequestBody ValidationLogCommentRequestDto body,
             Authentication authentication
     ) {
         ClientUser clientUser = getClientUser(authentication);
-        var dto = validationResultLogService.updateComment(clientUser, logId, request.getComment());
-        return ResponseEntity.ok(dto);
+        validationResultLogService.updateComment(clientUser, logId, body.getComment());
+        return ResponseEntity.noContent().build();
     }
 
 

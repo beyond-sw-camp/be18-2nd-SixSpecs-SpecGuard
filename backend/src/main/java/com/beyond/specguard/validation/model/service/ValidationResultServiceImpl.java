@@ -1,9 +1,9 @@
 package com.beyond.specguard.validation.model.service;
-import com.beyond.specguard.evaluationprofile.model.entity.EvaluationWeight;
-import com.beyond.specguard.evaluationprofile.model.entity.EvaluationWeight.WeightType;
+
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
 import com.beyond.specguard.company.common.model.entity.ClientUser;
+import com.beyond.specguard.evaluationprofile.model.entity.EvaluationWeight.WeightType;
 import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.entity.ResumeLink;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
@@ -18,16 +18,13 @@ import com.beyond.specguard.validation.model.repository.ValidationResultReposito
 import com.beyond.specguard.validation.util.KeywordUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.naming.AuthenticationException;
-import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.*;
 

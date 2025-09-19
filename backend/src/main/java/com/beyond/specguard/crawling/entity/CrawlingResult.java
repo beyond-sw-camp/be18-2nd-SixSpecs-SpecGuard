@@ -73,7 +73,8 @@ public class CrawlingResult {
         PENDING,
         RUNNING,
         FAILED,
-        COMPLETED
+        COMPLETED,
+        NOTEXISTED
     }
 
     @Builder

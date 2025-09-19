@@ -26,7 +26,7 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
           JOIN company_template_response ctr ON ctr.id = cra.response_id
          WHERE ctr.resume_id = :resumeId
         """, nativeQuery = true)
-    List<String> findTemplateAnalysisKeywordsJson(@Param("resumeId") String resumeId);
+    List<String> findTemplateAnalysisKeywordsJson(@Param("resumeId") UUID resumeId);
 
     // 플랫폼별 포트폴리오 정제 JSON 목록 (최신순)
     // portfolio_result -> crawling_result -> resume_link.link_type
@@ -39,7 +39,7 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
            AND rl.link_type = :linkType
          ORDER BY pr.created_at DESC
         """, nativeQuery = true)
-    List<String> findProcessedContentsByPlatform(@Param("resumeId") String resumeId,
+    List<String> findProcessedContentsByPlatform(@Param("resumeId") UUID resumeId,
                                                  @Param("linkType") String linkType);
 
 
@@ -52,7 +52,7 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
          WHERE rl.resume_id = :resumeId
            AND rl.link_type = 'GITHUB'
         """, nativeQuery = true)
-    Object[] sumGithubStatsRaw(@Param("resumeId") String resumeId);
+    Object[] sumGithubStatsRaw(@Param("resumeId") UUID resumeId);
 
     // 자격증 검증 집계
     @Query(value = """
@@ -63,7 +63,7 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
         JOIN resume_certificate rc ON rc.id = cv.certificate_id
        WHERE rc.resume_id = :resumeId
         """, nativeQuery = true)
-    Object[] countCertificateVerificationRaw(@Param("resumeId") String resumeId);
+    Object[] countCertificateVerificationRaw(@Param("resumeId") UUID resumeId);
 
     // 가중치 조회: resume → company_template → evaluation_profile → evaluation_weight
     interface WeightRow {
@@ -78,23 +78,26 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
           JOIN evaluation_weight ew ON ew.evaluation_profile_id = ep.id
          WHERE r.id = :resumeId
         """, nativeQuery = true)
-    List<WeightRow> findWeightsByResume(@Param("resumeId") String resumeId);
-
+    List<WeightRow> findWeightsByResume(@Param("resumeId") UUID resumeId);
 
 
     default Map<String, Object> sumGithubStats(UUID resumeId) {
-        Object[] row = sumGithubStatsRaw(resumeId.toString());
+        Object[] row = sumGithubStatsRaw(resumeId);
         Map<String, Object> m = new HashMap<>();
         m.put("repoSum",   ((Number) row[0]).intValue());
         m.put("commitSum", ((Number) row[1]).intValue());
         return m;
     }
     default Map<String, Object> countCertificateVerification(UUID resumeId) {
-        Object[] row = countCertificateVerificationRaw(resumeId.toString());
+        Object[] row = countCertificateVerificationRaw(resumeId);
         Map<String, Object> m = new HashMap<>();
         m.put("completed", ((Number) row[0]).intValue());
         m.put("failed",    ((Number) row[1]).intValue());
         return m;
     }
+
+
+
+
 
 }
