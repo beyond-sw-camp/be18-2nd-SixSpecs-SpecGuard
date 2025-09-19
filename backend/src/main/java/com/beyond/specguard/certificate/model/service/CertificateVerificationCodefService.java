@@ -36,6 +36,15 @@ public class CertificateVerificationCodefService implements CertificateVerificat
         // 자격증이 없으면 return
         if (resumeCertificates.isEmpty()) {
             log.info("[CertificateVerification] 자격증 없음 - resumeId={}", resumeId);
+
+            CertificateVerification verification = CertificateVerification.builder()
+                    .verificationSource("CODEF")
+                    .resumeCertificate(null)
+                    .status(CertificateVerification.Status.NOTEXISTED)
+                    .build();
+
+            verificationRepository.save(verification);
+            log.info("[CertificateVerification] NONEXISTED 상태 저장 - resumeId={}", resumeId);
             return;
         }
 

@@ -37,7 +37,7 @@ public class CertificateVerification {
     private UUID id; // UUID
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "certificate_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name = "certificate_id", nullable = true, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private ResumeCertificate resumeCertificate;
 
     @Enumerated(EnumType.STRING)
@@ -84,6 +84,6 @@ public class CertificateVerification {
     }
 
     public enum Status {
-        PENDING, COMPLETED, FAILED
+        PENDING, COMPLETED, FAILED, NOTEXISTED
     }
 }

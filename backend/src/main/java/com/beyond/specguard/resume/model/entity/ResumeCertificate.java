@@ -50,16 +50,16 @@ public class ResumeCertificate {
     private Resume resume;
 
     //자격증 명
-    @Column(name = "certificate_name", nullable = false, length = 255)
+    @Column(name = "certificate_name", nullable = true, length = 255)
     private String certificateName;
 
 
     //자격증 발급 번호
-    @Column(name = "certificate_number", nullable = false, length = 255)
+    @Column(name = "certificate_number", nullable = true, length = 255)
     private String certificateNumber;
 
     //발행자
-    @Column(name="issuer", nullable = false, length = 255)
+    @Column(name="issuer", nullable = true, length = 255)
     private String issuer;
 
 
