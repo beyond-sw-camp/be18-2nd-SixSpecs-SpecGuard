@@ -1,12 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List
 
-# === 기존 파일 업로드 관련 ===
-class UploadResult(BaseModel):
-    file_id: str = Field(..., example="123e4567-e89b-12d3-a456-426614174000")   # 저장 후 부여한 ID
-    filename: str = Field(..., example="resume.pdf")                            # 원본 파일명
-    size: int = Field(..., example=2048)                                        # 바이트 크기
-
 # === NLP 요청 공통 ===
 class NLPBaseRequest(BaseModel):
     type: str = Field(
@@ -21,13 +15,18 @@ class NLPBaseRequest(BaseModel):
         example="저는 전자공학을 전공하며 자율주행 프로젝트에 참여했습니다."
     )
 
+class BaseResponse(BaseModel):
+    status: str = Field(..., example="success")
+    data: dict = Field(...)
+
 # === 요약 API ===
 class SummaryRequest(NLPBaseRequest):
     pass
 
 class SummaryResponse(BaseModel):
-    type: str = Field(..., example="resume")
-    summary: str = Field(
+    type: str = Field(..., example="resume"),
+    status: str = Field(..., example="success")
+    data: str = Field(
         ...,
         example="전자공학 전공자로서 자율주행 프로젝트 경험이 있습니다."
     )
@@ -42,6 +41,10 @@ class KeywordResponse(BaseModel):
         ...,
         example=["라즈베리파이", "YOLO", "자율주행", "임베디드", "MQTT"]
     )
+
+class CrawlingRequest(BaseModel):
+    resumeId: str
+    
 
 # === 에러 응답 ===
 class ErrorResponse(BaseModel):

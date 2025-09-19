@@ -2,25 +2,23 @@ import platform
 from fastapi import FastAPI, Request
 from app.core.errors import install_error_handlers
 from app.routers.velog import router as velog_router
-import sys, asyncio 
+from app.routers.crawlingResult import router as crawling_router
+import sys, asyncio
 from dotenv import load_dotenv; load_dotenv()
-from app.config import settings
-from app.routes import summary, keywords   # ✅ keywords 라우터 추가
-import requests
+from app.routers import summary, keywords   # ✅ keywords 라우터 추가
 
-# 환경 변수 로드
-API_KEY = settings.GEMINI_API_KEY.get_secret_value()
+app = FastAPI(title="SpecGuard Python API", version="1.3.0")
 
 # 라우터 등록
 app.include_router(summary.router)
 app.include_router(keywords.router)
 
-app = FastAPI(title="SpecGuard Python API", version="1.3.0")
 
 # 전역 에러 핸들러 설치
 install_error_handlers(app)
 
 app.include_router(velog_router)
+app.include_router(crawling_router)
 
 if sys.platform.startswith("win"):
     try:
