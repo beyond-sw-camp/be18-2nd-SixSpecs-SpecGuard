@@ -15,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CompanyTemplateListResponseDto {
     @JsonProperty("templates")
-    private List<CompanyTemplateResponseDto.BasicDto> companyTemplateResponse;
+    private List<CompanyTemplateResponseDto> companyTemplateResponse;
     private Long totalElements;
     private Integer totalPages;
     private Integer pageNumber;
