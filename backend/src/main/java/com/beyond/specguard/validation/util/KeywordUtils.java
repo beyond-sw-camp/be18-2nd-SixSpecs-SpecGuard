@@ -2,6 +2,7 @@ package com.beyond.specguard.validation.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.core.util.Json;
 
 import java.text.Normalizer;
 import java.util.HashSet;
@@ -84,8 +85,51 @@ public class KeywordUtils {
         }
     }
 
+    //GITHUB_REPO_COUNT
+    //{"repos":["12"]}
+    public static int repoCount(String json) {
+        if(json == null || json.isBlank()) return 0;
+        try {
+            JsonNode root = OM.readTree(json);
+            JsonNode node = root.get("repos");
+            if (node != null && node.isArray() && node.size() > 0) {
+                JsonNode v = node.get(0);
+                if (v.isInt()) return v.asInt();
+                if (v.isTextual()) {
+                    String digits = v.asText().replaceAll("[^0-9]", "");
+                    if (!digits.isEmpty()) return Integer.parseInt(digits);
+                }
+            }
+            return 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+
+    //GITHUB_COMMIT_COUNT
+    //{"commits": ["12"]}
+    public static int commitCount(String json) {
+        if(json == null || json.isBlank()) return 0;
+        try {
+            JsonNode root = OM.readTree(json);
+            JsonNode node = root.get("commits");
+            if (node != null && node.isArray() && node.size() > 0) {
+                JsonNode v = node.get(0);
+                if (v.isInt()) return v.asInt();
+                if (v.isTextual()) {
+                    String digits = v.asText().replaceAll("[^0-9]", "");
+                    if (!digits.isEmpty()) return Integer.parseInt(digits);
+                }
+            }
+            return 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
     //VELOG_POST_COUNT
-    // {"count":[ "12" ]} 같은 포맷을 정수로 (없으면 0)
+    // {"count":[ "12" ]}
     public static int parseCount(String json) {
         if (json == null || json.isBlank()) return 0;
         try {
@@ -106,12 +150,12 @@ public class KeywordUtils {
     }
 
     //VELOG_RECENT_ACTIVITY
-    //datecount
+    //dateCount
     public static int dateCount(String json) {
         if (json == null || json.isBlank()) return 0;
         try{
             JsonNode root = OM.readTree(json);
-            JsonNode node = root.get("datecount");
+            JsonNode node = root.get("dateCount");
             if(node != null&& node.isArray() && node.size() > 0){
                 JsonNode v = node.get(0);
                 if (v.isInt()) return v.asInt();

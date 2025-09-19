@@ -77,9 +77,13 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             //    - count:    Velog 게시글 수
             Set<String> ghKeywords = new LinkedHashSet<>();     //깃허브 키워드
             Set<String> ghTech     = new LinkedHashSet<>();     //깃허브 기술 키워드
+            int githubCommitCount = 0;                          //깃허브 커밋수
+            int githubRepoCount = 0;                            //깃허브 레포수
             for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.GITHUB.name())) {
                 ghKeywords.addAll(KeywordUtils.parseKeywords(pc));
                 ghTech.addAll(KeywordUtils.parseTech(pc));
+                githubCommitCount += KeywordUtils.commitCount(pc);
+                githubRepoCount += KeywordUtils.repoCount(pc);
             }
 
             Set<String> notionKeywords = new LinkedHashSet<>();    //노션 키워드
@@ -97,9 +101,9 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             }
 
             // 3) GitHub 메타데이터(레포/커밋) 합계
-            var githubAgg = calculateQueryRepository.sumGithubStats(resumeId);
-            int repoCount   = ((Number) githubAgg.getOrDefault("repoSum", 0)).intValue();   //레포 수
-            int commitCount = ((Number) githubAgg.getOrDefault("commitSum", 0)).intValue(); //커밋 수
+//            var githubAgg = calculateQueryRepository.sumGithubStats(resumeId);
+//            int repoCount   = ((Number) githubAgg.getOrDefault("repoSum", 0)).intValue();   //레포 수
+//            int commitCount = ((Number) githubAgg.getOrDefault("commitSum", 0)).intValue(); //커밋 수
 
             // 4) 자격증 매칭 COMPLETED / (COMPLETED + FAILED)
             var certAgg = calculateQueryRepository.countCertificateVerification(resumeId);
@@ -108,8 +112,8 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             double certScore = (completed + failed) == 0 ? 0.0 : (double) completed / (completed + failed);
 
             // 5) 지표 산출(0~1)
-            double githubRepoScore      = clamp01(repoCount   / REPO_MAX);
-            double githubCommitScore    = clamp01(commitCount / COMMIT_MAX);
+            double githubRepoScore      = clamp01(githubRepoCount   / REPO_MAX);
+            double githubCommitScore    = clamp01(githubCommitCount / COMMIT_MAX);
             double githubKeywordMatch   = KeywordUtils.jaccard(ghKeywords, templateKeywords);
             double githubTopicMatch     = KeywordUtils.jaccard(ghTech,     templateKeywords);
             double notionKeywordMatch   = KeywordUtils.jaccard(notionKeywords, templateKeywords);
@@ -185,7 +189,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             //리포트용
             String reportJson = buildReportJson(
                     templateKeywords, ghKeywords, ghTech, notionKeywords, velogKeywords,
-                    repoCount, commitCount, velogPostCount, velogDateCount,
+                    githubRepoCount, githubCommitCount, velogPostCount, velogDateCount,
                     githubRepoScore, githubCommitScore, githubKeywordMatch, githubTopicMatch,
                     notionKeywordMatch, velogKeywordMatch, velogPostScore, velogDateScore,
                     certScore, sourceDiversityFactor, finalScore, weights

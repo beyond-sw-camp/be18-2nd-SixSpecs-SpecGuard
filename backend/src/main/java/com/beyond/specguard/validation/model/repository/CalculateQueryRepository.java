@@ -44,15 +44,15 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
 
 
     // GitHub 메타데이터 합계(레포/커밋) - resume의 GITHUB 링크 전체 기준
-    @Query(value = """
-        SELECT COALESCE(SUM(gm.repo_count),0) AS repoSum,
-               COALESCE(SUM(gm.commits),0)    AS commitSum
-          FROM github_metatdata gm
-          JOIN resume_link rl ON gm.resume_link_id = rl.id
-         WHERE rl.resume_id = :resumeId
-           AND rl.link_type = 'GITHUB'
-        """, nativeQuery = true)
-    Object[] sumGithubStatsRaw(@Param("resumeId") UUID resumeId);
+//    @Query(value = """
+//        SELECT COALESCE(SUM(gm.repo_count),0) AS repoSum,
+//               COALESCE(SUM(gm.commits),0)    AS commitSum
+//          FROM github_metatdata gm
+//          JOIN resume_link rl ON gm.resume_link_id = rl.id
+//         WHERE rl.resume_id = :resumeId
+//           AND rl.link_type = 'GITHUB'
+//        """, nativeQuery = true)
+//    Object[] sumGithubStatsRaw(@Param("resumeId") UUID resumeId);
 
     // 자격증 검증 집계
     @Query(value = """
