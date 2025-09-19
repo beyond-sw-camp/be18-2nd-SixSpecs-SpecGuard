@@ -19,7 +19,7 @@ public enum ResumeErrorCode implements ErrorCode {
     ACCESS_DENIED(
             HttpStatus.FORBIDDEN,
             "ACCESS_DENIED",
-            "기업 사용자가 아닙니다."
+            "접근이 불가능합니다."
     ),
     VERIFICATION_ALREADY_IN_PROGRESS(
             HttpStatus.CONFLICT,
@@ -96,7 +96,10 @@ public enum ResumeErrorCode implements ErrorCode {
             "TEMPLATE_NOT_FOUND",
             "템플릿이 없습니다."
     ),
-    INVALID_RESUME_CREDENTIAL(HttpStatus.UNAUTHORIZED, "INVALID_RESUME_CREDENTIAL", "이력서 인증에 실패했습니다.");
+    INVALID_RESUME_CREDENTIAL(HttpStatus.UNAUTHORIZED, "INVALID_RESUME_CREDENTIAL", "이력서 인증에 실패했습니다."),
+    REQUIRED_FIELD_MISSING(HttpStatus.BAD_REQUEST, "REQUIRED_FIELD_MISSING", "필수 필드가 누락되었습니다."),
+    FIELD_CONSTRAINT_VIOLATION(HttpStatus.BAD_REQUEST, "FIELD_CONSTRAINT_VIOLATION", "조건에 부합하지 않는 응답입니다.");
+
 
 
 

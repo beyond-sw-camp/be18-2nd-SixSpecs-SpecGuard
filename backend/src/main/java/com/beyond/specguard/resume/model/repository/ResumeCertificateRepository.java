@@ -1,6 +1,6 @@
 package com.beyond.specguard.resume.model.repository;
 
-import com.beyond.specguard.resume.model.entity.core.ResumeCertificate;
+import com.beyond.specguard.resume.model.entity.ResumeCertificate;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -11,4 +11,5 @@ public interface ResumeCertificateRepository extends JpaRepository<ResumeCertifi
     Optional<ResumeCertificate> findByIdAndResume_Id(UUID id, UUID resumeId);
     void deleteByResume_Id(UUID resumeId);
 
+    List<ResumeCertificate> findAllByResumeId(UUID resumeId);
 }

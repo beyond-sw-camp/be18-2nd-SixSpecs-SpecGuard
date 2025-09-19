@@ -1,6 +1,7 @@
 package com.beyond.specguard.resume.model.dto.request;
 
-import com.beyond.specguard.resume.model.entity.common.enums.Gender;
+import com.beyond.specguard.resume.model.entity.Resume;
+import com.beyond.specguard.resume.model.entity.ResumeBasic;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,12 +10,12 @@ import java.time.LocalDate;
 
 public record ResumeBasicCreateRequest(
         @Schema(description = "영문 이름", example = "Hong GilDong")
-        @NotNull
+        @NotBlank
         String englishName,
 
         @Schema(description = "성별", example = "M")
         @NotNull
-        Gender gender,
+        ResumeBasic.Gender gender,
 
         @Schema(description = "생년월일", type = "string", format = "date", example = "1995-03-10")
         @NotNull
@@ -36,10 +37,19 @@ public record ResumeBasicCreateRequest(
         String specialty,
 
         @Schema(description = "취미", example = "등산, 독서")
-        String hobbies,
-
-        @Schema(description = "프로필 이미지 파일")
-        @NotNull
-        String profileImage
+        String hobbies
 ) {
+        public ResumeBasic toEntity(Resume resume) {
+                return ResumeBasic.builder()
+                        .resume(resume)
+                        .englishName(englishName)
+                        .gender(gender)
+                        .birthDate(birthDate)
+                        .nationality(nationality)
+                        .applyField(applyField)
+                        .address(address)
+                        .specialty(specialty)
+                        .hobbies(hobbies)
+                        .build();
+        }
 }

@@ -1,6 +1,6 @@
 package com.beyond.specguard.resume.model.service;
 
-import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.Resume;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;

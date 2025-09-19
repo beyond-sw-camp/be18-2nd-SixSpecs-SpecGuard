@@ -1,5 +1,7 @@
 package com.beyond.specguard.resume.model.dto.request;
 
+import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
+import com.beyond.specguard.resume.model.entity.Resume;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -17,7 +19,7 @@ public record ResumeCreateRequest(
         @NotBlank
         String name,
 
-        @Schema(description = "연락처", example = "010-1234-5678")
+        @Schema(description = "연락처", example = "01012345678")
         @NotBlank
         String phone,
 
@@ -30,4 +32,14 @@ public record ResumeCreateRequest(
         @NotBlank
         String password
 ) {
+
+        public Resume toEntity(CompanyTemplate companyTemplate) {
+                return Resume.builder()
+                        .template(companyTemplate)
+                        .status(Resume.ResumeStatus.DRAFT)
+                        .name(name)
+                        .phone(phone)
+                        .email(email)
+                        .build();
+        }
 }

@@ -6,10 +6,6 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 public record ResumeAggregateUpdateRequest(
-        @Schema(description = "루트 이력서 일부 필드 변경")
-        @Valid
-        ResumeCorePatch core,
-
         @Schema(description = "학력 목록")
         @Valid
         List<ResumeEducationUpsertRequest> educations,

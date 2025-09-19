@@ -1,7 +1,7 @@
 package com.beyond.specguard.crawling.entity;
 
-import com.beyond.specguard.resume.model.entity.core.Resume;
-import com.beyond.specguard.resume.model.entity.core.ResumeLink;
+import com.beyond.specguard.resume.model.entity.Resume;
+import com.beyond.specguard.resume.model.entity.ResumeLink;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -51,7 +51,7 @@ public class CrawlingResult {
     private CrawlingStatus crawlingStatus;
 
     @Lob
-    @Column(name = "contents", columnDefinition = "LONGBLOB") // MariaDB 기준
+    @Column(name = "contents", columnDefinition = "LONGBLOB")
     private byte[] contents;
 
     @CreationTimestamp
@@ -84,8 +84,9 @@ public class CrawlingResult {
         this.crawlingStatus = crawlingStatus != null ? crawlingStatus : CrawlingStatus.PENDING;
     }
 
-    public void updateContents(byte[] contents) {
-        this.contents = contents;
+
+    public void updateContents(byte[] compressed) {
+        this.contents = compressed;
     }
 
     public void updateStatus(CrawlingStatus status) {
