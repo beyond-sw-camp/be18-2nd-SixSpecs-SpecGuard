@@ -13,7 +13,17 @@ from app.db import (
 
 MODEL = "gemini-2.0-flash-001"
 
-
+async def insert_failed_data(session, row):
+    processed_data = {}
+    status = "FAILED"
+    await session.execute(
+        SQL_INSERT_PORTFOLIO_RESULT,
+        {
+            "crawling_result_id": row.crawling_result_id,
+            "processed_contents": json.dumps(processed_data, ensure_ascii=False),
+            "status": status
+        }
+    )
 
 async def extract_keywrods_with_resume_id(resume_id: str):
     async with SessionLocal() as session:
@@ -35,8 +45,12 @@ async def extract_keywrods_with_resume_id(resume_id: str):
         portfolio_entries = []
 
         for row in rows:
-            # print(row)
-            # 2. gzip 해제 후 JSON 로드
+
+            if row.crawling_status == "FAILED" or row.crawling_status == "NOTEXISTED":
+                insert_failed_data(session, row)
+                continue
+
+
             try:
                 raw_contents = await decompress_gzip(row.contents)
 
