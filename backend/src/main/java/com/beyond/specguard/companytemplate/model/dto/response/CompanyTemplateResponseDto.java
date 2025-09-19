@@ -23,6 +23,7 @@ public class CompanyTemplateResponseDto {
     @JsonProperty("detail")
     private DetailDto detailDto;
 
+    @Builder
     public CompanyTemplateResponseDto(CompanyTemplate companyTemplate) {
         this.basicDto = BasicDto.toDto(companyTemplate);
         this.detailDto = DetailDto.toDto(companyTemplate);
