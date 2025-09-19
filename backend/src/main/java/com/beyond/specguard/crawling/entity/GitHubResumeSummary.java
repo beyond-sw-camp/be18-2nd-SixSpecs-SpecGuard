@@ -1,7 +1,6 @@
 package com.beyond.specguard.crawling.entity;
 
-
-import com.beyond.specguard.resume.model.entity.core.Resume;
+import com.beyond.specguard.resume.model.entity.Resume;
 import jakarta.persistence.Column;
 import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
@@ -70,4 +69,10 @@ public class GitHubResumeSummary {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public void updateStats(int repositoryCount, Map<String, Integer> languageStats, int commitCount) {
+        this.repositoryCount = repositoryCount;
+        this.languageStats = languageStats;
+        this.commitCount = commitCount;
+    }
 }

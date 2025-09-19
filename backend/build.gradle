@@ -62,6 +62,8 @@ dependencies {
 
     //스케줄러
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+    //웹클라이언트
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
     // --- codef (자격증 검증) ---
     implementation 'io.codef.api:easycodef-java:1.0.6'
