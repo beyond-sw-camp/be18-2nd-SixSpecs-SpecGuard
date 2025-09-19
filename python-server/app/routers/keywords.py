@@ -8,7 +8,7 @@ import re
 router = APIRouter(prefix="/api/v1/nlp", tags=["keywords"])
 
 @router.post("/keywords", response_model=BaseResponse)
-async def extract_keywords(request: KeywordRequest):
+async def extract_keywords_(request: KeywordRequest):
     """
     입력받은 포트폴리오/자소서 전문에서 핵심 키워드를 추출하는 API
     """
@@ -34,7 +34,7 @@ async def extract_keywords(request: KeywordRequest):
         )
 
     # 3) 프롬프트 생성
-    keywords = extract_keywords(request.text)
+    keywords = await extract_keywords(request.text)
 
     # 8) 최종 성공 응답
-    return BaseResponse(type=request.type, status="sucesss", data=keywords)
+    return BaseResponse(status="sucesss", data={"keywords" : keywords})

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.services.gemini_client import client
+from app.schemas import BaseResponse
 
 router = APIRouter(prefix="/api/v1/nlp", tags=["summary"])
 
@@ -15,7 +16,7 @@ class SummaryResponse(BaseModel):
 
 
 # === 요약 API ===
-@router.post("/summary", response_model=SummaryResponse)
+@router.post("/summary", response_model=BaseResponse)
 async def summarize_text(request: SummaryRequest):
     """
     입력받은 자소서 전문을 요약하는 API
@@ -55,4 +56,4 @@ async def summarize_text(request: SummaryRequest):
         )
 
     # 5) 결과 반환
-    return SummaryResponse(type=request.type, summary=summary_text)
+    return BaseResponse(status="success", data={"summary": summary_text})
