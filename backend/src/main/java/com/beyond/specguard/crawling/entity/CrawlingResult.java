@@ -51,8 +51,8 @@ public class CrawlingResult {
     private CrawlingStatus crawlingStatus;
 
     @Lob
-    @Column(name = "contents", columnDefinition = "LONGTEXT") // MariaDB 기준
-    private String contents;
+    @Column(name = "contents", columnDefinition = "LONGBLOB") // MariaDB 기준
+    private byte[] contents;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
