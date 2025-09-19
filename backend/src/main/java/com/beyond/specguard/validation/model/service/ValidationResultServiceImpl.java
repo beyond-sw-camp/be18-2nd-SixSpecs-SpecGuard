@@ -8,6 +8,7 @@ import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.entity.ResumeLink;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import com.beyond.specguard.validation.model.dto.request.ValidationCalculateRequestDto;
+import com.beyond.specguard.validation.model.dto.request.ValidationPercentileRequestDto;
 import com.beyond.specguard.validation.model.entity.ValidationIssue;
 import com.beyond.specguard.validation.model.entity.ValidationResult;
 import com.beyond.specguard.validation.model.entity.ValidationResultLog;
@@ -215,6 +216,14 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             log.error("Validation calculation failed for resumeId={} : {}", resumeId, ex.getMessage(), ex);
             return saveIssueAndLogsOnError(resumeId, ex);
         }
+    }
+
+    public UUID calculatePercentile(ClientUser clientUser, ValidationPercentileRequestDto request) {
+        validateWriteRole(clientUser.getRole());
+        final UUID templateId = request.getTemplateId();
+
+
+
     }
 
 

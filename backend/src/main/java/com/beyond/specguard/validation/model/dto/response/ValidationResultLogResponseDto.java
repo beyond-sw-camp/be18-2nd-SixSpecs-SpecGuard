@@ -9,6 +9,7 @@ import java.util.UUID;
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class ValidationResultLogResponseDto {
 
 
@@ -17,21 +18,5 @@ public class ValidationResultLogResponseDto {
     private Double validationScore;
     private LocalDateTime validatedAt;
     private String descriptionComment;
-
-    public ValidationResultLogResponseDto(
-            UUID id,
-            UUID resumeId,
-            Double validationScore,
-            LocalDateTime validatedAt,
-            String descriptionComment
-    ) {
-        this.id = id;
-        this.resumeId = resumeId;
-        this.validationScore = validationScore;
-        this.validatedAt = validatedAt;
-        this.descriptionComment = descriptionComment;
-    }
-
-
 
 }

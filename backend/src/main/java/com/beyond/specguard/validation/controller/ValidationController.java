@@ -4,6 +4,7 @@ import com.beyond.specguard.company.common.model.entity.ClientUser;
 import com.beyond.specguard.company.common.model.service.CustomUserDetails;
 import com.beyond.specguard.validation.model.dto.request.ValidationLogCommentRequestDto;
 import com.beyond.specguard.validation.model.dto.request.ValidationCalculateRequestDto;
+import com.beyond.specguard.validation.model.dto.request.ValidationPercentileRequestDto;
 import com.beyond.specguard.validation.model.dto.response.ValidationResultLogResponseDto;
 import com.beyond.specguard.validation.model.service.ValidationResultLogService;
 import com.beyond.specguard.validation.model.service.ValidationResultService;
@@ -76,6 +77,22 @@ public class ValidationController {
     ) {
         ClientUser clientUser = getClientUser(authentication);
         validationResultLogService.updateComment(clientUser, logId, body.getComment());
+        return ResponseEntity.noContent().build();
+    }
+
+
+    @Operation(
+            summary = "정합성 최종 점수 추출 API",
+            description = "adjusted_score에 percentile을 적용 후 최종 점수를 반환합니다."
+    )
+    @PreAuthorize("hasAnyRole('OWNER','MANAGER')")
+    @PostMapping("/percentile")
+    public ResponseEntity<Void> updatePercentile(
+            @Valid @RequestBody ValidationPercentileRequestDto request,
+            Authentication authentication
+    ){
+        ClientUser clientUser = getClientUser(authentication);
+        validationResultService.calculatePercentile(clientUser, request);
         return ResponseEntity.noContent().build();
     }
 
