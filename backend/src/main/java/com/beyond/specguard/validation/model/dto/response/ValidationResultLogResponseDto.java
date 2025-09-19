@@ -20,22 +20,5 @@ public class ValidationResultLogResponseDto {
     private String descriptionComment;
 
 
-    public ValidationResultLogResponseDto(
-            UUID id,
-            UUID resumeId,
-            Double validationScore,
-            LocalDateTime validatedAt,
-            String descriptionComment
-    ) {
-        this.id = id;
-        this.resumeId = resumeId;
-        this.validationScore = validationScore;
-        this.validatedAt = validatedAt;
-        this.descriptionComment = descriptionComment;
-    }
-
-
-
-
 
 }

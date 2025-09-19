@@ -57,7 +57,7 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
     // 자격증 검증 집계
     @Query(value = """
         SELECT 
-          COALESCE(SUM(CASE WHEN UPPER(cv.status) IN ('COMPLETED','SUCCESS') THEN 1 ELSE 0 END),0) AS completed,
+          COALESCE(SUM(CASE WHEN UPPER(cv.status) IN ('COMPLETED') THEN 1 ELSE 0 END),0) AS completed,
           COALESCE(SUM(CASE WHEN UPPER(cv.status) = 'FAILED' THEN 1 ELSE 0 END),0)                AS failed
         FROM certificate_verification cv
         JOIN resume_certificate rc ON rc.id = cv.certificate_id
@@ -81,12 +81,7 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
     List<WeightRow> findWeightsByResume(@Param("resumeId") String resumeId);
 
 
-    default List<String> findTemplateAnalysisKeywordsJson(UUID resumeId) {
-        return findTemplateAnalysisKeywordsJsonRaw(resumeId.toString());
-    }
-    default List<String> findProcessedContentsByPlatform(UUID resumeId, String linkType) {
-        return findProcessedContentsByPlatformRaw(resumeId.toString(), linkType);
-    }
+
     default Map<String, Object> sumGithubStats(UUID resumeId) {
         Object[] row = sumGithubStatsRaw(resumeId.toString());
         Map<String, Object> m = new HashMap<>();
@@ -101,7 +96,5 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
         m.put("failed",    ((Number) row[1]).intValue());
         return m;
     }
-    default List<WeightRow> findWeightsByResume(UUID resumeId) {
-        return findWeightsByResumeRaw(resumeId.toString());
-    }
+
 }

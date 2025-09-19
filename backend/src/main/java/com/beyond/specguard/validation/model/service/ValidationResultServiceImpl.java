@@ -221,9 +221,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
         // Issue 저장
         ValidationIssue issue = validationIssueRepository.save(
                 ValidationIssue.builder()
-                        .issueType(classifyIssueType(ex))
-                        .issueDescription(truncate(ex.getMessage(), 2000))
-                        .severity(ValidationIssue.Severity.HIGH)
+                        .validationResult(classifyIssueType(ex))
                         .build()
         );
 
@@ -254,20 +252,8 @@ public class ValidationResultServiceImpl implements ValidationResultService{
         return result.getId();
     }
 
-    private ValidationIssue.IssueType classifyIssueType(Exception ex) {
-        if (ex instanceof AuthenticationException) return ValidationIssue.IssueType.AUTH_API_FAILURE;
-        if (ex instanceof AccessDeniedException)   return ValidationIssue.IssueType.COMPANY_MISMATCH;
-        if (ex instanceof DataIntegrityViolationException) return ValidationIssue.IssueType.APPLICATION_VALUE_FORMAT_ERROR;
-        if (ex instanceof JsonProcessingException) return ValidationIssue.IssueType.MORPHOLOGICAL_ANALYSIS_FAILURE;
-
-        String msg = (ex.getMessage() == null) ? "" : ex.getMessage().toLowerCase();
-        if (msg.contains("duplicate") || msg.contains("unique")) return ValidationIssue.IssueType.DUPLICATE_DATA_UPLOAD;
-        if (msg.contains("not found") || msg.contains("no such")) return ValidationIssue.IssueType.USER_IDENTIFICATION_FAILED;
-        if (msg.contains("version")) return ValidationIssue.IssueType.APPLICATION_VERSION_MISMATCH;
-        if (msg.contains("format") || msg.contains("parse") || msg.contains("numberformat")) return ValidationIssue.IssueType.APPLICATION_VALUE_FORMAT_ERROR;
-        if (msg.contains("nan") || msg.contains("infinite")) return ValidationIssue.IssueType.MODEL_PREDICTION_UNSTABLE;
-
-        return ValidationIssue.IssueType.INVALID_ANALYSIS_VALUE;
+    private ValidationIssue.ValidationResult classifyIssueType(Exception ex) {
+        return ValidationIssue.ValidationResult.FAILED;
     }
 
     private String buildReportJson(
