@@ -54,14 +54,14 @@ public class ResumeService {
     //이력서 생성에서 create
     @Transactional
     public ResumeResponse create(ResumeCreateRequest req) {
-        if (req.passwordHash() == null || req.passwordHash().isBlank()) {
+        if (req.password() == null || req.password().isBlank()) {
             throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
         if (resumeRepository.existsByEmail(req.email())) {
             throw new CustomException(ResumeErrorCode.DUPLICATE_EMAIL);
         }
 
-        String encoded = passwordEncoder.encode(req.passwordHash().trim());
+        String encoded = passwordEncoder.encode(req.password().trim());
 
         try {
             Resume saved = resumeRepository.save(
