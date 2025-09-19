@@ -193,6 +193,8 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
         CompanyTemplate template = companyTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new CustomException(CompanyTemplateErrorCode.TEMPLATE_NOT_FOUND));
 
+        template.update(command.requestDto());
+
         if (template.getStatus() !=  CompanyTemplate.TemplateStatus.DRAFT) {
             throw new CustomException(CompanyTemplateErrorCode.NOT_DRAFT_TEMPLATE);
         }
