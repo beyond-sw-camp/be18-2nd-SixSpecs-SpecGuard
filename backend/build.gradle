@@ -70,6 +70,8 @@ dependencies {
 
     // Jsoup (HTML 파싱)
     implementation 'org.jsoup:jsoup:1.16.1'
+
+
 }
 
 

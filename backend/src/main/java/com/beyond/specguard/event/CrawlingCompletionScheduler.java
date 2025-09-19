@@ -94,7 +94,7 @@ public class CrawlingCompletionScheduler {
         // completed랑 nonexisted 합이 3개면 통과
         long completedOrNonExistedCount = results.stream()
                 .filter(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.COMPLETED
-                        || r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.NOTEXISTED)
+                        || r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.NOTEXSITED)
                 .count();
 
         boolean allCrawlingCompleted = (completedOrNonExistedCount == 3);

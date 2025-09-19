@@ -3,8 +3,8 @@ package com.beyond.specguard.notioncrawling.service;
 import com.beyond.specguard.crawling.entity.CrawlingResult;
 import com.beyond.specguard.crawling.repository.CrawlingResultRepository;
 import com.beyond.specguard.notioncrawling.dto.NotionPageDto;
-import com.beyond.specguard.resume.model.entity.core.Resume;
-import com.beyond.specguard.resume.model.entity.core.ResumeLink;
+import com.beyond.specguard.resume.model.entity.Resume;
+import com.beyond.specguard.resume.model.entity.ResumeLink;
 import com.beyond.specguard.resume.model.repository.ResumeLinkRepository;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,10 +52,8 @@ public class PublicNotionCrawlerService {
         CrawlingResult result = CrawlingResult.builder()
                 .resume(resume)
                 .resumeLink(resumeLink)
-                .crawlingStatus(CrawlingResult.CrawlingStatus.RUNNING)
                 .build();
-
-        crawlingResultRepository.save(result);
+        log.info("notion api 호출성공");
 
         try {
             // ----------------------------
@@ -108,7 +106,6 @@ public class PublicNotionCrawlerService {
             result.updateContents(compressed);
             result.updateStatus(CrawlingResult.CrawlingStatus.COMPLETED);
 
-            crawlingResultRepository.save(result);
             log.info("크롤링 완료 - resumeId={}, url={}", resumeId, notionUrl);
 
             return result.getId();
