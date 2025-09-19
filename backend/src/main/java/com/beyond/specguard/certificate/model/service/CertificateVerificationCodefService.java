@@ -33,27 +33,27 @@ public class CertificateVerificationCodefService implements CertificateVerificat
         List<ResumeCertificate> resumeCertificates = resumeCertificateRepository
                 .findAllByResumeId(resumeId);
 
-        // 자격증이 없으면 return
-        if (resumeCertificates.isEmpty()) {
-            log.info("[CertificateVerification] 자격증 없음 - resumeId={}", resumeId);
-
-            CertificateVerification verification = CertificateVerification.builder()
-                    .verificationSource("CODEF")
-                    .resumeCertificate(null)
-                    .status(CertificateVerification.Status.NOTEXISTED)
-                    .build();
-
-            verificationRepository.save(verification);
-            log.info("[CertificateVerification] NONEXISTED 상태 저장 - resumeId={}", resumeId);
-            return;
-        }
-
         // 자격증 순회
         for (ResumeCertificate certificate : resumeCertificates) {
+            String certNumber = certificate.getCertificateNumber();
+
+            // 번호가 null
+            if (certNumber == null) {
+                CertificateVerification verification = CertificateVerification.builder()
+                        .verificationSource("CODEF")
+                        .resumeCertificate(certificate)
+                        .status(CertificateVerification.Status.NOTEXISTED)
+                        .build();
+                verificationRepository.save(verification);
+                log.info("[CertificateVerification] certNumber 없음 → NOTEXISTED 저장 - resumeId={}, certId={}",
+                        resumeId, certificate.getId());
+                continue;
+            }
             log.info("[CertificateVerification] 자격증 검증 시작 - resumeId={}, certName={}, certNumber={}",
                     resumeId,
                     certificate.getCertificateName(),
                     certificate.getCertificateNumber());
+
             CertificateVerification verification = CertificateVerification.builder()
                     .verificationSource("CODEF")
                     .resumeCertificate(certificate)

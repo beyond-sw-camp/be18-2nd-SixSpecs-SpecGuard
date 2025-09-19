@@ -64,7 +64,7 @@ public class ResumeCertificate {
 
 
     //취득 시기
-    @Column(name = "issued_date", nullable = false)
+    @Column(name = "issued_date", nullable = true)
     private LocalDate issuedDate;
 
     //자격증 URL
