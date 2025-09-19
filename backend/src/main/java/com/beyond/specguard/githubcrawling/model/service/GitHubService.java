@@ -85,7 +85,7 @@ public class GitHubService {
             log.info(" GitHub 크롤링 완료 - resumeId={}, url={}",
                     result.getResume().getId(), result.getResumeLink().getUrl());
 
-            return stats; // 👉 이제 결과 반환
+            return stats; //  이제 결과 반환
 
         } catch (GitException e) {
             result.updateStatus(CrawlingStatus.FAILED);

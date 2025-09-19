@@ -7,6 +7,7 @@ import com.beyond.specguard.resume.model.repository.ResumeLinkRepository;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -21,12 +22,14 @@ public class ResumeSubmittedListener {
 
     private final ResumeLinkRepository resumeLinkRepository;
     private final ResumeRepository resumeRepository;
-    private final ResumeLinkProcessor resumeLinkProcessor; // 👈 분리된 Async Bean 주입
+    private final ResumeLinkProcessor resumeLinkProcessor;
 
+    @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleResumeSubmitted(ResumeSubmittedEvent event) {
         UUID resumeId = event.resumeId();
-        log.info("[AFTER_COMMIT] ResumeSubmittedEvent 수신 - resumeId={}", resumeId);
+        log.info("[ResumeSubmittedEvent] AFTER_COMMIT: resumeId={}, thread={}",
+                resumeId, Thread.currentThread().getName());
 
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new IllegalStateException("Resume not found: " + resumeId));

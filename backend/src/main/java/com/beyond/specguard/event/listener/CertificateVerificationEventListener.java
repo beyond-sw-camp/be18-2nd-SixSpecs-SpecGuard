@@ -4,7 +4,6 @@ import com.beyond.specguard.certificate.model.service.CertificateVerificationCod
 import com.beyond.specguard.event.CertificateVerificationEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -23,7 +22,8 @@ public class CertificateVerificationEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(CertificateVerificationEvent event) {
         UUID resumeId = event.resumeId();
-        log.info("AFTER_COMMIT: {}", resumeId);
+        log.info("[CertificateVerificationEvent] AFTER_COMMIT: resumeId={}, thread={}",
+                resumeId, Thread.currentThread().getName());
         verificationService.verifyCertificateAsync(resumeId);
     }
 }
