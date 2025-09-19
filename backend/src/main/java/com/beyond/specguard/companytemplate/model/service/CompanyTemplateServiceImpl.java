@@ -87,7 +87,7 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
         Page<CompanyTemplate> response = companyTemplateRepository.findAll(spec, c.pageable());
 
         return CompanyTemplateListResponseDto.builder()
-                .companyTemplateResponse(response.getContent().stream().map(CompanyTemplateResponseDto.BasicDto::toDto).toList())
+                .companyTemplateResponse(response.getContent().stream().map(t -> CompanyTemplateResponseDto.builder().basicDto(CompanyTemplateResponseDto.BasicDto.toDto(t)).detailDto(CompanyTemplateResponseDto.DetailDto.toDto(t)).build()).toList())
                 .totalElements(totalElements)
                 .totalPages(response.getTotalPages())
                 .pageNumber(response.getNumber())
