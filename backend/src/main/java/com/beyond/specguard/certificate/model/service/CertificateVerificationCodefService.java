@@ -27,19 +27,33 @@ public class CertificateVerificationCodefService implements CertificateVerificat
     private final ResumeCertificateRepository resumeCertificateRepository;
 
     @Override
-    @Async
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void verifyCertificateAsync(UUID resumeId) {
+        log.info("[CertificateVerification] 시작 - resumeId={}", resumeId);
         List<ResumeCertificate> resumeCertificates = resumeCertificateRepository
                 .findAllByResumeId(resumeId);
 
-        // 자격증이 없으면 return
-        if (resumeCertificates.isEmpty()) {
-            return;
-        }
-
         // 자격증 순회
         for (ResumeCertificate certificate : resumeCertificates) {
+            String certNumber = certificate.getCertificateNumber();
+
+            // 번호가 null
+            if (certNumber == null) {
+                CertificateVerification verification = CertificateVerification.builder()
+                        .verificationSource("CODEF")
+                        .resumeCertificate(certificate)
+                        .status(CertificateVerification.Status.NOTEXISTED)
+                        .build();
+                verificationRepository.save(verification);
+                log.info("[CertificateVerification] certNumber 없음 → NOTEXISTED 저장 - resumeId={}, certId={}",
+                        resumeId, certificate.getId());
+                continue;
+            }
+            log.info("[CertificateVerification] 자격증 검증 시작 - resumeId={}, certName={}, certNumber={}",
+                    resumeId,
+                    certificate.getCertificateName(),
+                    certificate.getCertificateNumber());
+
             CertificateVerification verification = CertificateVerification.builder()
                     .verificationSource("CODEF")
                     .resumeCertificate(certificate)
@@ -55,7 +69,10 @@ public class CertificateVerificationCodefService implements CertificateVerificat
 
                 // API 호출
                 CodefVerificationResponse response = codefClient.verifyCertificate(request);
-
+                log.info("[CertificateVerification] CODEF API 응답 수신 - resumeId={}, resIssueYN={}, resultDesc={}",
+                        resumeId,
+                        response.getData().getResIssueYN(),
+                        response.getData().getResResultDesc());
                 verification.setVerifiedNow();
 
                 // 성공 여부 판별
@@ -63,16 +80,28 @@ public class CertificateVerificationCodefService implements CertificateVerificat
 
                 if ("1".equals(resIssueYN)) {
                     verification.setStatusSuccess();
+                    log.info("[CertificateVerification] 검증 성공 - resumeId={}, certName={}", resumeId, certificate.getCertificateName());
                 } else {
                     verification.setStatusFailed();
                     verification.setErrorMessage(response.getData().getResResultDesc());
+                    log.warn("[CertificateVerification] 검증 실패 - resumeId={}, certName={}, reason={}",
+                            resumeId,
+                            certificate.getCertificateName(),
+                            response.getData().getResResultDesc());
                 }
 
             } catch (Exception e) {
                 verification.setStatusFailed();
                 verification.setErrorMessage(e.getMessage());
+                log.error("[CertificateVerification] 예외 발생 - resumeId={}, certName={}, error={}",
+                        resumeId,
+                        certificate.getCertificateName(),
+                        e.getMessage(), e);
             } finally {
                 verificationRepository.save(verification);
+                log.info("[CertificateVerification] 검증 결과 저장 완료 - resumeId={}, certName={}",
+                        resumeId,
+                        certificate.getCertificateName());
             }
         }
     }

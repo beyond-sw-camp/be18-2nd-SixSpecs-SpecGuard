@@ -165,6 +165,8 @@ public class Resume {
         this.status = ResumeStatus.PENDING;
     }
 
+    public void changeStatus(ResumeStatus status) { this.status = status; }
+
     public enum Role {
         APPLICANT;
     }
@@ -176,4 +178,5 @@ public class Resume {
         VALIDATED,
         COMPLETED
     }
+
 }

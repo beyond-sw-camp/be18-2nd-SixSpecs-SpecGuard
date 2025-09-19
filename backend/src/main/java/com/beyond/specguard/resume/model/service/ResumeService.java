@@ -8,6 +8,7 @@ import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateFieldRepository;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository;
+import com.beyond.specguard.event.CertificateVerificationEvent;
 import com.beyond.specguard.event.ResumeSubmittedEvent;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
@@ -357,40 +358,56 @@ public class ResumeService {
     //이력서 자격증 정보 UPDATE/INSERT upsertCertificates
     @Transactional
     public void upsertCertificates(UUID resumeId, UUID templateId, String email, List<ResumeCertificateUpsertRequest> certs) {
-        if(certs == null || certs.isEmpty()) return;
-
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
-
-        validateResumeCertificate(certs);
 
         validateOwnerShip(resume, email, templateId);
 
         List<ResumeCertificate> updatedFields = new ArrayList<>();
 
+        // 입력이 아예 없으면 -> NULL 값 row 하나 추가
+        if (certs == null || certs.isEmpty()) {
+            ResumeCertificate emptyCert = ResumeCertificate.builder()
+                    .resume(resume)
+                    .certificateName(null)
+                    .certificateNumber(null)
+                    .issuer(null)
+                    .certUrl(null)
+                    .build();
+
+            resume.getResumeCertificates().clear();
+            resume.getResumeCertificates().add(emptyCert);
+            resumeRepository.saveAndFlush(resume);
+            return;
+        }
+
+
+        validateResumeCertificate(certs);
+
+
         Map<UUID, ResumeCertificateUpsertRequest> dtoMap = certs.stream()
                 .filter(f -> f.id() != null)
                 .collect(Collectors.toMap(ResumeCertificateUpsertRequest::id, f -> f));
 
-        // 6. 업데이트
+
         for (ResumeCertificate existing : resume.getResumeCertificates()) {
             if (dtoMap.containsKey(existing.getId())) {
-                // 업데이트
                 existing.update(dtoMap.get(existing.getId()));
                 updatedFields.add(existing);
             }
         }
+
 
         List<ResumeCertificate> newCertificates = certs.stream()
                 .filter(f -> f.id() == null)
                 .map(l -> l.toEntity(resume))
                 .toList();
 
+
         resume.getResumeCertificates().clear();
-
         updatedFields.addAll(newCertificates);
-
         resume.getResumeCertificates().addAll(updatedFields);
+
 
         resumeRepository.saveAndFlush(resume);
     }
@@ -548,6 +565,9 @@ public class ResumeService {
 
         eventPublisher.publishEvent(
                 new ResumeSubmittedEvent(resume.getId(), resume.getTemplate().getId())
+        );
+        eventPublisher.publishEvent(
+                new CertificateVerificationEvent(resume.getId())
         );
 
         resumeRepository.updateStatus(resume.getId(), resume.getStatus());
