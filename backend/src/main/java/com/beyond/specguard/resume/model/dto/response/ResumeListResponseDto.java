@@ -84,7 +84,7 @@ public record ResumeListResponseDto(
                     skills,
                     certifications,
                     hasPortfolio,
-                    resume.getValidationResult().getValidationScore()
+                    resume.getValidationResult().getAdjustedTotal()
 
             );
         }

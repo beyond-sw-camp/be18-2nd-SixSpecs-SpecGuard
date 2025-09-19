@@ -65,7 +65,7 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
         """, nativeQuery = true)
     Object[] countCertificateVerificationRaw(@Param("resumeId") UUID resumeId);
 
-    // 가중치 조회: resume → company_template → evaluation_profile → evaluation_weight
+    // 가중치 조회: resume → company_template -> evaluation_profile -> evaluation_weight
     interface WeightRow {
         String getWeightType();
         Double getWeightValue();
@@ -81,13 +81,15 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
     List<WeightRow> findWeightsByResume(@Param("resumeId") UUID resumeId);
 
 
-    default Map<String, Object> sumGithubStats(UUID resumeId) {
-        Object[] row = sumGithubStatsRaw(resumeId);
-        Map<String, Object> m = new HashMap<>();
-        m.put("repoSum",   ((Number) row[0]).intValue());
-        m.put("commitSum", ((Number) row[1]).intValue());
-        return m;
-    }
+//    default Map<String, Object> sumGithubStats(UUID resumeId) {
+//        Object[] row = sumGithubStatsRaw(resumeId);
+//        Map<String, Object> m = new HashMap<>();
+//        m.put("repoSum",   ((Number) row[0]).intValue());
+//        m.put("commitSum", ((Number) row[1]).intValue());
+//        return m;
+//    }
+
+
     default Map<String, Object> countCertificateVerification(UUID resumeId) {
         Object[] row = countCertificateVerificationRaw(resumeId);
         Map<String, Object> m = new HashMap<>();

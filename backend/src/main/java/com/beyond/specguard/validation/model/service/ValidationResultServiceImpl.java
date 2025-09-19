@@ -180,7 +180,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             ValidationResult result = validationResultRepository.save(
                     ValidationResult.builder()
                             .resume(resumeRef)
-                            .validationScore(finalScore)
+                            .adjustedTotal(finalScore)
                             .createdAt(LocalDateTime.now())
                             .build()
             );
@@ -268,89 +268,88 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             List<CalculateQueryRepository.WeightRow> weights
     ) throws JsonProcessingException {
 
-        // 가중치 맵핑
-        Map<String, Double> wm = new HashMap<>();
-        for (var w : weights) {
-            wm.put(w.getWeightType(), Optional.ofNullable(w.getWeightValue()).orElse(0.0));
-        }
-
-        // Strength/Weakness (상위/하위 30%)
-        Map<String, Double> flat = new LinkedHashMap<>();
-        flat.put("github.repo_count", githubRepoScore);
-        flat.put("github.commit_frequency", githubCommitScore);
-        flat.put("github.topic_match", githubTopicMatch);
-        flat.put("github.keyword_match", githubKeywordMatch);
-        flat.put("notion.keyword_match", notionKeywordMatch);
-        flat.put("velog.post_count", velogPostScore);
-        flat.put("velog.recent_activity", velogDateScore);
-        flat.put("velog.keyword_match", velogKeywordMatch);
-        flat.put("others.certificate_match", certScore);
-
-        var strengths = new ArrayList<String>();
-        var weaknesses = new ArrayList<String>();
-        computeStrengthsWeaknesses(flat, strengths, weaknesses);
-
-        // PDF 설계 반영한 구조 (요약)
-        Map<String, Object> root = new LinkedHashMap<>();
-        Map<String, Object> applicantInfo = Map.of(
-                "applicantName", null,
-                "jobPosting", null,
-                "submissionDate", null,
-                "portfolioLinks", List.of()
-        );
-        root.put("applicantInfo", applicantInfo);
-        root.put("finalScore", Math.round(finalScore * 1000.0) / 10.0); // 0~100 스케일(소수1자리)
-        root.put("percentileRank", null);
-        root.put("sourceDiversityFactor", Math.round(sourceDiversityFactor * 100.0) / 100.0);
-
-        Map<String, Object> categoryScores = new LinkedHashMap<>();
-        categoryScores.put("github", Map.of(
-                "repo_count",        Map.of("score", githubRepoScore,  "weight", wm.getOrDefault("GITHUB_REPO_COUNT", 0.0)),
-                "commit_frequency",  Map.of("score", githubCommitScore,"weight", wm.getOrDefault("GITHUB_COMMIT_COUNT", 0.0)),
-                "topic_match",       Map.of("score", githubTopicMatch, "weight", wm.getOrDefault("GITHUB_TOPIC_MATCH", 0.0)),
-                "keyword_match",     Map.of("score", githubKeywordMatch,"weight", wm.getOrDefault("GITHUB_KEYWORD_MATCH", 0.0))
-        ));
-        categoryScores.put("notion", Map.of(
-                "keyword_match", Map.of("score", notionKeywordMatch,"weight", wm.getOrDefault("NOTION_KEYWORD_MATCH", 0.0))
-        ));
-        categoryScores.put("velog", Map.of(
-                "post_count",       Map.of("score", velogPostScore, "weight", wm.getOrDefault("VELOG_POST_COUNT", 0.0)),
-                "recent_activity",  Map.of("score", velogDateScore, "weight", wm.getOrDefault("VELOG_RECENT_ACTIVITY", 0.0)),
-                "keyword_match",    Map.of("score", velogKeywordMatch,"weight", wm.getOrDefault("VELOG_KEYWORD_MATCH", 0.0))
-        ));
-        categoryScores.put("others", Map.of(
-                "certificate_match", Map.of("score", certScore,"weight", wm.getOrDefault("CERTIFICATE_MATCH", 0.0))
-        ));
-        root.put("categoryScores", categoryScores);
-
-        root.put("strengths", strengths);
-        root.put("weaknesses", weaknesses);
-
-        String summary = "자동 요약은 추후 NLP 모듈 연동 시 생성됩니다. 현재는 지표 기반의 정량 결과만 반영됩니다.";
-        root.put("summary", summary);
-
-        // 원천 값도 첨부(디버깅/트레이싱)
-        root.put("raw", Map.of(
-                "TEMPLATE", Map.of("keywordsCount", templateKeywords.size()),
-                "GITHUB",   Map.of("keywords", ghKeywords, "tech", ghTech, "repo", repoCount, "commits", commitCount),
-                "NOTION",   Map.of("keywords", notionKeywords),
-                "VELOG",    Map.of("keywords", velogKeywords, "postCount", velogPostCount, "dateCount", velogDateCount)
-        ));
-
-        return OM.writeValueAsString(root);
-    }
-
-    private void computeStrengthsWeaknesses(Map<String, Double> flat, List<String> strengths, List<String> weaknesses) {
-        var values = new ArrayList<>(flat.values());
-        values.sort(Double::compareTo);
-        if (values.isEmpty()) return;
-        double p30 = values.get((int)Math.floor(values.size() * 0.30));
-        double p70 = values.get((int)Math.floor(values.size() * 0.70));
-        for (var e : flat.entrySet()) {
-            if (e.getValue() >= p70 && e.getValue() > 0) strengths.add(e.getKey());
-            if (e.getValue() <= p30) weaknesses.add(e.getKey());
-        }
-    }
+//        // 가중치 맵핑
+//        Map<String, Double> wm = new HashMap<>();
+//        for (var w : weights) {
+//            wm.put(w.getWeightType(), Optional.ofNullable(w.getWeightValue()).orElse(0.0));
+//        }
+//
+//        // Strength/Weakness (상위/하위 30%)
+//        Map<String, Double> flat = new LinkedHashMap<>();
+//        flat.put("github.repo_count", githubRepoScore);
+//        flat.put("github.commit_frequency", githubCommitScore);
+//        flat.put("github.topic_match", githubTopicMatch);
+//        flat.put("github.keyword_match", githubKeywordMatch);
+//        flat.put("notion.keyword_match", notionKeywordMatch);
+//        flat.put("velog.post_count", velogPostScore);
+//        flat.put("velog.recent_activity", velogDateScore);
+//        flat.put("velog.keyword_match", velogKeywordMatch);
+//        flat.put("others.certificate_match", certScore);
+//
+//        var strengths = new ArrayList<String>();
+//        var weaknesses = new ArrayList<String>();
+//        computeStrengthsWeaknesses(flat, strengths, weaknesses);
+//
+//        Map<String, Object> root = new LinkedHashMap<>();
+//        Map<String, Object> applicantInfo = Map.of(
+//                "applicantName", null,
+//                "jobPosting", null,
+//                "submissionDate", null,
+//                "portfolioLinks", List.of()
+//        );
+//        root.put("applicantInfo", applicantInfo);
+//        root.put("finalScore", Math.round(finalScore * 1000.0) / 10.0); // 0~100 스케일(소수1자리)
+//        root.put("percentileRank", null);
+//        root.put("sourceDiversityFactor", Math.round(sourceDiversityFactor * 100.0) / 100.0);
+//
+//        Map<String, Object> categoryScores = new LinkedHashMap<>();
+//        categoryScores.put("github", Map.of(
+//                "repo_count",        Map.of("score", githubRepoScore,  "weight", wm.getOrDefault("GITHUB_REPO_COUNT", 0.0)),
+//                "commit_frequency",  Map.of("score", githubCommitScore,"weight", wm.getOrDefault("GITHUB_COMMIT_COUNT", 0.0)),
+//                "topic_match",       Map.of("score", githubTopicMatch, "weight", wm.getOrDefault("GITHUB_TOPIC_MATCH", 0.0)),
+//                "keyword_match",     Map.of("score", githubKeywordMatch,"weight", wm.getOrDefault("GITHUB_KEYWORD_MATCH", 0.0))
+//        ));
+//        categoryScores.put("notion", Map.of(
+//                "keyword_match", Map.of("score", notionKeywordMatch,"weight", wm.getOrDefault("NOTION_KEYWORD_MATCH", 0.0))
+//        ));
+//        categoryScores.put("velog", Map.of(
+//                "post_count",       Map.of("score", velogPostScore, "weight", wm.getOrDefault("VELOG_POST_COUNT", 0.0)),
+//                "recent_activity",  Map.of("score", velogDateScore, "weight", wm.getOrDefault("VELOG_RECENT_ACTIVITY", 0.0)),
+//                "keyword_match",    Map.of("score", velogKeywordMatch,"weight", wm.getOrDefault("VELOG_KEYWORD_MATCH", 0.0))
+//        ));
+//        categoryScores.put("others", Map.of(
+//                "certificate_match", Map.of("score", certScore,"weight", wm.getOrDefault("CERTIFICATE_MATCH", 0.0))
+//        ));
+//        root.put("categoryScores", categoryScores);
+//
+//        root.put("strengths", strengths);
+//        root.put("weaknesses", weaknesses);
+//
+//        String summary = "자동 요약은 추후 NLP 모듈 연동 시 생성됩니다. 현재는 지표 기반의 정량 결과만 반영됩니다.";
+//        root.put("summary", summary);
+//
+//        // 원천 값도 첨부(디버깅/트레이싱)
+//        root.put("raw", Map.of(
+//                "TEMPLATE", Map.of("keywordsCount", templateKeywords.size()),
+//                "GITHUB",   Map.of("keywords", ghKeywords, "tech", ghTech, "repo", repoCount, "commits", commitCount),
+//                "NOTION",   Map.of("keywords", notionKeywords),
+//                "VELOG",    Map.of("keywords", velogKeywords, "postCount", velogPostCount, "dateCount", velogDateCount)
+//        ));
+//
+//        return OM.writeValueAsString(root);
+//    }
+//
+//    private void computeStrengthsWeaknesses(Map<String, Double> flat, List<String> strengths, List<String> weaknesses) {
+//        var values = new ArrayList<>(flat.values());
+//        values.sort(Double::compareTo);
+//        if (values.isEmpty()) return;
+//        double p30 = values.get((int)Math.floor(values.size() * 0.30));
+//        double p70 = values.get((int)Math.floor(values.size() * 0.70));
+//        for (var e : flat.entrySet()) {
+//            if (e.getValue() >= p70 && e.getValue() > 0) strengths.add(e.getKey());
+//            if (e.getValue() <= p30) weaknesses.add(e.getKey());
+//        }
+//    }
 
     private static double clamp01(double v) {
         if (Double.isNaN(v) || Double.isInfinite(v)) return 0.0;

@@ -46,8 +46,11 @@ public class ValidationResult {
     )
     private ValidationIssue validationIssue;
 
-    @Column(name = "validation_score", nullable = false)
-    private Double validationScore;
+    @Column(name = "adjusted_total", nullable = false)
+    private Double adjustedTotal;
+
+    @Column(name="final_score")
+    private Double finalScore;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
