@@ -20,6 +20,8 @@ public record ResumeEducationResponseDto(
         LocalDate startDate,
         LocalDate endDate,
         ResumeEducation.SchoolType schoolType,
+        String district,
+        String city,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -36,6 +38,8 @@ public record ResumeEducationResponseDto(
                 .schoolType(resumeEducation.getSchoolType())
                 .endDate(resumeEducation.getEndDate())
                 .startDate(resumeEducation.getStartDate())
+                .district(resumeEducation.getDistrict())
+                .city(resumeEducation.getCity())
                 .createdAt(resumeEducation.getCreatedAt())
                 .updatedAt(resumeEducation.getUpdatedAt())
                 .build();

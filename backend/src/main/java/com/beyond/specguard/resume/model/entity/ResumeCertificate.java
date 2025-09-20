@@ -21,7 +21,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
-import org.hibernate.validator.constraints.URL;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -50,27 +49,21 @@ public class ResumeCertificate {
     private Resume resume;
 
     //자격증 명
-    @Column(name = "certificate_name", nullable = false, length = 255)
+    @Column(name = "certificate_name", nullable = false)
     private String certificateName;
 
 
     //자격증 발급 번호
-    @Column(name = "certificate_number", nullable = false, length = 255)
+    @Column(name = "certificate_number", nullable = false)
     private String certificateNumber;
 
     //발행자
-    @Column(name="issuer", nullable = false, length = 255)
+    @Column(name="issuer", nullable = false)
     private String issuer;
-
 
     //취득 시기
     @Column(name = "issued_date", nullable = false)
     private LocalDate issuedDate;
-
-    //자격증 URL
-    @URL
-    @Column(name = "cert_url", nullable = true, columnDefinition = "TEXT")
-    private String certUrl;
 
     @CreationTimestamp
     @Column(name ="created_at", updatable = false)
@@ -80,11 +73,10 @@ public class ResumeCertificate {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public void update(ResumeCertificateUpsertRequest req) {
+    public void update(ResumeCertificateUpsertRequest.Item req) {
         if (req.certificateName() != null) this.certificateName = req.certificateName();
         if (req.certificateNumber() != null) this.certificateNumber = req.certificateNumber();
         if (req.issuer() != null) this.issuer = req.issuer();
         if (req.issuedDate() != null) this.issuedDate = req.issuedDate();
-        if (req.certUrl() != null) this.certUrl = req.certUrl();
     }
 }

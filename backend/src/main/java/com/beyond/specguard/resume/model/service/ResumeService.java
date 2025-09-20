@@ -193,20 +193,6 @@ public class ResumeService {
         }
     }
 
-    // 링크 중복 검증
-    private void validateLinkDuplicates(List<ResumeLinkUpsertRequest> links) {
-        Set<String> keys = new HashSet<>();
-        for (var link : links) {
-            if (link.url() == null || link.url().isBlank()) {
-                throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
-            }
-            String norm = link.url().trim().toLowerCase();
-            if (!keys.add(norm)) {
-                throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
-            }
-        }
-    }
-
     //이력서 기본 정보 UPDATE/INSERT 에서 upsertBasic
     @Transactional
     public ResumeBasicResponse upsertBasic(UUID resumeId, UUID templateId, String email, ResumeBasicCreateRequest req, MultipartFile profileImage) {
@@ -308,8 +294,6 @@ public class ResumeService {
 
 
         if (req.links() != null) {
-            validateLinkDuplicates(req.links());
-
             List<ResumeLink> updatedFields = new ArrayList<>();
 
             Map<UUID, ResumeLinkUpsertRequest> dtoMap = req.links().stream()
@@ -341,7 +325,9 @@ public class ResumeService {
     }
 
     // 중복 자격증 검증
-    private void validateResumeCertificate(List<ResumeCertificateUpsertRequest> certs) {
+    private void validateResumeCertificate(ResumeCertificateUpsertRequest request) {
+        List<ResumeCertificateUpsertRequest.Item> certs = request.certificates();
+
         Set<String> seen = new HashSet<>();
 
         for (var d : certs) {
@@ -354,21 +340,21 @@ public class ResumeService {
 
     //이력서 자격증 정보 UPDATE/INSERT upsertCertificates
     @Transactional
-    public void upsertCertificates(UUID resumeId, UUID templateId, String email, List<ResumeCertificateUpsertRequest> certs) {
-        if(certs == null || certs.isEmpty()) return;
+    public void upsertCertificates(UUID resumeId, UUID templateId, String email, ResumeCertificateUpsertRequest req) {
+        if(req.certificates() == null || req.certificates().isEmpty()) return;
 
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
 
-        validateResumeCertificate(certs);
+        validateResumeCertificate(req);
 
         validateOwnerShip(resume, email, templateId);
 
         List<ResumeCertificate> updatedFields = new ArrayList<>();
 
-        Map<UUID, ResumeCertificateUpsertRequest> dtoMap = certs.stream()
+        Map<UUID, ResumeCertificateUpsertRequest.Item> dtoMap = req.certificates().stream()
                 .filter(f -> f.id() != null)
-                .collect(Collectors.toMap(ResumeCertificateUpsertRequest::id, f -> f));
+                .collect(Collectors.toMap(ResumeCertificateUpsertRequest.Item::id, f -> f));
 
         // 6. 업데이트
         for (ResumeCertificate existing : resume.getResumeCertificates()) {
@@ -379,18 +365,17 @@ public class ResumeService {
             }
         }
 
-        List<ResumeCertificate> newCertificates = certs.stream()
+        List<ResumeCertificate> newCertificates = req.certificates().stream()
                 .filter(f -> f.id() == null)
                 .map(l -> l.toEntity(resume))
                 .toList();
 
-        resume.getResumeCertificates().clear();
-
         updatedFields.addAll(newCertificates);
 
+        resume.getResumeCertificates().clear();
         resume.getResumeCertificates().addAll(updatedFields);
 
-        resumeRepository.saveAndFlush(resume);
+        resumeRepository.save(resume);
     }
 
 

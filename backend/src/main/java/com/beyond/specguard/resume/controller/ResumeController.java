@@ -34,7 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -99,7 +98,7 @@ public class ResumeController {
     public ResumeBasicResponse upsertBasic(
             @AuthenticationPrincipal  ResumeDetails resumeDetails,
             @RequestPart("basic") @Valid ResumeBasicCreateRequest req,
-            @RequestPart(value = "profileImage", required = true) MultipartFile profileImage
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) throws IOException {
         UUID templateId = resumeDetails.getResume().getTemplate().getId();
         String email = resumeDetails.getUsername();
@@ -139,7 +138,7 @@ public class ResumeController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void upsertCertificates(
             @AuthenticationPrincipal ResumeDetails resumeDetails,
-            @Valid @RequestBody List<ResumeCertificateUpsertRequest> certificates
+            @Valid @RequestBody ResumeCertificateUpsertRequest certificates
     ) {
         UUID templateId = resumeDetails.getResume().getTemplate().getId();
         String email = resumeDetails.getUsername();

@@ -3,7 +3,6 @@ package com.beyond.specguard.resume.model.dto.request;
 import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.entity.ResumeLink;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
@@ -13,7 +12,6 @@ public record ResumeLinkUpsertRequest (
         UUID id,
 
         @Schema(description = "URL", example = "https://github.com/hong123")
-        @NotBlank
         String url,
 
         @Schema(description = "링크 타입", example = "GITHUB")
