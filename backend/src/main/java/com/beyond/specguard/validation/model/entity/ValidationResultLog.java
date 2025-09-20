@@ -2,6 +2,7 @@ package com.beyond.specguard.validation.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
@@ -48,7 +49,7 @@ public class ValidationResultLog {
     @Column(name = "match_fields", columnDefinition = "TEXT")
     private String matchFields;
 
-    @UpdateTimestamp
+    @CreationTimestamp
     @Column(name = "validated_at", nullable = false)
     private LocalDateTime validatedAt;
 

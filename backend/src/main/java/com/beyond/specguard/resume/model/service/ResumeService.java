@@ -88,9 +88,7 @@ public class ResumeService {
     private final LocalFileStorageService storageService;
     private final ApplicationEventPublisher eventPublisher;
     private final ValidationResultRepository  validationResultRepository;
-
     private final CompanyTemplateFieldRepository companyTemplateFieldRepository;
-    private final CompanyTemplateResponseRepository companyTemplateResponseRepository;
 
     //이력서 생성에서 create
     @Transactional
@@ -533,7 +531,7 @@ public class ResumeService {
         // resume 연관관계 업데이트
         resume.setTemplateResponses(updatedFields);
 
-        List<CompanyTemplateResponse> responses = companyTemplateResponseRepository.saveAllAndFlush(updatedFields);
+        List<CompanyTemplateResponse> responses = templateResponseRepository.saveAllAndFlush(updatedFields);
 
         return CompanyTemplateResponseResponse.builder()
                 .savedCount(responses.size())

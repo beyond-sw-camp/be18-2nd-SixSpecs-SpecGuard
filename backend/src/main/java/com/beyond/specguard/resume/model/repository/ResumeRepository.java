@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ResumeRepository extends JpaRepository<Resume, UUID>, JpaSpecificationExecutor<Resume> {
-    boolean existsByEmail(String email);
+
     @Query("""
         select r.id
         from Resume r
@@ -28,7 +28,7 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID>, JpaSpecif
     @Query("SELECT r FROM Resume r JOIN FETCH r.template WHERE r.email = :email AND r.template.id = :templateId")
     Optional<Resume> findByEmailAndTemplateId(@Param("email") String email, @Param("templateId") UUID templateId);
 
-    boolean existsByEmailAndTemplateId(String email, UUID uuid);
+    boolean existsByEmailAndTemplateId(String email, UUID templateId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Resume r set r.status = :status where r.id = :resumeId")

@@ -42,7 +42,7 @@ public class ValidationController {
             summary = "정합성 결과 계산 API",
             description = "특정 이력서에 대해 정합성 검사를 요청하고 정합성 검사를 실행한다."
     )
-    @PreAuthorize("hasAnyRole('OWNER','MANAGER','VIEWER')")
+    @PreAuthorize("hasAnyRole('OWNER','MANAGER')")
     @PostMapping("/calculate")
     public ResponseEntity<UUID> calculate(@Valid @RequestBody ValidationCalculateRequestDto request,
                                           Authentication authentication) {

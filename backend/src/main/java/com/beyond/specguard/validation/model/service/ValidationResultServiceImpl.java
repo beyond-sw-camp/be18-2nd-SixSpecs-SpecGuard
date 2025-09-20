@@ -166,17 +166,30 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             mismatch.removeAll(observedUnion);
 
             // 5) 성공 이슈 & 결과 저장
-            ValidationIssue issue = validationIssueRepository.save(
-                    ValidationIssue.builder().validationResult(ValidationIssue.ValidationResult.SUCCESS).build()
-            );
             Resume resumeRef = em.getReference(Resume.class, resumeId);
-            ValidationResult result = validationResultRepository.save(
-                    ValidationResult.builder()
-                            .resume(resumeRef)
-                            .validationIssue(issue)
-                            .adjustedTotal(adjustedTotal)
-                            .build()
-            );
+
+            Optional<ValidationResult> opt = validationResultRepository.findByResumeId(resumeId);
+
+            ValidationResult result;
+            if (opt.isEmpty()) {
+                ValidationIssue issue = validationIssueRepository.save(
+                        ValidationIssue.builder()
+                                .validationResult(ValidationIssue.ValidationResult.SUCCESS)
+                                .build()
+                );
+                // 없으면 새로 생성
+                result = validationResultRepository.save(
+                        ValidationResult.builder()
+                                .resume(resumeRef)
+                                .validationIssue(issue)
+                                .adjustedTotal(adjustedTotal)
+                                .build()
+                );
+            } else {
+                // 있으면 업데이트 쿼리로 필드만 갱신
+                result = opt.get();
+                validationResultRepository.updateAdjustedTotal(result.getId(), adjustedTotal);
+            }
 
 
             // 6) 리포트 JSON + 로그 적재

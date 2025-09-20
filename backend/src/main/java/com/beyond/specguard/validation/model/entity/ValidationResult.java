@@ -32,7 +32,8 @@ public class ValidationResult {
             name="resume_id",
             nullable = false,
             columnDefinition = "CHAR(36)",
-            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT),
+            unique = true
     )
     @JdbcTypeCode(SqlTypes.CHAR)
     private Resume resume;

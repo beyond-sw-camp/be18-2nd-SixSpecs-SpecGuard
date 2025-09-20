@@ -36,7 +36,7 @@ public record ResumeListResponseDto(
             List<String> skills,              // 지원자가 작성한 기술/스킬 리스트
             List<String> certifications,      // 자격증 리스트 (선택적)
             Boolean hasPortfolio,              // 포트폴리오/링크 존재 여부
-            Double validationScore              //정합성 점수
+            Double finalScore              //정합성 점수
     ) {
         public static Item fromEntity(Resume resume) {
             // 학력, 경력, 포트폴리오, 스킬 등 요약
@@ -84,7 +84,7 @@ public record ResumeListResponseDto(
                     skills,
                     certifications,
                     hasPortfolio,
-                    resume.getValidationResult().getAdjustedTotal()
+                    resume.getValidationResult().getFinalScore()
 
             );
         }

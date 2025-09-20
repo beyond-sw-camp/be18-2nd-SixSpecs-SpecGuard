@@ -21,6 +21,15 @@ public interface ValidationResultRepository extends JpaRepository<ValidationResu
     List<ValidationResult> findAllValidatedByTemplateId(@Param("templateId") UUID templateId);
 
     @Query("""
+   select vr
+     from ValidationResult vr
+     join vr.resume r
+    where r.id = :resumeId
+""")
+    Optional<ValidationResult> findByResumeId(@Param("resumeId") UUID resumeId);
+
+
+    @Query("""
        select vr
          from ValidationResult vr
          join vr.resume r
@@ -56,4 +65,10 @@ public interface ValidationResultRepository extends JpaRepository<ValidationResu
     int updateAggregatedKeywords(@Param("resultId") UUID resultId,
                                  @Param("matchKw") String matchKw,
                                  @Param("mismatchKw") String mismatchKw);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update ValidationResult vr set vr.adjustedTotal = :adjustedTotal where vr.id = :resultId")
+    int updateAdjustedTotal(@Param("resultId") UUID resultId,
+                            @Param("adjustedTotal") Double adjustedTotal);
+
 }
