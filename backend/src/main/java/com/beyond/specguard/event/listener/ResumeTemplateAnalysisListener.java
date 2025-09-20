@@ -1,4 +1,3 @@
-/*
 package com.beyond.specguard.event.listener;
 
 import com.beyond.specguard.event.ResumeSubmittedEvent;
@@ -19,7 +18,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
@@ -61,8 +62,10 @@ public class ResumeTemplateAnalysisListener {
                                 .responseId(response.getId())
                                 .build());
 
-                analysis.updateAnalysis(summaryRes.getSummary(),
-                        new ObjectMapper().writeValueAsString(keywordRes.getKeywords()));
+
+                Map<String, Object> keywordsMap = Map.of("keywords",keywordRes.getData().getKeywords() );
+                analysis.updateAnalysis(summaryRes.getData().getSummary(),
+                        new ObjectMapper().writeValueAsString(keywordsMap));
 
                 analysisRepository.save(analysis);
 
@@ -74,4 +77,3 @@ public class ResumeTemplateAnalysisListener {
         }
     }
 }
-*/

@@ -55,11 +55,8 @@ public class CrawlingCompletionScheduler {
                 List<CrawlingResult> results = crawlingResultRepository.findByResume_Id(resumeId);
 
                 // [NLP 호출 위치]
-                for (CrawlingResult result : results) {
-                    if (result.getCrawlingStatus() == CrawlingResult.CrawlingStatus.COMPLETED) {
-                        keywordNlpClient.extractKeywords(resumeId);
-                    }
-                }
+                keywordNlpClient.extractKeywords(resumeId);
+
 
                 //  resumeId 기준 PortfolioResult 전부 조회 (한 번에)
                 List<PortfolioResult> portfolioResults = portfolioResultRepository.findAllByResumeId(resumeId);
