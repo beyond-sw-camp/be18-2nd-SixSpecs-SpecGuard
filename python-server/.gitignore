@@ -20,5 +20,5 @@
 
 __pycache__/
 
-../src/main/resources/application.properties
-../src/main/resources/application-*.properties
+../backend/src/resources/application-*.properties
+../backend/src/resources/application.properties
