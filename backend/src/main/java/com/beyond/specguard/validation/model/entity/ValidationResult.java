@@ -56,7 +56,28 @@ public class ValidationResult {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "description_comment", columnDefinition = "TEXT")
+    private String descriptionComment;
 
+    @Column(name = "match_keyword", columnDefinition = "TEXT")
+    private String matchKeyword;
+
+    @Column(name = "mismatch_keyword", columnDefinition = "TEXT")
+    private String mismatchKeyword;
+
+    @Column(name = "result_at")
+    private LocalDateTime resultAt;
+
+
+    public void updateFinalScore(Double score, LocalDateTime at) {
+        this.finalScore = score;
+        this.resultAt = at;
+    }
+    public void updateComment(String comment) { this.descriptionComment = comment; }
+    public void updateKeywords(String topMatches, String randomMismatches) {
+        this.matchKeyword = topMatches;
+        this.mismatchKeyword = randomMismatches;
+    }
 
 
 

@@ -45,16 +45,12 @@ public class ValidationResultLog {
     @Column(name="mismatch_fields", columnDefinition = "JSON", nullable = true)
     private String mismatchFields;
 
+    @Column(name = "match_fields", columnDefinition = "TEXT")
+    private String matchFields;
+
     @UpdateTimestamp
     @Column(name = "validated_at", nullable = false)
     private LocalDateTime validatedAt;
-
-
-    @Column(name = "description_comment", columnDefinition = "TEXT", nullable = true)
-    private String descriptionComment;
-
-
-
 
 
 }
