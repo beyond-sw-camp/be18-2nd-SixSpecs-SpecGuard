@@ -38,17 +38,12 @@ public class ValidationResultLog {
     @Column(name = "validation_score", nullable = false)
     private Double validationScore;
 
-    @Column(name = "validation_resume_portfolio", nullable = true)
-    private Double validationResumePortfolio;
 
     @Column(name = "keyword_list", columnDefinition = "TEXT", nullable = true)
     private String keywordList;
 
     @Column(name="mismatch_fields", columnDefinition = "JSON", nullable = true)
     private String mismatchFields;
-
-    @Column(name="summary", columnDefinition="TEXT")
-    private String summary;
 
     @UpdateTimestamp
     @Column(name = "validated_at", nullable = false)
@@ -57,6 +52,7 @@ public class ValidationResultLog {
 
     @Column(name = "description_comment", columnDefinition = "TEXT", nullable = true)
     private String descriptionComment;
+
 
 
 

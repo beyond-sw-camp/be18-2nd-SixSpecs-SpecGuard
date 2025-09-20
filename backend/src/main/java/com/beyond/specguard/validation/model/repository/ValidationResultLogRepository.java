@@ -2,7 +2,7 @@ package com.beyond.specguard.validation.model.repository;
 
 import com.beyond.specguard.validation.model.dto.response.ValidationResultLogResponseDto;
 import com.beyond.specguard.validation.model.entity.ValidationResultLog;
-import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

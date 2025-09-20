@@ -42,7 +42,7 @@ public class ValidationController {
             @Valid @RequestBody ValidationCalculateRequestDto request,
             Authentication authentication
     ) {
-        ClientUser clientUser = getClientUser(authentication);
+        ClientUser clientUser  = getClientUser(authentication);
         UUID resultId = validationResultService.calculateAndSave(clientUser, request);
         return ResponseEntity.ok(resultId);
     }

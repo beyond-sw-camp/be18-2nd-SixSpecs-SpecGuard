@@ -15,12 +15,8 @@ import java.util.UUID;
 @Builder
 public class ValidationPercentileRequestDto{
         @NotNull
-        UUID templateId;
+        private UUID templateId;
 
         @NotNull
-        UUID resumeId;
-
-        Double adjustedTotal;
-
-        Resume.ResumeStatus status;
+        private UUID resumeId;
 }

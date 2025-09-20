@@ -43,17 +43,6 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
                                                  @Param("linkType") String linkType);
 
 
-    // GitHub 메타데이터 합계(레포/커밋) - resume의 GITHUB 링크 전체 기준
-//    @Query(value = """
-//        SELECT COALESCE(SUM(gm.repo_count),0) AS repoSum,
-//               COALESCE(SUM(gm.commits),0)    AS commitSum
-//          FROM github_metatdata gm
-//          JOIN resume_link rl ON gm.resume_link_id = rl.id
-//         WHERE rl.resume_id = :resumeId
-//           AND rl.link_type = 'GITHUB'
-//        """, nativeQuery = true)
-//    Object[] sumGithubStatsRaw(@Param("resumeId") UUID resumeId);
-
     // 자격증 검증 집계
     @Query(value = """
         SELECT 
@@ -80,14 +69,6 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
         """, nativeQuery = true)
     List<WeightRow> findWeightsByResume(@Param("resumeId") UUID resumeId);
 
-
-//    default Map<String, Object> sumGithubStats(UUID resumeId) {
-//        Object[] row = sumGithubStatsRaw(resumeId);
-//        Map<String, Object> m = new HashMap<>();
-//        m.put("repoSum",   ((Number) row[0]).intValue());
-//        m.put("commitSum", ((Number) row[1]).intValue());
-//        return m;
-//    }
 
 
     default Map<String, Object> countCertificateVerification(UUID resumeId) {

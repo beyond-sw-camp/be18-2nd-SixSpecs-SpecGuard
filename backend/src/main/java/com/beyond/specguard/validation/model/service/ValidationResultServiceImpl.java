@@ -7,6 +7,7 @@ import com.beyond.specguard.evaluationprofile.model.entity.EvaluationWeight.Weig
 import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.entity.ResumeLink;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
+import com.beyond.specguard.validation.exception.errorcode.ValidationErrorCode;
 import com.beyond.specguard.validation.model.dto.request.ValidationCalculateRequestDto;
 import com.beyond.specguard.validation.model.dto.request.ValidationPercentileRequestDto;
 import com.beyond.specguard.validation.model.entity.ValidationIssue;
@@ -19,6 +20,8 @@ import com.beyond.specguard.validation.model.repository.ValidationResultReposito
 import com.beyond.specguard.validation.util.KeywordUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -65,49 +68,48 @@ public class ValidationResultServiceImpl implements ValidationResultService{
 
         try {
             // 1) 템플릿 키워드 수집 (company_template_response_analysis.keyword)
-            List<String> templateKeywordJsons =
-                    calculateQueryRepository.findTemplateAnalysisKeywordsJson(resumeId);
+            List<String> templateKeywordJsons = calculateQueryRepository.findTemplateAnalysisKeywordsJson(resumeId);
             Set<String> templateKeywords = new LinkedHashSet<>();
-            for (String json : templateKeywordJsons) {
-                templateKeywords.addAll(KeywordUtils.parseKeywords(json));
-            }
+            for (String json : templateKeywordJsons) templateKeywords.addAll(KeywordUtils.parseKeywords(json));
 
             // 2) 플랫폼별 포트폴리오 정제 결과 수집
-            //    - keywords: 키워드 매칭
-            //    - tech:     GitHub 토픽 매칭
-            //    - count:    Velog 게시글 수
             Set<String> ghKeywords = new LinkedHashSet<>();     //깃허브 키워드
             Set<String> ghTech     = new LinkedHashSet<>();     //깃허브 기술 키워드
             int githubCommitCount = 0;                          //깃허브 커밋수
             int githubRepoCount = 0;                            //깃허브 레포수
-            for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.GITHUB.name())) {
+            List<String> ghProcessed =
+                    calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.GITHUB.name());
+            for (String pc : ghProcessed) {
                 ghKeywords.addAll(KeywordUtils.parseKeywords(pc));
                 ghTech.addAll(KeywordUtils.parseTech(pc));
                 githubCommitCount += KeywordUtils.commitCount(pc);
-                githubRepoCount += KeywordUtils.repoCount(pc);
+                githubRepoCount   += KeywordUtils.repoCount(pc);
             }
 
+            Set<String> ghObserved = new LinkedHashSet<>(ghKeywords);
+            ghObserved.addAll(ghTech);
+
             Set<String> notionKeywords = new LinkedHashSet<>();    //노션 키워드
-            for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.NOTION.name())) {
+            List<String> notionProcessed =
+                    calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.NOTION.name());
+            for (String pc : notionProcessed) {
                 notionKeywords.addAll(KeywordUtils.parseKeywords(pc));
             }
 
             Set<String> velogKeywords = new LinkedHashSet<>();      //벨로그 키워드
             int velogPostCount = 0;                                 //벨로그 개수
             int velogDateCount = 0;                                 //벨로그 최근 개수
-            for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.VELOG.name())) {
+            List<String> velogProcessed =
+                    calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.VELOG.name());
+            for (String pc : velogProcessed) {
                 velogKeywords.addAll(KeywordUtils.parseKeywords(pc));
                 velogPostCount += KeywordUtils.parseCount(pc);
                 velogDateCount += KeywordUtils.dateCount(pc);
             }
 
-            // 3) GitHub 메타데이터(레포/커밋) 합계
-//            var githubAgg = calculateQueryRepository.sumGithubStats(resumeId);
-//            int repoCount   = ((Number) githubAgg.getOrDefault("repoSum", 0)).intValue();   //레포 수
-//            int commitCount = ((Number) githubAgg.getOrDefault("commitSum", 0)).intValue(); //커밋 수
 
             // 4) 자격증 매칭 COMPLETED / (COMPLETED + FAILED)
-            var certAgg = calculateQueryRepository.countCertificateVerification(resumeId);
+            var certAgg   = calculateQueryRepository.countCertificateVerification(resumeId);
             int completed = ((Number) certAgg.getOrDefault("completed", 0)).intValue();
             int failed    = ((Number) certAgg.getOrDefault("failed", 0)).intValue();
             double certScore = (completed + failed) == 0 ? 0.0 : (double) completed / (completed + failed);
@@ -120,7 +122,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             double notionKeywordMatch   = KeywordUtils.jaccard(notionKeywords, templateKeywords);
             double velogKeywordMatch    = KeywordUtils.jaccard(velogKeywords,  templateKeywords);
             double velogPostScore       = clamp01(velogPostCount / VELOG_POST_MAX);
-            double velogDateScore     = clamp01(velogDateCount / VELOG_POST_MAX);
+            double velogDateScore       = clamp01(velogDateCount / VELOG_POST_MAX);
 
             // 6) 가중치 적용 (존재하는 지표만 합산)
             Map<WeightType, Double> metrics = new EnumMap<>(WeightType.class);
@@ -131,7 +133,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             metrics.put(WeightType.NOTION_KEYWORD_MATCH,  notionKeywordMatch);
             metrics.put(WeightType.VELOG_KEYWORD_MATCH,   velogKeywordMatch);
             metrics.put(WeightType.VELOG_POST_COUNT,      velogPostScore);
-            metrics.put(WeightType.VELOG_RECENT_ACTIVITY,    velogDateScore);
+            metrics.put(WeightType.VELOG_RECENT_ACTIVITY, velogDateScore);
             metrics.put(WeightType.CERTIFICATE_MATCH,     certScore);
 
 
@@ -141,39 +143,57 @@ public class ValidationResultServiceImpl implements ValidationResultService{
 
 
             //정합성 점수 종합
-            int sourceCount = 9;
-            if(githubRepoScore == 0.0){sourceCount--;}
-            if(githubCommitScore == 0.0){sourceCount--;}
-            if(githubKeywordMatch == 0.0){sourceCount--;}
-            if(githubTopicMatch == 0.0){sourceCount--;}
-            if(notionKeywordMatch == 0.0){sourceCount--;}
-            if(velogKeywordMatch == 0.0){sourceCount--;}
-            if(velogPostScore == 0.0){sourceCount--;}
-            if(velogDateScore == 0.0){sourceCount--;}
-            if(certScore == 0.0){sourceCount--;}
-            double sourceDiversityFactor = Math.log(1+sourceCount) / Math.log(9);
+            int sourceCount = 0;
+            for (double v : new double[]{
+                    githubRepoScore, githubCommitScore, githubKeywordMatch, githubTopicMatch,
+                    notionKeywordMatch, velogKeywordMatch, velogPostScore, velogDateScore, certScore
+            }) sourceCount += (v > 0.0 ? 1 : 0);
+            double sourceDiversityFactor = (sourceCount == 0) ? 0.0 : Math.log(1 + sourceCount) / Math.log(9);
 
             double rawTotal = 0.0;
-            for(var w : weights){
-                WeightType wt;
-                try{
-                    wt = WeightType.valueOf(w.getWeightType());
-                }catch(Exception e){
-                    throw new IllegalArgumentException("Invalid weight type: " + w.getWeightType());
-                }
-                if(!metrics.containsKey(wt)){
-                    continue;
-                }
-                double weight = Optional.ofNullable(w.getWeightValue()).orElse(0.0);
-                double score  = metrics.get(wt);
-                rawTotal += weight * score;
+            for (var w : weights) {
+                WeightType wt = WeightType.valueOf(w.getWeightType());
+                if (!metrics.containsKey(wt)) continue;
+                rawTotal += Optional.ofNullable(w.getWeightValue()).orElse(0.0) * metrics.get(wt);
             }
 
             double adjustedTotal = rawTotal * sourceDiversityFactor;
-            //TODO percentile 계산
-            double finalScore = adjustedTotal * 100;
 
+            Map<String, Integer> presenceScore = new HashMap<>();
+            for (String k : templateKeywords) {
+                int s = 0;
+                if (ghObserved.contains(k))     s++;
+                if (notionKeywords.contains(k)) s++;
+                if (velogKeywords.contains(k))  s++;
+                if (s > 0) presenceScore.put(k, s);
+            }
 
+            List<String> top5 = presenceScore.entrySet().stream()
+                    .sorted((a, b) -> {
+                        int byScore = Integer.compare(b.getValue(), a.getValue());
+                        return (byScore != 0) ? byScore : a.getKey().compareTo(b.getKey());
+                    })
+                    .limit(5)
+                    .map(Map.Entry::getKey)
+                    .toList();
+
+            String descriptionComment = top5.isEmpty() ? null : String.join(", ", top5);
+
+            Set<String> observedUnion = new LinkedHashSet<>();
+            observedUnion.addAll(ghObserved);
+            observedUnion.addAll(notionKeywords);
+            observedUnion.addAll(velogKeywords);
+
+            Set<String> mismatch = new LinkedHashSet<>(templateKeywords);
+            mismatch.removeAll(observedUnion);
+            String mismatchJson = OM.writeValueAsString(mismatch);
+
+            // 6) 성공 이슈(필수 FK) 생성
+            ValidationIssue issue = validationIssueRepository.save(
+                    ValidationIssue.builder()
+                            .validationResult(ValidationIssue.ValidationResult.SUCCESS)
+                            .build()
+            );
 
 
             // 7) 저장 (빌더만)
@@ -181,8 +201,8 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             ValidationResult result = validationResultRepository.save(
                     ValidationResult.builder()
                             .resume(resumeRef)
-                            .adjustedTotal(finalScore)
-                            .createdAt(LocalDateTime.now())
+                            .validationIssue(issue)
+                            .adjustedTotal(adjustedTotal)
                             .build()
             );
 
@@ -193,20 +213,20 @@ public class ValidationResultServiceImpl implements ValidationResultService{
                     githubRepoCount, githubCommitCount, velogPostCount, velogDateCount,
                     githubRepoScore, githubCommitScore, githubKeywordMatch, githubTopicMatch,
                     notionKeywordMatch, velogKeywordMatch, velogPostScore, velogDateScore,
-                    certScore, sourceDiversityFactor, finalScore, weights
+                    certScore, sourceDiversityFactor, adjustedTotal, weights
             );
-
-
 
             validationResultLogRepository.save(
                     ValidationResultLog.builder()
                             .validationResult(result)
-                            .validationScore(finalScore)
+                            .validationScore(adjustedTotal)
                             .keywordList(reportJson)
-                            .mismatchFields(null)
+                            .mismatchFields(mismatchJson)
+                            .descriptionComment(descriptionComment)
                             .validatedAt(LocalDateTime.now())
                             .build()
             );
+
 
             // 8) 상태 전환
             resumeRepository.updateStatus(resumeId, Resume.ResumeStatus.VALIDATED);
@@ -218,53 +238,68 @@ public class ValidationResultServiceImpl implements ValidationResultService{
         }
     }
 
+
+
+    @Override
+    @Transactional
     public UUID calculatePercentile(ClientUser clientUser, ValidationPercentileRequestDto request) {
         validateWriteRole(clientUser.getRole());
         final UUID templateId = request.getTemplateId();
+        final UUID resumeId   = request.getResumeId();
 
+        var population = validationResultRepository.findAllValidatedByTemplateId(templateId);
+        if (population.isEmpty()) throw new CustomException(ValidationErrorCode.RESUME_NOT_FOUND);
 
+        ValidationResult target = validationResultRepository.findByResumeId(resumeId)
+                .orElseThrow(() -> new CustomException(ValidationErrorCode.RESUME_NOT_FOUND));
+        if (target.getAdjustedTotal() == null) throw new CustomException(CommonErrorCode.INVALID_REQUEST);
 
+        double x = target.getAdjustedTotal();
+        int n = population.size(), less = 0, equal = 0;
+        for (ValidationResult vr : population) {
+            double v = Optional.ofNullable(vr.getAdjustedTotal()).orElse(0.0);
+            if (v < x) less++;
+            else if (Double.compare(v, x) == 0) equal++;
+        }
+        double percentile = (less + 0.5 * equal) / n;
+        double finalScore = Math.max(0.0, Math.min(1.0, percentile)) * 100.0;
+
+        validationResultRepository.updateFinalScore(target.getId(), finalScore);
+        return target.getId();
     }
 
 
+
     private UUID saveIssueAndLogsOnError(UUID resumeId, Exception ex) {
-        // Issue 저장
         ValidationIssue issue = validationIssueRepository.save(
                 ValidationIssue.builder()
                         .validationResult(classifyIssueType(ex))
                         .build()
         );
-
-        // Result(0점) + 이슈 연결
         Resume resumeRef = em.getReference(Resume.class, resumeId);
         ValidationResult result = validationResultRepository.save(
                 ValidationResult.builder()
                         .resume(resumeRef)
                         .validationIssue(issue)
-                        .validationScore(0.0)
-                        .createdAt(LocalDateTime.now())
+                        .adjustedTotal(0.0)
                         .build()
         );
-
-        // 로그 (오류 요약)
         String json = "{\"ERROR\":\"" + escapeJson(truncate(ex.getMessage(), 500)) + "\"}";
         validationResultLogRepository.save(
                 ValidationResultLog.builder()
                         .validationResult(result)
                         .validationScore(0.0)
                         .keywordList(json)
-                        .mismatchFields(null)
                         .validatedAt(LocalDateTime.now())
-                        .descriptionComment(null)
                         .build()
         );
-        // 실패 시 상태는 변경하지 않음
         return result.getId();
     }
 
     private ValidationIssue.ValidationResult classifyIssueType(Exception ex) {
         return ValidationIssue.ValidationResult.FAILED;
     }
+
 
     private String buildReportJson(
             Set<String> templateKeywords,
@@ -273,103 +308,75 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             int repoCount, int commitCount, int velogPostCount, int velogDateCount,
             double githubRepoScore, double githubCommitScore, double githubKeywordMatch, double githubTopicMatch,
             double notionKeywordMatch, double velogKeywordMatch, double velogPostScore, double velogDateScore,
-            double certScore, double sourceDiversityFactor, double finalScore,
+            double certScore, double sourceDiversityFactor, double adjustedTotal,
             List<CalculateQueryRepository.WeightRow> weights
     ) throws JsonProcessingException {
+        ObjectNode root = OM.createObjectNode();
 
-//        // 가중치 맵핑
-//        Map<String, Double> wm = new HashMap<>();
-//        for (var w : weights) {
-//            wm.put(w.getWeightType(), Optional.ofNullable(w.getWeightValue()).orElse(0.0));
-//        }
-//
-//        // Strength/Weakness (상위/하위 30%)
-//        Map<String, Double> flat = new LinkedHashMap<>();
-//        flat.put("github.repo_count", githubRepoScore);
-//        flat.put("github.commit_frequency", githubCommitScore);
-//        flat.put("github.topic_match", githubTopicMatch);
-//        flat.put("github.keyword_match", githubKeywordMatch);
-//        flat.put("notion.keyword_match", notionKeywordMatch);
-//        flat.put("velog.post_count", velogPostScore);
-//        flat.put("velog.recent_activity", velogDateScore);
-//        flat.put("velog.keyword_match", velogKeywordMatch);
-//        flat.put("others.certificate_match", certScore);
-//
-//        var strengths = new ArrayList<String>();
-//        var weaknesses = new ArrayList<String>();
-//        computeStrengthsWeaknesses(flat, strengths, weaknesses);
-//
-//        Map<String, Object> root = new LinkedHashMap<>();
-//        Map<String, Object> applicantInfo = Map.of(
-//                "applicantName", null,
-//                "jobPosting", null,
-//                "submissionDate", null,
-//                "portfolioLinks", List.of()
-//        );
-//        root.put("applicantInfo", applicantInfo);
-//        root.put("finalScore", Math.round(finalScore * 1000.0) / 10.0); // 0~100 스케일(소수1자리)
-//        root.put("percentileRank", null);
-//        root.put("sourceDiversityFactor", Math.round(sourceDiversityFactor * 100.0) / 100.0);
-//
-//        Map<String, Object> categoryScores = new LinkedHashMap<>();
-//        categoryScores.put("github", Map.of(
-//                "repo_count",        Map.of("score", githubRepoScore,  "weight", wm.getOrDefault("GITHUB_REPO_COUNT", 0.0)),
-//                "commit_frequency",  Map.of("score", githubCommitScore,"weight", wm.getOrDefault("GITHUB_COMMIT_COUNT", 0.0)),
-//                "topic_match",       Map.of("score", githubTopicMatch, "weight", wm.getOrDefault("GITHUB_TOPIC_MATCH", 0.0)),
-//                "keyword_match",     Map.of("score", githubKeywordMatch,"weight", wm.getOrDefault("GITHUB_KEYWORD_MATCH", 0.0))
-//        ));
-//        categoryScores.put("notion", Map.of(
-//                "keyword_match", Map.of("score", notionKeywordMatch,"weight", wm.getOrDefault("NOTION_KEYWORD_MATCH", 0.0))
-//        ));
-//        categoryScores.put("velog", Map.of(
-//                "post_count",       Map.of("score", velogPostScore, "weight", wm.getOrDefault("VELOG_POST_COUNT", 0.0)),
-//                "recent_activity",  Map.of("score", velogDateScore, "weight", wm.getOrDefault("VELOG_RECENT_ACTIVITY", 0.0)),
-//                "keyword_match",    Map.of("score", velogKeywordMatch,"weight", wm.getOrDefault("VELOG_KEYWORD_MATCH", 0.0))
-//        ));
-//        categoryScores.put("others", Map.of(
-//                "certificate_match", Map.of("score", certScore,"weight", wm.getOrDefault("CERTIFICATE_MATCH", 0.0))
-//        ));
-//        root.put("categoryScores", categoryScores);
-//
-//        root.put("strengths", strengths);
-//        root.put("weaknesses", weaknesses);
-//
-//        String summary = "자동 요약은 추후 NLP 모듈 연동 시 생성됩니다. 현재는 지표 기반의 정량 결과만 반영됩니다.";
-//        root.put("summary", summary);
-//
-//        // 원천 값도 첨부(디버깅/트레이싱)
-//        root.put("raw", Map.of(
-//                "TEMPLATE", Map.of("keywordsCount", templateKeywords.size()),
-//                "GITHUB",   Map.of("keywords", ghKeywords, "tech", ghTech, "repo", repoCount, "commits", commitCount),
-//                "NOTION",   Map.of("keywords", notionKeywords),
-//                "VELOG",    Map.of("keywords", velogKeywords, "postCount", velogPostCount, "dateCount", velogDateCount)
-//        ));
-//
-//        return OM.writeValueAsString(root);
-//    }
-//
-//    private void computeStrengthsWeaknesses(Map<String, Double> flat, List<String> strengths, List<String> weaknesses) {
-//        var values = new ArrayList<>(flat.values());
-//        values.sort(Double::compareTo);
-//        if (values.isEmpty()) return;
-//        double p30 = values.get((int)Math.floor(values.size() * 0.30));
-//        double p70 = values.get((int)Math.floor(values.size() * 0.70));
-//        for (var e : flat.entrySet()) {
-//            if (e.getValue() >= p70 && e.getValue() > 0) strengths.add(e.getKey());
-//            if (e.getValue() <= p30) weaknesses.add(e.getKey());
-//        }
-//    }
+
+        ObjectNode kw = OM.createObjectNode();
+        kw.set("template", toArray(templateKeywords));
+        kw.set("github_keywords", toArray(ghKeywords));
+        kw.set("github_topics", toArray(ghTech));
+        kw.set("notion_keywords", toArray(notionKeywords));
+        kw.set("velog_keywords", toArray(velogKeywords));
+        root.set("keywords", kw);
+
+        ObjectNode raw = OM.createObjectNode();
+        raw.put("github_repo_count", repoCount);
+        raw.put("github_commit_count", commitCount);
+        raw.put("velog_post_count", velogPostCount);
+        raw.put("velog_recent_activity", velogDateCount);
+        root.set("raw_aggregates", raw);
+
+        ObjectNode metrics = OM.createObjectNode();
+        metrics.put("GITHUB_REPO_COUNT", githubRepoScore);
+        metrics.put("GITHUB_COMMIT_COUNT", githubCommitScore);
+        metrics.put("GITHUB_KEYWORD_MATCH", githubKeywordMatch);
+        metrics.put("GITHUB_TOPIC_MATCH", githubTopicMatch);
+        metrics.put("NOTION_KEYWORD_MATCH", notionKeywordMatch);
+        metrics.put("VELOG_KEYWORD_MATCH", velogKeywordMatch);
+        metrics.put("VELOG_POST_COUNT", velogPostScore);
+        metrics.put("VELOG_RECENT_ACTIVITY", velogDateScore);
+        metrics.put("CERTIFICATE_MATCH", certScore);
+        root.set("metrics", metrics);
+
+        ArrayNode ws = OM.createArrayNode();
+        for (var w : weights) {
+            ObjectNode n = OM.createObjectNode();
+            n.put("weight_type", w.getWeightType());
+            n.put("weight_value", Optional.ofNullable(w.getWeightValue()).orElse(0.0));
+            ws.add(n);
+        }
+        root.set("weights", ws);
+
+        ObjectNode summary = OM.createObjectNode();
+        summary.put("source_diversity_factor", sourceDiversityFactor);
+        summary.put("adjusted_total", adjustedTotal);
+        root.set("summary", summary);
+
+        return OM.writeValueAsString(root);
+    }
+
+    private static ArrayNode toArray(Collection<String> set) {
+        ArrayNode arr = OM.createArrayNode();
+        for (String s : set) arr.add(s);
+        return arr;
+    }
 
     private static double clamp01(double v) {
         if (Double.isNaN(v) || Double.isInfinite(v)) return 0.0;
         return Math.max(0.0, Math.min(1.0, v));
     }
+
     private static String truncate(String s, int max) {
         if (s == null) return null;
         return (s.length() <= max) ? s : s.substring(0, max);
     }
+
     private static String escapeJson(String s) {
         if (s == null) return null;
-        return s.replace("\"","\\\"");
+        return s.replace("\"", "\\\"");
     }
+
 }
