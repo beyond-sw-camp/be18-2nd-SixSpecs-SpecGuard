@@ -67,6 +67,8 @@ dependencies {
 
     // --- codef (자격증 검증) ---
     implementation 'io.codef.api:easycodef-java:1.0.6'
+    // Jsoup
+    implementation 'org.jsoup:jsoup:1.16.1'
 }
 
 
