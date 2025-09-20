@@ -1,4 +1,3 @@
-/*
 package com.beyond.specguard.event.client;
 
 import com.beyond.specguard.event.dto.KeywordRequest;
@@ -35,4 +34,3 @@ public class TemplateNlpClient {
                 .block();
     }
 }
-*/

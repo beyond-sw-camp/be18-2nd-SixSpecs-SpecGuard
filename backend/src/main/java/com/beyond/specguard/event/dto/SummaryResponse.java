@@ -8,7 +8,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SummaryResponse {
-    private String type;
-    private String summary;
+    private String status;
+    private Data data;
 
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Data {
+        private String summary;
+    }
 }

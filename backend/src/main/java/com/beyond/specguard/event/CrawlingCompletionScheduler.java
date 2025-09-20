@@ -4,6 +4,7 @@ import com.beyond.specguard.crawling.entity.CrawlingResult;
 import com.beyond.specguard.crawling.entity.PortfolioResult;
 import com.beyond.specguard.crawling.repository.CrawlingResultRepository;
 import com.beyond.specguard.crawling.repository.PortfolioResultRepository;
+import com.beyond.specguard.event.client.KeywordNlpClient;
 import com.beyond.specguard.resume.model.entity.CompanyTemplateResponseAnalysis;
 import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.repository.CompanyTemplateResponseAnalysisRepository;
@@ -26,6 +27,7 @@ public class CrawlingCompletionScheduler {
     private final PortfolioResultRepository portfolioResultRepository;
     private final CompanyTemplateResponseAnalysisRepository analysisRepository;
     private final ResumeRepository resumeRepository;
+    private final KeywordNlpClient  keywordNlpClient;
 
     private final ReentrantLock lock = new ReentrantLock();
 
@@ -52,15 +54,9 @@ public class CrawlingCompletionScheduler {
                 //  resumeId 기준 CrawlingResult 전부 조회
                 List<CrawlingResult> results = crawlingResultRepository.findByResume_Id(resumeId);
 
-                // ✅ [NLP 호출 위치]
-                // 여기서 results 중 CrawlingStatus == COMPLETED 인 결과만 골라서
-                // NLP 서버에 요청을 보내야 함 (저장은 Python 쪽에서 처리)
-                // ex)
-                // for (CrawlingResult result : results) {
-                //     if (result.getCrawlingStatus() == CrawlingResult.CrawlingStatus.COMPLETED) {
-                //         nlpClient.extractKeywords(new KeywordRequest(resumeId, result.getContents()));
-                //     }
-                // }
+                // [NLP 호출 위치]
+                keywordNlpClient.extractKeywords(resumeId);
+
 
                 //  resumeId 기준 PortfolioResult 전부 조회 (한 번에)
                 List<PortfolioResult> portfolioResults = portfolioResultRepository.findAllByResumeId(resumeId);
@@ -86,33 +82,23 @@ public class CrawlingCompletionScheduler {
                                     List<CrawlingResult> results,
                                     List<PortfolioResult> portfolioResults,
                                     List<CompanyTemplateResponseAnalysis> analyses) {
-        boolean anyFailed = results.stream()
-                .anyMatch(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.FAILED);
 
         boolean anyRunning = results.stream()
-                .anyMatch(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.RUNNING);
-        // completed랑 nonexisted 합이 3개면 통과
-        long completedOrNonExistedCount = results.stream()
-                .filter(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.COMPLETED
-                        || r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.NOTEXISTED)
-                .count();
+                .anyMatch(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.PENDING);
 
-        boolean allCrawlingCompleted = (completedOrNonExistedCount == 3);
+        // 모든 값의 합이 3개일때로 수정해야함.
+        boolean allCrawlingCompleted = (results.size() == 3);
 
-        //  모든 포트폴리오가 COMPLETED 이어야 true
-        boolean portfolioCompleted = !portfolioResults.isEmpty() &&
-                portfolioResults.stream()
-                        .allMatch(p -> p.getPortfolioStatus() == PortfolioResult.PortfolioStatus.COMPLETED);
+        // PortfolioResult 상태 상관없이 개수 합이 3개면 완료
+        boolean portfolioCompleted = (portfolioResults.size() == 3);
 
+        //자소서 nlp 임 이건
         boolean allNlpProcessed = analyses.stream()
                 .allMatch(a -> a.getSummary() != null && !a.getSummary().isBlank());
 
         if (anyRunning) {
             //  실행 중인 크롤링이 있으면 전체 상태는 PENDING
             resume.changeStatus(Resume.ResumeStatus.PENDING);
-        } else if (anyFailed) {
-            //  실패 있으면 FAILED
-            resume.changeStatus(Resume.ResumeStatus.FAILED);
         } else if (allCrawlingCompleted && portfolioCompleted && allNlpProcessed) {
             //  전부 완료된 경우에 PROCESSING
             resume.changeStatus(Resume.ResumeStatus.PROCESSING);

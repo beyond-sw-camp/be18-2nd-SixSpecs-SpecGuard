@@ -38,7 +38,7 @@ public class CertificateVerificationCodefService implements CertificateVerificat
             String certNumber = certificate.getCertificateNumber();
 
             // 번호가 null
-            if (certNumber == null) {
+            if (certNumber == null || certNumber.isBlank()) {
                 CertificateVerification verification = CertificateVerification.builder()
                         .verificationSource("CODEF")
                         .resumeCertificate(certificate)

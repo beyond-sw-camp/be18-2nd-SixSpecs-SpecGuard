@@ -63,12 +63,12 @@ public class ResumeLink {
 
     //url 링크
     @URL
-    @Column(name="url", columnDefinition = "TEXT", nullable = false)
+    @Column(name="url", columnDefinition = "TEXT", nullable = true)
     private String url;
 
     //url 종류
     @Enumerated(EnumType.STRING)
-    @Column(name = "link_type", nullable = false)
+    @Column(name = "link_type", nullable = true)
     private LinkType linkType;
 
     @CreationTimestamp
