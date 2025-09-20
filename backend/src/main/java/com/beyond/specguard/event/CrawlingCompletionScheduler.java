@@ -86,12 +86,10 @@ public class CrawlingCompletionScheduler {
                                     List<CrawlingResult> results,
                                     List<PortfolioResult> portfolioResults,
                                     List<CompanyTemplateResponseAnalysis> analyses) {
-        boolean anyFailed = results.stream()
-                .anyMatch(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.FAILED);
 
         boolean anyRunning = results.stream()
-                .anyMatch(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.RUNNING);
-        // completed랑 nonexisted 합이 3개면 통과
+                .anyMatch(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.PENDING);
+        // 모든 값의 합이 3개일때로 수정해야함.
         long completedOrNonExistedCount = results.stream()
                 .filter(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.COMPLETED
                         || r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.NOTEXISTED)
@@ -99,20 +97,20 @@ public class CrawlingCompletionScheduler {
 
         boolean allCrawlingCompleted = (completedOrNonExistedCount == 3);
 
-        //  모든 포트폴리오가 COMPLETED 이어야 true
-        boolean portfolioCompleted = !portfolioResults.isEmpty() &&
-                portfolioResults.stream()
-                        .allMatch(p -> p.getPortfolioStatus() == PortfolioResult.PortfolioStatus.COMPLETED);
+        //  합이 3개일때 수정해야함.
+        long portfolioCompletedOrNonExisted = portfolioResults.stream()
+                .filter(p -> p.getPortfolioStatus() == PortfolioResult.PortfolioStatus.COMPLETED
+                        || p.getPortfolioStatus() == PortfolioResult.PortfolioStatus.NOTEXISTED)
+                .count();
+        boolean portfolioCompleted = (portfolioCompletedOrNonExisted == 3);
 
+        //자소서 nlp 임 이건
         boolean allNlpProcessed = analyses.stream()
                 .allMatch(a -> a.getSummary() != null && !a.getSummary().isBlank());
 
         if (anyRunning) {
             //  실행 중인 크롤링이 있으면 전체 상태는 PENDING
             resume.changeStatus(Resume.ResumeStatus.PENDING);
-        } else if (anyFailed) {
-            //  실패 있으면 FAILED
-            resume.changeStatus(Resume.ResumeStatus.FAILED);
         } else if (allCrawlingCompleted && portfolioCompleted && allNlpProcessed) {
             //  전부 완료된 경우에 PROCESSING
             resume.changeStatus(Resume.ResumeStatus.PROCESSING);
