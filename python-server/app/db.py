@@ -42,8 +42,9 @@ FROM {RL_TBL}
 WHERE {RL_COL_RID} = :rid
   AND {RL_COL_TYPE} = :lt
   AND (
-        {RL_COL_URL} = :url
-        OR (:url = '' AND {RL_COL_URL} IS NULL)
+        (:url <> '' AND {RL_COL_URL} = :url)
+        OR
+        (:url = '' AND ({RL_COL_URL} IS NULL OR {RL_COL_URL} = ''))
       )
 LIMIT 1
 """)
