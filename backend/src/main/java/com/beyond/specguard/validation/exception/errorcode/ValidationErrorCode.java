@@ -6,6 +6,9 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public enum ValidationErrorCode implements ErrorCode {
+
+
+
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "서버 내부 오류"),
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "요청 본문 오류"),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "인증 실패"),
