@@ -175,9 +175,7 @@ public class Resume {
         DRAFT,
         PENDING,
         PROCESSING,
-        VALIDATED,
-        COMPLETED,
-        FAILED
+        VALIDATED
     }
 
 }
