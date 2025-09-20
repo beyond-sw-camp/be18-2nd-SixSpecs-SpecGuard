@@ -4,6 +4,7 @@ import com.beyond.specguard.crawling.entity.CrawlingResult;
 import com.beyond.specguard.crawling.entity.PortfolioResult;
 import com.beyond.specguard.crawling.repository.CrawlingResultRepository;
 import com.beyond.specguard.crawling.repository.PortfolioResultRepository;
+import com.beyond.specguard.event.client.KeywordNlpClient;
 import com.beyond.specguard.resume.model.entity.CompanyTemplateResponseAnalysis;
 import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.repository.CompanyTemplateResponseAnalysisRepository;
@@ -26,10 +27,11 @@ public class CrawlingCompletionScheduler {
     private final PortfolioResultRepository portfolioResultRepository;
     private final CompanyTemplateResponseAnalysisRepository analysisRepository;
     private final ResumeRepository resumeRepository;
+    private final KeywordNlpClient  keywordNlpClient;
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    @Scheduled(fixedDelay = 300000000)
+    @Scheduled(fixedDelay = 30000)
     public void checkCrawlingStatus() {
         if (!lock.tryLock()) {
             log.warn("이전 스케줄러 실행 중 → 이번 실행 스킵");
@@ -52,15 +54,12 @@ public class CrawlingCompletionScheduler {
                 //  resumeId 기준 CrawlingResult 전부 조회
                 List<CrawlingResult> results = crawlingResultRepository.findByResume_Id(resumeId);
 
-                // ✅ [NLP 호출 위치]
-                // 여기서 results 중 CrawlingStatus == COMPLETED 인 결과만 골라서
-                // NLP 서버에 요청을 보내야 함 (저장은 Python 쪽에서 처리)
-                // ex)
-                // for (CrawlingResult result : results) {
-                //     if (result.getCrawlingStatus() == CrawlingResult.CrawlingStatus.COMPLETED) {
-                //         nlpClient.extractKeywords(new KeywordRequest(resumeId, result.getContents()));
-                //     }
-                // }
+                // [NLP 호출 위치]
+                for (CrawlingResult result : results) {
+                    if (result.getCrawlingStatus() == CrawlingResult.CrawlingStatus.COMPLETED) {
+                        keywordNlpClient.extractKeywords(resumeId);
+                    }
+                }
 
                 //  resumeId 기준 PortfolioResult 전부 조회 (한 번에)
                 List<PortfolioResult> portfolioResults = portfolioResultRepository.findAllByResumeId(resumeId);
