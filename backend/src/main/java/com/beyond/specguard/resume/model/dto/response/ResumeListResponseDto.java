@@ -4,15 +4,13 @@ import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.entity.ResumeCertificate;
 import com.beyond.specguard.resume.model.entity.ResumeEducation;
 import com.beyond.specguard.resume.model.entity.ResumeExperience;
+import com.beyond.specguard.validation.model.entity.ValidationResult;
 import lombok.Builder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Builder
 public record ResumeListResponseDto(
@@ -60,15 +58,24 @@ public record ResumeListResponseDto(
                     .map(ResumeExperience::getPosition)
                     .orElse("");
 
-            List<String> skills = resume.getResumeBasic() != null
-                    ? List.of(resume.getResumeBasic().getSpecialty().split(",")) // ','로 구분된 스킬
-                    : Collections.emptyList();
+
+            String specialty = (resume.getResumeBasic() != null) ? resume.getResumeBasic().getSpecialty() : null;
+            List<String> skills = (specialty == null || specialty.isBlank())
+                    ? Collections.emptyList()
+                    : Arrays.stream(specialty.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isBlank())
+                    .toList();
 
             List<String> certifications = resume.getResumeCertificates().stream()
                     .map(ResumeCertificate::getCertificateName)
                     .toList();
 
             Boolean hasPortfolio = !resume.getResumeLinks().isEmpty();
+
+            Double finalScore = Optional.ofNullable(resume.getValidationResult())
+                    .map(ValidationResult::getFinalScore)
+                    .orElse(null);
 
             return new Item(
                     resume.getTemplate().getId(),
@@ -84,7 +91,7 @@ public record ResumeListResponseDto(
                     skills,
                     certifications,
                     hasPortfolio,
-                    resume.getValidationResult().getFinalScore()
+                    finalScore
 
             );
         }

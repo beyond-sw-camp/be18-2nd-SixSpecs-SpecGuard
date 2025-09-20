@@ -39,4 +39,11 @@ public class ResumeSpecification {
             return cb.like(cb.lower(root.get("email")), "%" + email.toLowerCase() + "%");
         };
     }
+
+    //템플릿ID 필터
+    public static Specification<Resume> hasTemplate(UUID templateId) {
+        return (root, query, cb) -> templateId == null
+                ? cb.conjunction()
+                : cb.equal(root.get("template").get("id"), templateId);
+    }
 }

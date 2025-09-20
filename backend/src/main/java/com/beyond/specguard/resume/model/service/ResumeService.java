@@ -140,11 +140,12 @@ public class ResumeService {
 
     //지원서 목록 조회에서 list
     @Transactional(readOnly = true)
-    public ResumeListResponseDto list(UUID templeteId, Pageable pageable, ClientUser clientUser, Resume.ResumeStatus status, String name, String email) {
+    public ResumeListResponseDto list(UUID templateId, Pageable pageable, ClientUser clientUser, Resume.ResumeStatus status, String name, String email) {
         UUID companyId = clientUser.getCompany().getId();
 
         Specification<Resume> spec = Specification.allOf(
                 ResumeSpecification.hasCompany(companyId),
+                ResumeSpecification.hasTemplate(templateId),
                 ResumeSpecification.hasStatus(status),
                 ResumeSpecification.nameContains(name),
                 ResumeSpecification.emailContains(email)
@@ -152,15 +153,16 @@ public class ResumeService {
 
         long totalElements = resumeRepository.count(spec);
 
-        Page<Resume> response = resumeRepository.findAll(spec, pageable);
+        Page<Resume> page = resumeRepository.findAll(spec, pageable);
 
-        Page<ResumeListResponseDto.Item> results = response.map(ResumeListResponseDto.Item::fromEntity);
+        Page<ResumeListResponseDto.Item> mapped = page.map(ResumeListResponseDto.Item::fromEntity);
+
         return ResumeListResponseDto.builder()
                 .totalElements(totalElements)
-                .totalPages(results.getTotalPages())
-                .pageNumber(results.getNumber())
-                .pageSize(results.getSize())
-                .contents(results.getContent())
+                .totalPages(mapped.getTotalPages())
+                .pageNumber(mapped.getNumber())
+                .pageSize(mapped.getSize())
+                .contents(mapped.getContent())
                 .build();
     }
 
