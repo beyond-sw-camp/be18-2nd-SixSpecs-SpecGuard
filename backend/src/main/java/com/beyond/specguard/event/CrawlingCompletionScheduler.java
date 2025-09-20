@@ -85,20 +85,12 @@ public class CrawlingCompletionScheduler {
 
         boolean anyRunning = results.stream()
                 .anyMatch(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.PENDING);
+
         // 모든 값의 합이 3개일때로 수정해야함.
-        long completedOrNonExistedCount = results.stream()
-                .filter(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.COMPLETED
-                        || r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.NOTEXISTED)
-                .count();
+        boolean allCrawlingCompleted = (results.size() == 3);
 
-        boolean allCrawlingCompleted = (completedOrNonExistedCount == 3);
-
-        //  합이 3개일때 수정해야함.
-        long portfolioCompletedOrNonExisted = portfolioResults.stream()
-                .filter(p -> p.getPortfolioStatus() == PortfolioResult.PortfolioStatus.COMPLETED
-                        || p.getPortfolioStatus() == PortfolioResult.PortfolioStatus.NOTEXISTED)
-                .count();
-        boolean portfolioCompleted = (portfolioCompletedOrNonExisted == 3);
+        // PortfolioResult 상태 상관없이 개수 합이 3개면 완료
+        boolean portfolioCompleted = (portfolioResults.size() == 3);
 
         //자소서 nlp 임 이건
         boolean allNlpProcessed = analyses.stream()

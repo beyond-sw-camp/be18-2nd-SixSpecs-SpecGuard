@@ -18,7 +18,7 @@ import java.util.UUID;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ResumeSubmittedListener {
+public class ResumeSubmittedCrawlingListener {
 
     private final ResumeLinkRepository resumeLinkRepository;
     private final ResumeRepository resumeRepository;

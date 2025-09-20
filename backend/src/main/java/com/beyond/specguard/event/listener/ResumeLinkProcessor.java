@@ -2,7 +2,7 @@ package com.beyond.specguard.event.listener;
 
 import com.beyond.specguard.crawling.entity.CrawlingResult;
 import com.beyond.specguard.crawling.repository.CrawlingResultRepository;
-import com.beyond.specguard.event.client.PythonCrawlerClient;
+import com.beyond.specguard.event.client.VelogCrawlerClient;
 import com.beyond.specguard.githubcrawling.model.service.GitHubService;
 import com.beyond.specguard.notioncrawling.service.PublicNotionCrawlerService;
 import com.beyond.specguard.resume.model.entity.Resume;
@@ -22,7 +22,7 @@ public class ResumeLinkProcessor {
 
     private final GitHubService gitHubService;
     private final CrawlingResultRepository crawlingResultRepository;
-    private final PythonCrawlerClient pythonCrawlerClient;
+    private final VelogCrawlerClient velogCrawlerClient;
     private final PublicNotionCrawlerService notionCrawlerService;
 
     @Async
@@ -62,7 +62,7 @@ public class ResumeLinkProcessor {
                 case VELOG -> {
                     log.info("[VELOG] Python API 호출 시작 resumeId={}, url={}, thread={}",
                             resume.getId(), link.getUrl(), threadName);
-                    Map<String, Object> velogData = pythonCrawlerClient.callVelogApi(resume.getId(), link.getUrl());
+                    Map<String, Object> velogData = velogCrawlerClient.callVelogApi(resume.getId(), link.getUrl());
                     log.info("[VELOG] Python API 응답: {}, thread={}", velogData, threadName);
                 }
                 case NOTION -> {
