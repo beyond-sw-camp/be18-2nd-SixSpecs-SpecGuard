@@ -46,13 +46,23 @@ public class PublicNotionCrawlerService {
 
         try {
             // ----------------------------
+            // URL null/빈값 체크
+            // ----------------------------
+            if (notionUrl == null || notionUrl.trim().isEmpty()) {
+                result.updateStatus(CrawlingResult.CrawlingStatus.NOTEXISTED);
+                crawlingResultRepository.save(result);
+                log.warn("URL 없음 - resultId={}, url={}", resultId, notionUrl);
+                return;
+            }
+
+            // ----------------------------
             // Notion 페이지 크롤링
             // ----------------------------
             Document doc;
             try {
                 doc = Jsoup.connect(notionUrl).get();
             } catch (IOException e) {
-                // URL 존재하지 않음 → NOTEXISTED 상태
+                // 네트워크 단에서 아예 연결 불가 → NOTEXISTED
                 result.updateStatus(CrawlingResult.CrawlingStatus.NOTEXISTED);
                 crawlingResultRepository.save(result);
                 log.warn("URL 존재하지 않음 - resultId={}, url={}", resultId, notionUrl);
@@ -60,7 +70,7 @@ public class PublicNotionCrawlerService {
             }
 
             // ----------------------------
-            //  페이지 파싱
+            // 페이지 파싱
             // ----------------------------
             String title = doc.title();
             String content = doc.select("p").text();
@@ -76,7 +86,7 @@ public class PublicNotionCrawlerService {
             NotionPageDto pageDto = new NotionPageDto(notionUrl, title, content, codeBlocks, tags);
 
             // ----------------------------
-            // 3 JSON 직렬화 + GZIP 압축
+            // JSON 직렬화 + GZIP 압축
             // ----------------------------
             String serialized = objectMapper.writeValueAsString(pageDto);
 
@@ -89,7 +99,7 @@ public class PublicNotionCrawlerService {
             }
 
             // ----------------------------
-            // 4️ CrawlingResult 업데이트
+            // CrawlingResult 업데이트
             // ----------------------------
             result.updateContents(compressed);
             result.updateStatus(CrawlingResult.CrawlingStatus.COMPLETED);
