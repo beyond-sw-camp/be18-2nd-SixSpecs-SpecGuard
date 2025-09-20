@@ -67,16 +67,16 @@ dependencies {
 
     // --- codef (자격증 검증) ---
     implementation 'io.codef.api:easycodef-java:1.0.6'
-<<<<<<< HEAD
+
 
     //정합성
     implementation("org.apache.commons:commons-text:1.11.0")
     implementation("org.springframework.boot:spring-boot-configuration-processor")
 
-=======
+
     // Jsoup
     implementation 'org.jsoup:jsoup:1.16.1'
->>>>>>> develop
+
 }
 
 
