@@ -11,13 +11,14 @@ import java.util.UUID;
 
 public interface ValidationResultRepository extends JpaRepository<ValidationResult, UUID> {
     @Query("""
-       select vr
-         from ValidationResult vr
-         join vr.resume r
-        where r.template.id = :templateId
-          and r.status = com.beyond.specguard.resume.model.entity.Resume.ResumeStatus.VALIDATED
-          and vr.adjustedTotal is not null
-    """)
+    select vr
+    from ValidationResult vr
+    join vr.resume r
+    join r.template t
+    where t.id = :templateId
+    and r.status = Resume.ResumeStatus.VALIDATED
+    and vr.adjustedTotal is not null
+            """)
     List<ValidationResult> findAllValidatedByTemplateId(@Param("templateId") UUID templateId);
 
     @Query("""

@@ -3,23 +3,17 @@ package com.beyond.specguard.validation.model.repository;
 import com.beyond.specguard.resume.model.entity.Resume;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-
-
 public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
 
-
-
     // 회사 템플릿 응답 분석 키워드(JSON) 목록
-    // company_template_response_analysis.keyword 컬럼(JSON: {"keywords":[...]})
+    // company_template_response_analysis.keyword 컬럼(JSON: {"keywords":[...]} )
     @Query(value = """
         SELECT cra.keyword
           FROM company_template_response_analysis cra
@@ -42,45 +36,52 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
     List<String> findProcessedContentsByPlatform(@Param("resumeId") UUID resumeId,
                                                  @Param("linkType") String linkType);
 
+    // ===== 자격증 검증 집계 (MariaDB: CAST AS BIGINT 사용 금지, Number 프로젝션으로 수신) =====
+    interface CertAggRow {
+        Number getCompleted();
+        Number getFailed();
+    }
 
-    // 자격증 검증 집계
     @Query(value = """
         SELECT 
-          COALESCE(SUM(CASE WHEN UPPER(cv.status) IN ('COMPLETED') THEN 1 ELSE 0 END),0) AS completed,
-          COALESCE(SUM(CASE WHEN UPPER(cv.status) = 'FAILED'     THEN 1 ELSE 0 END),0) AS failed
+          COALESCE(SUM(CASE WHEN UPPER(cv.status) = 'COMPLETED' THEN 1 ELSE 0 END), 0) AS completed,
+          COALESCE(SUM(CASE WHEN UPPER(cv.status) = 'FAILED'     THEN 1 ELSE 0 END), 0) AS failed
         FROM certificate_verification cv
         JOIN resume_certificate rc ON rc.id = cv.certificate_id
        WHERE rc.resume_id = :resumeId
         """, nativeQuery = true)
-    Object[] countCertificateVerificationRaw(@Param("resumeId") UUID resumeId);
+    CertAggRow countCertificateVerificationRow(@Param("resumeId") UUID resumeId);
 
+    default Map<String, Object> countCertificateVerification(UUID resumeId) {
+        CertAggRow row = countCertificateVerificationRow(resumeId);
+        int completed = (row == null || row.getCompleted() == null) ? 0 : row.getCompleted().intValue();
+        int failed    = (row == null || row.getFailed()    == null) ? 0 : row.getFailed().intValue();
+        Map<String, Object> m = new HashMap<>();
+        m.put("completed", completed);
+        m.put("failed", failed);
+        return m;
+    }
 
-    // 가중치 조회: resume → company_template -> evaluation_profile -> evaluation_weight
+    // ===== 가중치 조회 (회사별 활성 프로필 기준) =====
     interface WeightRow {
         String getWeightType();
         Double getWeightValue();
     }
+
     @Query(value = """
         SELECT ew.weight_type AS weightType, ew.weight_value AS weightValue
           FROM resume r
           JOIN company_template   ct ON ct.id = r.template_id
-          JOIN evaluation_profile ep ON ep.id = ct.evaluation_profile_id
+          JOIN evaluation_profile ep ON ep.id = (
+                 SELECT epp.id
+                   FROM evaluation_profile epp
+                  WHERE epp.company_id = ct.company_id
+                    AND epp.is_active = 1
+                  ORDER BY epp.updated_at DESC
+                  LIMIT 1
+          )
           JOIN evaluation_weight  ew ON ew.evaluation_profile_id = ep.id
          WHERE r.id = :resumeId
         """, nativeQuery = true)
     List<WeightRow> findWeightsByResume(@Param("resumeId") UUID resumeId);
-
-
-    default Map<String, Object> countCertificateVerification(UUID resumeId) {
-        Object[] row = countCertificateVerificationRaw(resumeId);
-        Map<String, Object> m = new HashMap<>();
-        m.put("completed", ((Number) row[0]).intValue());
-        m.put("failed",    ((Number) row[1]).intValue());
-        return m;
-    }
-
-
-
-
-
 }

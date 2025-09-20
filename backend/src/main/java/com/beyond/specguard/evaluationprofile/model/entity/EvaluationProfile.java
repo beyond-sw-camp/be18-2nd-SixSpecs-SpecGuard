@@ -1,20 +1,9 @@
 package com.beyond.specguard.evaluationprofile.model.entity;
 
 import com.beyond.specguard.company.common.model.entity.ClientCompany;
+import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import com.beyond.specguard.evaluationprofile.model.dto.request.EvaluationProfileRequestDto;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.ConstraintMode;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ForeignKey;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -49,6 +38,15 @@ public class EvaluationProfile {
             columnDefinition = "CHAR(36)",
             foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private ClientCompany company;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name="company_template_id",
+            nullable = false,
+            columnDefinition = "CHAR(36)",
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
+    )
+    private CompanyTemplate companyTemplate;
 
     @Column(nullable = false)
     private String name;

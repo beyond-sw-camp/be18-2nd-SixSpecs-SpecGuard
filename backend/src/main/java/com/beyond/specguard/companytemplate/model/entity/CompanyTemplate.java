@@ -46,14 +46,6 @@ public class CompanyTemplate {
     )
     private ClientCompany clientCompany;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-            name="evaluation_profile_id",
-            nullable = false,
-            columnDefinition = "CHAR(36)",
-            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
-    )
-    private EvaluationProfile evaluationProfile;
 
     @Column(nullable = false, length = 50)
     private String name;
