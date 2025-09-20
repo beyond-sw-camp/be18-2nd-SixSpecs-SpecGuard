@@ -13,7 +13,6 @@ public record ResumeLinkUpsertRequest (
         UUID id,
 
         @Schema(description = "URL", example = "https://github.com/hong123")
-        @NotBlank
         String url,
 
         @Schema(description = "링크 타입", example = "GITHUB")
@@ -25,7 +24,7 @@ public record ResumeLinkUpsertRequest (
                         .resume(resume)
                         .id(id)
                         .linkType(linkType)
-                        .url(url)
+                        .url((url == null || url.trim().isEmpty()) ? null : url)
                         .build();
         }
 }

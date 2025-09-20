@@ -40,19 +40,41 @@ public class GitHubService {
                 .orElseThrow(() -> new IllegalStateException("CrawlingResult not found: " + resultId));
 
         try {
-            // 1. URL 검증
-            String username = GitHubUrlParser.extractUsername(result.getResumeLink().getUrl());
-            if (username == null || username.isBlank()) {
-                throw new GitException(GitErrorCode.GITHUB_INVALID_URL);
+            // 1. URL 검증 (널/빈 체크)
+            String url = (result.getResumeLink() != null) ? result.getResumeLink().getUrl() : null;
+
+            if (url == null || url.trim().isEmpty()) {
+                result.updateStatus(CrawlingStatus.NOTEXISTED);
+                crawlingResultRepository.save(result);
+                log.warn("GitHub URL 없음 - resultId={}, url={}", resultId, url);
+                return null;
             }
 
-            // 2. GitHub API 호출
+            // 2. Username 추출 (파싱 실패도 NOTEXISTED 처리)
+            String username;
+            try {
+                username = GitHubUrlParser.extractUsername(url);
+            } catch (Exception ex) {
+                result.updateStatus(CrawlingStatus.NOTEXISTED);
+                crawlingResultRepository.save(result);
+                log.warn("GitHub URL 파싱 실패 - resultId={}, url={}", resultId, url);
+                return null;
+            }
+
+            if (username == null || username.isBlank()) {
+                result.updateStatus(CrawlingStatus.NOTEXISTED);
+                crawlingResultRepository.save(result);
+                log.warn("GitHub URL 잘못됨 - resultId={}, url={}", resultId, url);
+                return null;
+            }
+
+            // 3. GitHub API 호출
             GitHubStatsDto stats = gitHubApiClient.fetchGitHubStats(username);
             if (stats == null) {
                 throw new GitException(GitErrorCode.GITHUB_API_ERROR);
             }
 
-            // 3. 응답 직렬화 + 압축
+            // 4. 응답 직렬화 + 압축
             String serialized = objectMapper.writeValueAsString(stats);
             byte[] compressed;
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -62,12 +84,12 @@ public class GitHubService {
                 compressed = baos.toByteArray();
             }
 
-            // 4. CrawlingResult 업데이트
+            // 5. CrawlingResult 업데이트
             result.updateContents(compressed);
             result.updateStatus(CrawlingStatus.COMPLETED);
             crawlingResultRepository.save(result);
 
-            // 5. GitHubResumeSummary upsert
+            // 6. GitHubResumeSummary upsert
             GitHubResumeSummary summary = summaryRepository.findByResumeId(result.getResume().getId())
                     .orElseGet(() -> GitHubResumeSummary.builder()
                             .resume(result.getResume())
@@ -82,23 +104,27 @@ public class GitHubService {
 
             summaryRepository.save(summary);
 
-            log.info(" GitHub 크롤링 완료 - resumeId={}, url={}",
-                    result.getResume().getId(), result.getResumeLink().getUrl());
+            log.info("GitHub 크롤링 완료 - resumeId={}, url={}",
+                    result.getResume().getId(), url);
 
-            return stats; //  이제 결과 반환
+            return stats;
 
         } catch (GitException e) {
             result.updateStatus(CrawlingStatus.FAILED);
             crawlingResultRepository.save(result);
-            log.error(" GitHub 크롤링 실패 - resumeId={}, url={}, code={}",
-                    result.getResume().getId(), result.getResumeLink().getUrl(), e.getErrorCode().getCode(), e);
+            log.error("GitHub 크롤링 실패 - resumeId={}, url={}, code={}",
+                    result.getResume().getId(),
+                    (result.getResumeLink() != null ? result.getResumeLink().getUrl() : null),
+                    e.getErrorCode().getCode(), e);
             throw e;
 
         } catch (Exception e) {
             result.updateStatus(CrawlingStatus.FAILED);
             crawlingResultRepository.save(result);
-            log.error(" GitHub 크롤링 중 알 수 없는 오류 - resumeId={}, url={}",
-                    result.getResume().getId(), result.getResumeLink().getUrl(), e);
+            log.error("GitHub 크롤링 중 알 수 없는 오류 - resumeId={}, url={}",
+                    result.getResume().getId(),
+                    (result.getResumeLink() != null ? result.getResumeLink().getUrl() : null),
+                    e);
             throw new GitException(GitErrorCode.GITHUB_UNKNOWN);
         }
     }

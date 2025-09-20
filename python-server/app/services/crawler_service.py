@@ -78,6 +78,8 @@ async def ingest_velog_single(resume_id: str, url: str | None):
         row = res.mappings().first()
 
     if not row:
+        if not url:   # url이 None → "" 변환된 케이스
+                    return {"claimed": False, "status": "NOTEXISTED"}
         # 주어진 resume_id/url로 VELOG 유형의 링크 행을 못 찾음
         raise HTTPException(
             status_code=404,

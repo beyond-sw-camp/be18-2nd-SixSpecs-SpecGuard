@@ -18,7 +18,7 @@ import java.util.UUID;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ResumeSubmittedListener {
+public class ResumeSubmittedCrawlingListener {
 
     private final ResumeLinkRepository resumeLinkRepository;
     private final ResumeRepository resumeRepository;
@@ -36,7 +36,7 @@ public class ResumeSubmittedListener {
 
         List<ResumeLink> links = resumeLinkRepository.findByResume_Id(resumeId);
 
-        // 🔥 각각 비동기로 실행
+        //  각각 비동기로 실행
         for (ResumeLink link : links) {
             resumeLinkProcessor.processLinkAsync(resume, link);
         }

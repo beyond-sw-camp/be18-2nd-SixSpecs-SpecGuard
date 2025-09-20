@@ -61,13 +61,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -198,10 +192,11 @@ public class ResumeService {
     private void validateLinkDuplicates(List<ResumeLinkUpsertRequest> links) {
         Set<String> keys = new HashSet<>();
         for (var link : links) {
-            if (link.url() == null || link.url().isBlank()) {
-                throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
+            String url = link.url();
+            if (url == null || url.isBlank()) {
+                continue;
             }
-            String norm = link.url().trim().toLowerCase();
+            String norm = url.trim().toLowerCase();
             if (!keys.add(norm)) {
                 throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
             }
@@ -308,39 +303,80 @@ public class ResumeService {
         }
 
 
-        if (req.links() != null) {
+        if (req.links() == null || req.links().isEmpty()) {
+            // 빈 row를 입력해줌
+            List<ResumeLink> defaultLinks = Arrays.asList(
+                    ResumeLink.builder().resume(resume).linkType(ResumeLink.LinkType.GITHUB).url(null).build(),
+                    ResumeLink.builder().resume(resume).linkType(ResumeLink.LinkType.VELOG).url(null).build(),
+                    ResumeLink.builder().resume(resume).linkType(ResumeLink.LinkType.NOTION).url(null).build()
+            );
+
+            resume.getResumeLinks().clear();
+            resume.getResumeLinks().addAll(defaultLinks);
+
+        } else{
             validateLinkDuplicates(req.links());
 
-            List<ResumeLink> updatedFields = new ArrayList<>();
+            List<ResumeLink> processed = req.links().stream()
+                    .map(l -> ResumeLink.builder()
+                            .resume(resume)
+                            .linkType(l.linkType())
+                            .url((l.url() == null || l.url().trim().isEmpty()) ? null : l.url())
+                            .build()
+                    ).collect(Collectors.toList());
 
-            Map<UUID, ResumeLinkUpsertRequest> dtoMap = req.links().stream()
-                    .filter(f -> f.id() != null)
-                    .collect(Collectors.toMap(ResumeLinkUpsertRequest::id, f -> f));
+            Set<ResumeLink.LinkType> providedTypes = processed.stream()
+                    .map(ResumeLink::getLinkType)
+                    .collect(Collectors.toSet());
 
-            // 6. 업데이트
-            for (ResumeLink existing : resume.getResumeLinks()) {
-                if (dtoMap.containsKey(existing.getId())) {
-                    // 업데이트
-                    existing.update(dtoMap.get(existing.getId()));
-                    updatedFields.add(existing);
+            for (ResumeLink.LinkType type : ResumeLink.LinkType.values()) {
+                if (!providedTypes.contains(type)) {
+                    processed.add(
+                            ResumeLink.builder().resume(resume).linkType(type).url(null).build()
+                    );
                 }
             }
 
-            List<ResumeLink> newResumeLinks = req.links().stream()
-                    .filter(f -> f.id() == null)
-                    .map(l -> l.toEntity(resume))
-                    .toList();
-
             resume.getResumeLinks().clear();
-
-            updatedFields.addAll(newResumeLinks);
-
-            resume.getResumeLinks().addAll(updatedFields);
+            resume.getResumeLinks().addAll(processed);
         }
 
         resumeRepository.saveAndFlush(resume);
     }
+    /*// 중복 + 입력 유효성 검증  지금 테이블을 nullable로 바꿔뒀으니 코드단에서 이렇게 해서 입력값이 전부다 차있는지 검증하는건 어떤지해서 올려뒀습니다
+    private void validateResumeCertificate(List<ResumeCertificateUpsertRequest> certs) {
+        Set<String> seen = new HashSet<>();
 
+        for (var d : certs) {
+            //  입력값 검증
+            boolean allEmpty = isBlank(d.certificateName())
+                    && isBlank(d.certificateNumber())
+                    && isBlank(d.issuer())
+                    && isBlank(d.certUrl());
+
+            boolean allFilled = !isBlank(d.certificateName())
+                    && !isBlank(d.certificateNumber())
+                    && !isBlank(d.issuer())
+                    && !isBlank(d.certUrl());
+
+            if (!allEmpty && !allFilled) {
+                throw new CustomException(ResumeErrorCode.INVALID_CERTIFICATE_INPUT);
+            }
+
+            //  중복 검증 (모두 입력된 경우에만 체크)
+            if (allFilled) {
+                String key = d.certificateName().trim().toLowerCase()
+                        + "|" + d.certificateNumber().trim().toLowerCase();
+                if (!seen.add(key)) {
+                    throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
+                }
+            }
+        }
+    }
+
+    private boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
+    }*/
     // 중복 자격증 검증
     private void validateResumeCertificate(List<ResumeCertificateUpsertRequest> certs) {
         Set<String> seen = new HashSet<>();
@@ -561,9 +597,17 @@ public class ResumeService {
 
         resume.setStatusPending();
 
+        long start = System.currentTimeMillis();
+        String threadName = Thread.currentThread().getName();
+
+        log.info("[Submit] BEFORE publish ResumeSubmittedEvent - resumeId={}, templateId={}, thread={}, time={}",
+                resume.getId(), resume.getTemplate().getId(), threadName, start);
         eventPublisher.publishEvent(
                 new ResumeSubmittedEvent(resume.getId(), resume.getTemplate().getId())
         );
+
+        log.info("[Submit] BEFORE publish CertificateVerificationEvent - resumeId={}, thread={}, time={}",
+                resume.getId(), threadName, System.currentTimeMillis());
         eventPublisher.publishEvent(
                 new CertificateVerificationEvent(resume.getId())
         );
