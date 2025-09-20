@@ -53,5 +53,21 @@ public class ValidationResultLog {
     @Column(name = "validated_at", nullable = false)
     private LocalDateTime validatedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "log_type", nullable = false, length = 40)
+    private ValidationLogType logType;
+
+    public enum ValidationLogType {
+        GITHUB_REPO_COUNT,
+        GITHUB_COMMIT_COUNT,
+        GITHUB_KEYWORD_MATCH,
+        GITHUB_TOPIC_MATCH,
+        NOTION_KEYWORD_MATCH,
+        VELOG_KEYWORD_MATCH,
+        VELOG_POST_COUNT,
+        VELOG_RECENT_ACTIVITY,
+        CERTIFICATE_MATCH
+    }
+
 
 }
