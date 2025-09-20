@@ -1,12 +1,12 @@
+from typing import Optional
 from fastapi import APIRouter, HTTPException, Path, Body
 from pydantic import BaseModel, Field
-
 from app.services import crawler_service as svc
 
 router = APIRouter(prefix="/api/v1", tags=["ingest"])
 
 class StartBody(BaseModel):
-    url: str = Field(..., description="Velog 프로필 URL (예: https://velog.io/@handle/posts)")
+    url: Optional[str] = Field(None, description="Velog 프로필 URL (예: https://velog.io/@handle/posts)")
 
 @router.post("/ingest/resumes/{resumeId}/velog/start")
 async def start_velog_ingest(
