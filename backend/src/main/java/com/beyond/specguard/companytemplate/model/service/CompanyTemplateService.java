@@ -15,6 +15,8 @@ import java.util.UUID;
 public interface CompanyTemplateService {
     CompanyTemplate getCompanyTemplate(ClientUser clientUser, UUID templateId);
 
+    CompanyTemplateListResponseDto getTemplates(String companySlug);
+
     void deleteTemplate(UUID templateId, ClientUser clientUser);
 
     CompanyTemplateResponseDto.BasicDto updateBasic(UpdateTemplateBasicCommand command);

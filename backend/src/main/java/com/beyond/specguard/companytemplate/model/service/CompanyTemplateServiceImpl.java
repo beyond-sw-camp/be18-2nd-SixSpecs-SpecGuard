@@ -90,6 +90,19 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public CompanyTemplateListResponseDto getTemplates(String companySlug) {
+
+        List<CompanyTemplate> response = companyTemplateRepository.findByClientCompany_Slug(companySlug);
+
+        return CompanyTemplateListResponseDto.builder()
+                .companyTemplateResponse(response.stream().map(CompanyTemplateResponseDto.BasicDto::toDto).toList())
+                .totalElements((long) response.size())
+                .build();
+    }
+
+
+    @Override
     @Transactional
     public void deleteTemplate(UUID templateId, ClientUser clientUser) {
         // 권한 검증
@@ -192,6 +205,8 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
         // 1. 기존 템플릿 조회
         CompanyTemplate template = companyTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new CustomException(CompanyTemplateErrorCode.TEMPLATE_NOT_FOUND));
+
+        template.update(command.requestDto());
 
         if (template.getStatus() !=  CompanyTemplate.TemplateStatus.DRAFT) {
             throw new CustomException(CompanyTemplateErrorCode.NOT_DRAFT_TEMPLATE);

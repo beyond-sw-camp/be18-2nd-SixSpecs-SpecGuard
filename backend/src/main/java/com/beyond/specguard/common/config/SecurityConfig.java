@@ -89,7 +89,8 @@ public class SecurityConfig {
 
     private static final String[] APPLICANT_AUTH_WHITE_LIST = {
             "/api/v1/resumes/login",
-            "/api/v1/resumes/**"
+            "/api/v1/verify/**",
+            "/api/v1/resumes/companies/*/templates"
     };
 
     @Bean
@@ -214,6 +215,7 @@ public class SecurityConfig {
         http.securityMatcher("/api/v1/resumes/**")
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(APPLICANT_AUTH_WHITE_LIST).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/resumes").permitAll()
                         .anyRequest().hasRole("APPLICANT")
                 );
         http

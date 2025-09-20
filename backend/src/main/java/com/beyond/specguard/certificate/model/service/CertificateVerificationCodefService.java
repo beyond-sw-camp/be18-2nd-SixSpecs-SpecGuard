@@ -5,7 +5,7 @@ import com.beyond.specguard.certificate.model.dto.CodefVerificationResponse;
 import com.beyond.specguard.certificate.model.entity.CertificateVerification;
 import com.beyond.specguard.certificate.model.repository.CertificateVerificationRepository;
 import com.beyond.specguard.certificate.util.CertificateNumberUtil;
-import com.beyond.specguard.resume.model.entity.core.ResumeCertificate;
+import com.beyond.specguard.resume.model.entity.ResumeCertificate;
 import com.beyond.specguard.resume.model.repository.ResumeCertificateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,7 @@ public class CertificateVerificationCodefService implements CertificateVerificat
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void verifyCertificateAsync(UUID resumeId) {
         List<ResumeCertificate> resumeCertificates = resumeCertificateRepository
-                .findAllByResumeId(resumeId);
+                .findAllByResume_Id(resumeId);
 
         // 자격증이 없으면 return
         if (resumeCertificates.isEmpty()) {

@@ -1,6 +1,6 @@
 package com.beyond.specguard.certificate.model.entity;
 
-import com.beyond.specguard.resume.model.entity.core.ResumeCertificate;
+import com.beyond.specguard.resume.model.entity.ResumeCertificate;
 import jakarta.persistence.Column;
 import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
