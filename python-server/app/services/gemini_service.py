@@ -14,7 +14,7 @@ from app.db import (
 MODEL = "gemini-2.0-flash-001"
 
 async def insert_failed_data(session, row):
-    processed_data = {}
+    processed_data = {"keywords": {}}
     status = "FAILED"
     await session.execute(
         SQL_INSERT_PORTFOLIO_RESULT,
