@@ -29,7 +29,7 @@ public class CrawlingCompletionScheduler {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    @Scheduled(fixedDelay = 30000)
+    @Scheduled(fixedDelay = 300000000)
     public void checkCrawlingStatus() {
         if (!lock.tryLock()) {
             log.warn("이전 스케줄러 실행 중 → 이번 실행 스킵");

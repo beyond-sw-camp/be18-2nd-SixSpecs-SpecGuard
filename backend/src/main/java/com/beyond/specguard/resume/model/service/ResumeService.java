@@ -340,7 +340,40 @@ public class ResumeService {
 
         resumeRepository.saveAndFlush(resume);
     }
+    /*// 중복 + 입력 유효성 검증  이렇게 해서 입력값이 전부다 차있는지 코드단에서 검증하는건 어떤지해서 올려뒀습니다
+    private void validateResumeCertificate(List<ResumeCertificateUpsertRequest> certs) {
+        Set<String> seen = new HashSet<>();
 
+        for (var d : certs) {
+            //  입력값 검증
+            boolean allEmpty = isBlank(d.certificateName())
+                    && isBlank(d.certificateNumber())
+                    && isBlank(d.issuer())
+                    && isBlank(d.certUrl());
+
+            boolean allFilled = !isBlank(d.certificateName())
+                    && !isBlank(d.certificateNumber())
+                    && !isBlank(d.issuer())
+                    && !isBlank(d.certUrl());
+
+            if (!allEmpty && !allFilled) {
+                throw new CustomException(ResumeErrorCode.INVALID_CERTIFICATE_INPUT);
+            }
+
+            //  중복 검증 (모두 입력된 경우에만 체크)
+            if (allFilled) {
+                String key = d.certificateName().trim().toLowerCase()
+                        + "|" + d.certificateNumber().trim().toLowerCase();
+                if (!seen.add(key)) {
+                    throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
+                }
+            }
+        }
+    }
+
+    private boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
+    }*/
     // 중복 자격증 검증
     private void validateResumeCertificate(List<ResumeCertificateUpsertRequest> certs) {
         Set<String> seen = new HashSet<>();
@@ -561,9 +594,17 @@ public class ResumeService {
 
         resume.setStatusPending();
 
+        long start = System.currentTimeMillis();
+        String threadName = Thread.currentThread().getName();
+
+        log.info("[Submit] BEFORE publish ResumeSubmittedEvent - resumeId={}, templateId={}, thread={}, time={}",
+                resume.getId(), resume.getTemplate().getId(), threadName, start);
         eventPublisher.publishEvent(
                 new ResumeSubmittedEvent(resume.getId(), resume.getTemplate().getId())
         );
+
+        log.info("[Submit] BEFORE publish CertificateVerificationEvent - resumeId={}, thread={}, time={}",
+                resume.getId(), threadName, System.currentTimeMillis());
         eventPublisher.publishEvent(
                 new CertificateVerificationEvent(resume.getId())
         );

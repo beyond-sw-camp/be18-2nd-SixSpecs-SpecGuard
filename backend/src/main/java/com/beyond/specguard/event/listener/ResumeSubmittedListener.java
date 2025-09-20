@@ -36,7 +36,7 @@ public class ResumeSubmittedListener {
 
         List<ResumeLink> links = resumeLinkRepository.findByResume_Id(resumeId);
 
-        // 🔥 각각 비동기로 실행
+        //  각각 비동기로 실행
         for (ResumeLink link : links) {
             resumeLinkProcessor.processLinkAsync(resume, link);
         }
