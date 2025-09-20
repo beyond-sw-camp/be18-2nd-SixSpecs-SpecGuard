@@ -88,7 +88,15 @@ async def ingest_velog_single(resume_id: str, url: str | None):
 
     # URL 공란이면: NOTEXISTED + 더미 gzip 후 종료
     if not url:
-        dummy = to_gzip_bytes_from_text("제출된 링크 없음")
+        payload = {
+            "source": "velog",
+            "base_url": "",
+            "post_count": 0,
+            "recent_activity": ""
+        }
+        dummy = to_gzip_bytes_from_json(payload)
+
+        
         async with SessionLocal() as s0:
             await s0.execute(
                 SQL_SET_NOTEXISTED_IF_NOT_TERMINAL,
