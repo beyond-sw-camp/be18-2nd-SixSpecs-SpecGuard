@@ -5,6 +5,7 @@ import com.beyond.specguard.company.common.model.service.CustomUserDetails;
 import com.beyond.specguard.validation.model.dto.request.ValidationLogCommentRequestDto;
 import com.beyond.specguard.validation.model.dto.request.ValidationCalculateRequestDto;
 import com.beyond.specguard.validation.model.dto.request.ValidationPercentileRequestDto;
+import com.beyond.specguard.validation.model.dto.response.ValidationFinalSummaryResponseDto;
 import com.beyond.specguard.validation.model.dto.response.ValidationResultLogResponseDto;
 import com.beyond.specguard.validation.model.service.ValidationResultLogService;
 import com.beyond.specguard.validation.model.service.ValidationResultService;
@@ -32,77 +33,82 @@ public class ValidationController {
     private final ValidationResultLogService validationResultLogService;
 
 
+    private ClientUser getClientUser(Authentication authentication) {
+        return ((CustomUserDetails) authentication.getPrincipal()).getUser();
+    }
+
+
     @Operation(
             summary = "정합성 결과 계산 API",
             description = "특정 이력서에 대해 정합성 검사를 요청하고 정합성 검사를 실행한다."
     )
     @PreAuthorize("hasAnyRole('OWNER','MANAGER','VIEWER')")
     @PostMapping("/calculate")
-    public ResponseEntity<UUID> calculate(
-            @Valid @RequestBody ValidationCalculateRequestDto request,
-            Authentication authentication
-    ) {
-        ClientUser clientUser  = getClientUser(authentication);
-        UUID resultId = validationResultService.calculateAndSave(clientUser, request);
-        return ResponseEntity.ok(resultId);
+    public ResponseEntity<UUID> calculate(@Valid @RequestBody ValidationCalculateRequestDto request,
+                                          Authentication authentication) {
+        ClientUser user = getClientUser(authentication);
+        return ResponseEntity.ok(validationResultService.calculateAndSave(user, request));
     }
 
 
 
     @Operation(
-            summary = "정합성 점수 조회 API",
-            description = "기업 사용자가 특정 이력서의 정합성 분석 결과를 조회합니다."
+            summary = "정합성 로그 조회 API",
+            description = "기업 사용자가 특정 이력서의 정합성 분석 결과 로그를 조회합니다."
     )
     @PreAuthorize("hasAnyRole('OWNER','MANAGER','VIEWER')")
     @GetMapping("/{resumeId}/result")
-    public ResponseEntity<List<ValidationResultLogResponseDto>> getValidationLog(
-            @PathVariable UUID resumeId,
-            Authentication authentication
-    ) {
-        ClientUser clientUser = getClientUser(authentication);
-        return ResponseEntity.ok(validationResultLogService.getLogsByResumeId(clientUser, resumeId));
+    public ResponseEntity<List<ValidationResultLogResponseDto>> getValidationLog(@PathVariable UUID resumeId,
+                                                                                 Authentication authentication) {
+        ClientUser user = getClientUser(authentication);
+        return ResponseEntity.ok(validationResultLogService.getLogsByResumeId(user, resumeId));
     }
 
 
     @Operation(
-            summary = "정합성 로그 코멘트 수정 API",
-            description = "특정 정합성 로그의 Comment를 작성합니다."
+            summary = "정합성 결과 코멘트 작성 및 수정 API",
+            description = "특정 정합성 결과의 Comment를 작성합니다."
     )
     @PreAuthorize("hasAnyRole('OWNER','MANAGER')")
-    @PatchMapping("/logs/{logId}/comment")
-    public ResponseEntity<Void> updateComment(
-            @PathVariable UUID logId,
-            @Valid @RequestBody ValidationLogCommentRequestDto body,
-            Authentication authentication
-    ) {
-        ClientUser clientUser = getClientUser(authentication);
-        validationResultLogService.updateComment(clientUser, logId, body.getComment());
+    @PatchMapping("/{resultId}/comment")
+    public ResponseEntity<Void> updateComment(@PathVariable UUID resultId,
+                                              @Valid @RequestBody ValidationLogCommentRequestDto body,
+                                              Authentication authentication) {
+        ClientUser user = getClientUser(authentication);
+        validationResultService.updateResultComment(user, resultId, body.getComment());
         return ResponseEntity.noContent().build();
     }
 
 
     @Operation(
-            summary = "정합성 최종 점수 추출 API",
-            description = "adjusted_score에 percentile을 적용 후 최종 점수를 반환합니다."
+            summary = "정합성 최종 점수 조회 API",
+            description = "최종 점수를 반환합니다."
+    )
+    @PreAuthorize("hasAnyRole('OWNER','MANAGER','VIEWER')")
+    @GetMapping("/{resumeId}/final")
+    public ResponseEntity<ValidationFinalSummaryResponseDto> getFinal(@PathVariable UUID resumeId,
+                                                                      Authentication authentication) {
+        ClientUser user = getClientUser(authentication);
+        return ResponseEntity.ok(validationResultService.getFinalSummary(user, resumeId));
+    }
+
+
+    @Operation(
+            summary = "최종 점수 계산 API",
+            description = "퍼센타일로 final_score 산출 및 result_at 저장"
     )
     @PreAuthorize("hasAnyRole('OWNER','MANAGER')")
     @PostMapping("/percentile")
-    public ResponseEntity<Void> updatePercentile(
-            @Valid @RequestBody ValidationPercentileRequestDto request,
-            Authentication authentication
-    ){
-        ClientUser clientUser = getClientUser(authentication);
-        validationResultService.calculatePercentile(clientUser, request);
+    public ResponseEntity<Void> updatePercentile(@Valid @RequestBody ValidationPercentileRequestDto request,
+                                                 Authentication authentication) {
+        ClientUser user = getClientUser(authentication);
+        validationResultService.calculatePercentile(user, request);
         return ResponseEntity.noContent().build();
     }
 
 
-
-
-
-
-    private ClientUser getClientUser(Authentication authentication) {
-        return ((CustomUserDetails) authentication.getPrincipal()).getUser();
-    }
-
 }
+
+
+
+

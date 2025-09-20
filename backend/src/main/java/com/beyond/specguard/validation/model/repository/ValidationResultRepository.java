@@ -1,11 +1,9 @@
 package com.beyond.specguard.validation.model.repository;
 
+
 import com.beyond.specguard.validation.model.entity.ValidationResult;
-import com.beyond.specguard.validation.model.entity.ValidationResultLog;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,10 +25,35 @@ public interface ValidationResultRepository extends JpaRepository<ValidationResu
          from ValidationResult vr
          join vr.resume r
         where r.id = :resumeId
+        order by vr.createdAt desc
     """)
-    Optional<ValidationResult> findByResumeId(@Param("resumeId") UUID resumeId);
+    List<ValidationResult> findAllByResumeOrderByCreatedAtDesc(@Param("resumeId") UUID resumeId);
+
+    @Query("""
+       select vr
+         from ValidationResult vr
+         join vr.resume r
+        where r.id = :resumeId
+        order by vr.createdAt desc
+    """)
+    default Optional<ValidationResult> findLatestByResume(@Param("resumeId") UUID resumeId) {
+        List<ValidationResult> list = findAllByResumeOrderByCreatedAtDesc(resumeId);
+        return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
+    }
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update ValidationResult vr set vr.finalScore = :finalScore where vr.id = :resultId")
-    int updateFinalScore(@Param("resultId") UUID resultId, @Param("finalScore") Double finalScore);
+    @Query("update ValidationResult vr set vr.finalScore = :finalScore, vr.resultAt = :resultAt where vr.id = :resultId")
+    int updateFinalScoreAndResultAt(@Param("resultId") UUID resultId,
+                                    @Param("finalScore") Double finalScore,
+                                    @Param("resultAt") java.time.LocalDateTime resultAt);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update ValidationResult vr set vr.descriptionComment = :comment where vr.id = :resultId")
+    int updateDescriptionComment(@Param("resultId") UUID resultId, @Param("comment") String comment);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update ValidationResult vr set vr.matchKeyword = :matchKw, vr.mismatchKeyword = :mismatchKw where vr.id = :resultId")
+    int updateAggregatedKeywords(@Param("resultId") UUID resultId,
+                                 @Param("matchKw") String matchKw,
+                                 @Param("mismatchKw") String mismatchKw);
 }

@@ -178,4 +178,16 @@ public class KeywordUtils {
         Set<String> union = new HashSet<>(a); union.addAll(b);
         return union.isEmpty() ? 0.0 : (double) inter.size() / (double) union.size();
     }
+
+
+    public static Set<String> splitCsvToSet(String csv) {
+        if (csv == null || csv.isBlank()) return Set.of();
+        String[] parts = csv.split(",");
+        Set<String> out = new LinkedHashSet<>();
+        for (String p : parts) {
+            String norm = normalizeToken(p);
+            if (!norm.isBlank()) out.add(norm);
+        }
+        return out;
+    }
 }

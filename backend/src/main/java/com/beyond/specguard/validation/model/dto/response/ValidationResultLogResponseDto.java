@@ -17,6 +17,8 @@ public class ValidationResultLogResponseDto {
     private UUID resumeId;
     private Double validationScore;
     private LocalDateTime validatedAt;
-    private String descriptionComment;
+    private String keywordList;
+    private String mismatchFields;
+    private String matchFields;
 
 }

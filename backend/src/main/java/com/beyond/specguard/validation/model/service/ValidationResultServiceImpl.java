@@ -10,6 +10,7 @@ import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import com.beyond.specguard.validation.exception.errorcode.ValidationErrorCode;
 import com.beyond.specguard.validation.model.dto.request.ValidationCalculateRequestDto;
 import com.beyond.specguard.validation.model.dto.request.ValidationPercentileRequestDto;
+import com.beyond.specguard.validation.model.dto.response.ValidationFinalSummaryResponseDto;
 import com.beyond.specguard.validation.model.entity.ValidationIssue;
 import com.beyond.specguard.validation.model.entity.ValidationResult;
 import com.beyond.specguard.validation.model.entity.ValidationResultLog;
@@ -31,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -58,6 +60,14 @@ public class ValidationResultServiceImpl implements ValidationResultService{
         }
     }
 
+    private void validateReadRole(ClientUser.Role role) {
+        if (!EnumSet.of(ClientUser.Role.VIEWER, ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role)) {
+            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
+        }
+    }
+
+
+
     @Override
     @Transactional
     public UUID calculateAndSave(ClientUser clientUser, ValidationCalculateRequestDto request) {
@@ -71,37 +81,24 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             List<String> templateKeywordJsons = calculateQueryRepository.findTemplateAnalysisKeywordsJson(resumeId);
             Set<String> templateKeywords = new LinkedHashSet<>();
             for (String json : templateKeywordJsons) templateKeywords.addAll(KeywordUtils.parseKeywords(json));
-
             // 2) 플랫폼별 포트폴리오 정제 결과 수집
             Set<String> ghKeywords = new LinkedHashSet<>();     //깃허브 키워드
             Set<String> ghTech     = new LinkedHashSet<>();     //깃허브 기술 키워드
             int githubCommitCount = 0;                          //깃허브 커밋수
             int githubRepoCount = 0;                            //깃허브 레포수
-            List<String> ghProcessed =
-                    calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.GITHUB.name());
-            for (String pc : ghProcessed) {
+            for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.GITHUB.name())) {
                 ghKeywords.addAll(KeywordUtils.parseKeywords(pc));
                 ghTech.addAll(KeywordUtils.parseTech(pc));
                 githubCommitCount += KeywordUtils.commitCount(pc);
                 githubRepoCount   += KeywordUtils.repoCount(pc);
             }
-
-            Set<String> ghObserved = new LinkedHashSet<>(ghKeywords);
-            ghObserved.addAll(ghTech);
-
-            Set<String> notionKeywords = new LinkedHashSet<>();    //노션 키워드
-            List<String> notionProcessed =
-                    calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.NOTION.name());
-            for (String pc : notionProcessed) {
+            Set<String> notionKeywords = new LinkedHashSet<>();
+            for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.NOTION.name())) {
                 notionKeywords.addAll(KeywordUtils.parseKeywords(pc));
             }
-
-            Set<String> velogKeywords = new LinkedHashSet<>();      //벨로그 키워드
-            int velogPostCount = 0;                                 //벨로그 개수
-            int velogDateCount = 0;                                 //벨로그 최근 개수
-            List<String> velogProcessed =
-                    calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.VELOG.name());
-            for (String pc : velogProcessed) {
+            Set<String> velogKeywords = new LinkedHashSet<>();
+            int velogPostCount = 0, velogDateCount = 0;
+            for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.VELOG.name())) {
                 velogKeywords.addAll(KeywordUtils.parseKeywords(pc));
                 velogPostCount += KeywordUtils.parseCount(pc);
                 velogDateCount += KeywordUtils.dateCount(pc);
@@ -109,12 +106,12 @@ public class ValidationResultServiceImpl implements ValidationResultService{
 
 
             // 4) 자격증 매칭 COMPLETED / (COMPLETED + FAILED)
-            var certAgg   = calculateQueryRepository.countCertificateVerification(resumeId);
+            var certAgg = calculateQueryRepository.countCertificateVerification(resumeId);
             int completed = ((Number) certAgg.getOrDefault("completed", 0)).intValue();
             int failed    = ((Number) certAgg.getOrDefault("failed", 0)).intValue();
             double certScore = (completed + failed) == 0 ? 0.0 : (double) completed / (completed + failed);
 
-            // 5) 지표 산출(0~1)
+            // 4) 지표 산출(0~1)
             double githubRepoScore      = clamp01(githubRepoCount   / REPO_MAX);
             double githubCommitScore    = clamp01(githubCommitCount / COMMIT_MAX);
             double githubKeywordMatch   = KeywordUtils.jaccard(ghKeywords, templateKeywords);
@@ -123,6 +120,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             double velogKeywordMatch    = KeywordUtils.jaccard(velogKeywords,  templateKeywords);
             double velogPostScore       = clamp01(velogPostCount / VELOG_POST_MAX);
             double velogDateScore       = clamp01(velogDateCount / VELOG_POST_MAX);
+
 
             // 6) 가중치 적용 (존재하는 지표만 합산)
             Map<WeightType, Double> metrics = new EnumMap<>(WeightType.class);
@@ -135,8 +133,6 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             metrics.put(WeightType.VELOG_POST_COUNT,      velogPostScore);
             metrics.put(WeightType.VELOG_RECENT_ACTIVITY, velogDateScore);
             metrics.put(WeightType.CERTIFICATE_MATCH,     certScore);
-
-
 
             //가중치
             var weights = calculateQueryRepository.findWeightsByResume(resumeId);
@@ -159,44 +155,20 @@ public class ValidationResultServiceImpl implements ValidationResultService{
 
             double adjustedTotal = rawTotal * sourceDiversityFactor;
 
-            Map<String, Integer> presenceScore = new HashMap<>();
-            for (String k : templateKeywords) {
-                int s = 0;
-                if (ghObserved.contains(k))     s++;
-                if (notionKeywords.contains(k)) s++;
-                if (velogKeywords.contains(k))  s++;
-                if (s > 0) presenceScore.put(k, s);
-            }
-
-            List<String> top5 = presenceScore.entrySet().stream()
-                    .sorted((a, b) -> {
-                        int byScore = Integer.compare(b.getValue(), a.getValue());
-                        return (byScore != 0) ? byScore : a.getKey().compareTo(b.getKey());
-                    })
-                    .limit(5)
-                    .map(Map.Entry::getKey)
-                    .toList();
-
-            String descriptionComment = top5.isEmpty() ? null : String.join(", ", top5);
-
+            // 일치/불일치 집합 (이번 로그 기준)
             Set<String> observedUnion = new LinkedHashSet<>();
-            observedUnion.addAll(ghObserved);
-            observedUnion.addAll(notionKeywords);
-            observedUnion.addAll(velogKeywords);
+            observedUnion.addAll(ghKeywords); observedUnion.addAll(ghTech);
+            observedUnion.addAll(notionKeywords); observedUnion.addAll(velogKeywords);
 
+            Set<String> match = new LinkedHashSet<>(templateKeywords);
+            match.retainAll(observedUnion);
             Set<String> mismatch = new LinkedHashSet<>(templateKeywords);
             mismatch.removeAll(observedUnion);
-            String mismatchJson = OM.writeValueAsString(mismatch);
 
-            // 6) 성공 이슈(필수 FK) 생성
+            // 5) 성공 이슈 & 결과 저장
             ValidationIssue issue = validationIssueRepository.save(
-                    ValidationIssue.builder()
-                            .validationResult(ValidationIssue.ValidationResult.SUCCESS)
-                            .build()
+                    ValidationIssue.builder().validationResult(ValidationIssue.ValidationResult.SUCCESS).build()
             );
-
-
-            // 7) 저장 (빌더만)
             Resume resumeRef = em.getReference(Resume.class, resumeId);
             ValidationResult result = validationResultRepository.save(
                     ValidationResult.builder()
@@ -207,7 +179,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             );
 
 
-            //리포트용
+            // 6) 리포트 JSON + 로그 적재
             String reportJson = buildReportJson(
                     templateKeywords, ghKeywords, ghTech, notionKeywords, velogKeywords,
                     githubRepoCount, githubCommitCount, velogPostCount, velogDateCount,
@@ -216,20 +188,27 @@ public class ValidationResultServiceImpl implements ValidationResultService{
                     certScore, sourceDiversityFactor, adjustedTotal, weights
             );
 
+            String mismatchJson = OM.writeValueAsString(mismatch);
+            String matchText    = String.join(", ", match);
+
             validationResultLogRepository.save(
                     ValidationResultLog.builder()
                             .validationResult(result)
                             .validationScore(adjustedTotal)
                             .keywordList(reportJson)
                             .mismatchFields(mismatchJson)
-                            .descriptionComment(descriptionComment)
+                            .matchFields(matchText)
                             .validatedAt(LocalDateTime.now())
                             .build()
             );
 
 
-            // 8) 상태 전환
+            // 7) 이력서 상태 전환
             resumeRepository.updateStatus(resumeId, Resume.ResumeStatus.VALIDATED);
+
+            // 8) “현재까지의 로그”를 집계해 결과의 match/mismatch_keyword 갱신
+            aggregateAndUpdateResultKeywords(result.getId());
+
             return result.getId();
 
         } catch (Exception ex) {
@@ -237,6 +216,8 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             return saveIssueAndLogsOnError(resumeId, ex);
         }
     }
+
+
 
 
 
@@ -250,7 +231,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
         var population = validationResultRepository.findAllValidatedByTemplateId(templateId);
         if (population.isEmpty()) throw new CustomException(ValidationErrorCode.RESUME_NOT_FOUND);
 
-        ValidationResult target = validationResultRepository.findByResumeId(resumeId)
+        ValidationResult target = validationResultRepository.findLatestByResume(resumeId)
                 .orElseThrow(() -> new CustomException(ValidationErrorCode.RESUME_NOT_FOUND));
         if (target.getAdjustedTotal() == null) throw new CustomException(CommonErrorCode.INVALID_REQUEST);
 
@@ -264,16 +245,82 @@ public class ValidationResultServiceImpl implements ValidationResultService{
         double percentile = (less + 0.5 * equal) / n;
         double finalScore = Math.max(0.0, Math.min(1.0, percentile)) * 100.0;
 
-        validationResultRepository.updateFinalScore(target.getId(), finalScore);
+        // 최종 점수/시각 저장
+        validationResultRepository.updateFinalScoreAndResultAt(target.getId(), finalScore, LocalDateTime.now());
+
+        // 안전하게 집계 키워드 최신화 한 번 더
+        aggregateAndUpdateResultKeywords(target.getId());
+
         return target.getId();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ValidationFinalSummaryResponseDto getFinalSummary(ClientUser clientUser, UUID resumeId) {
+        validateReadRole(clientUser.getRole());
+        ValidationResult vr = validationResultRepository.findLatestByResume(resumeId)
+                .orElseThrow(() -> new CustomException(ValidationErrorCode.RESUME_NOT_FOUND));
+        return ValidationFinalSummaryResponseDto.builder()
+                .resultId(vr.getId())
+                .resumeId(resumeId)
+                .finalScore(vr.getFinalScore())
+                .matchKeyword(vr.getMatchKeyword())
+                .mismatchKeyword(vr.getMismatchKeyword())
+                .resultAt(vr.getResultAt())
+                .descriptionComment(vr.getDescriptionComment())
+                .build();
     }
 
 
 
+    @Override
+    @Transactional
+    public void updateResultComment(ClientUser clientUser, UUID resultId, String comment) {
+        validateWriteRole(clientUser.getRole());
+        int u = validationResultRepository.updateDescriptionComment(resultId, comment);
+        if (u == 0) throw new CustomException(ValidationErrorCode.RESUME_NOT_FOUND);
+    }
+
+    // ===== 내부 유틸 =====
+
+    private void aggregateAndUpdateResultKeywords(UUID resultId) {
+        // 모든 로그의 match/mismatch 집계
+        List<ValidationResultLog> logs = validationResultLogRepository.findAllByResultId(resultId);
+
+        // match_fields TEXT -> split, normalize, count
+        Map<String, Integer> freq = new HashMap<>();
+        Set<String> mismatchUnion = new LinkedHashSet<>();
+
+        for (ValidationResultLog l : logs) {
+            // match
+            Set<String> matches = KeywordUtils.splitCsvToSet(l.getMatchFields());
+            for (String m : matches) freq.merge(m, 1, Integer::sum);
+
+            // mismatch (JSON 배열)
+            mismatchUnion.addAll(KeywordUtils.parseKeywords(l.getMismatchFields()));
+        }
+
+        String matchTop5 = freq.entrySet().stream()
+                .sorted((a,b) -> {
+                    int by = Integer.compare(b.getValue(), a.getValue());
+                    return by != 0 ? by : a.getKey().compareTo(b.getKey());
+                })
+                .limit(5)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.joining(", "));
+
+        // mismatch 랜덤 5개
+        List<String> mis = new ArrayList<>(mismatchUnion);
+        Collections.shuffle(mis);
+        String mismatchRand5 = mis.stream().limit(5).collect(Collectors.joining(", "));
+
+        validationResultRepository.updateAggregatedKeywords(resultId, emptyToNull(matchTop5), emptyToNull(mismatchRand5));
+    }
+
     private UUID saveIssueAndLogsOnError(UUID resumeId, Exception ex) {
         ValidationIssue issue = validationIssueRepository.save(
                 ValidationIssue.builder()
-                        .validationResult(classifyIssueType(ex))
+                        .validationResult(ValidationIssue.ValidationResult.FAILED)
                         .build()
         );
         Resume resumeRef = em.getReference(Resume.class, resumeId);
@@ -290,16 +337,16 @@ public class ValidationResultServiceImpl implements ValidationResultService{
                         .validationResult(result)
                         .validationScore(0.0)
                         .keywordList(json)
+                        .mismatchFields("[]")
+                        .matchFields("")
                         .validatedAt(LocalDateTime.now())
                         .build()
         );
         return result.getId();
     }
 
-    private ValidationIssue.ValidationResult classifyIssueType(Exception ex) {
-        return ValidationIssue.ValidationResult.FAILED;
-    }
-
+    private static String emptyToNull(String s) { return (s == null || s.isBlank()) ? null : s; }
+    private static double clamp01(double v) { return (Double.isNaN(v) || Double.isInfinite(v)) ? 0.0 : Math.max(0.0, Math.min(1.0, v)); }
 
     private String buildReportJson(
             Set<String> templateKeywords,
@@ -312,7 +359,6 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             List<CalculateQueryRepository.WeightRow> weights
     ) throws JsonProcessingException {
         ObjectNode root = OM.createObjectNode();
-
 
         ObjectNode kw = OM.createObjectNode();
         kw.set("template", toArray(templateKeywords));
@@ -360,23 +406,9 @@ public class ValidationResultServiceImpl implements ValidationResultService{
 
     private static ArrayNode toArray(Collection<String> set) {
         ArrayNode arr = OM.createArrayNode();
-        for (String s : set) arr.add(s);
+        set.stream().filter(Objects::nonNull).forEach(arr::add);
         return arr;
     }
-
-    private static double clamp01(double v) {
-        if (Double.isNaN(v) || Double.isInfinite(v)) return 0.0;
-        return Math.max(0.0, Math.min(1.0, v));
-    }
-
-    private static String truncate(String s, int max) {
-        if (s == null) return null;
-        return (s.length() <= max) ? s : s.substring(0, max);
-    }
-
-    private static String escapeJson(String s) {
-        if (s == null) return null;
-        return s.replace("\"", "\\\"");
-    }
-
+    private static String truncate(String s, int max) { return (s == null || s.length() <= max) ? s : s.substring(0, max); }
+    private static String escapeJson(String s) { return (s == null) ? null : s.replace("\"", "\\\""); }
 }

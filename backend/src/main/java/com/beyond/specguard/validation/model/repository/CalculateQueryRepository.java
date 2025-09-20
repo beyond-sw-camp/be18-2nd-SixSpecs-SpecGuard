@@ -34,7 +34,7 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
         SELECT pr.processed_contents
           FROM portfolio_result pr
           JOIN crawling_result cr ON pr.crawling_result_id = cr.id
-          JOIN resume_link rl ON cr.resume_link_id = rl.id
+          JOIN resume_link rl      ON cr.resume_link_id = rl.id
          WHERE cr.resume_id = :resumeId
            AND rl.link_type = :linkType
          ORDER BY pr.created_at DESC
@@ -47,12 +47,13 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
     @Query(value = """
         SELECT 
           COALESCE(SUM(CASE WHEN UPPER(cv.status) IN ('COMPLETED') THEN 1 ELSE 0 END),0) AS completed,
-          COALESCE(SUM(CASE WHEN UPPER(cv.status) = 'FAILED' THEN 1 ELSE 0 END),0)                AS failed
+          COALESCE(SUM(CASE WHEN UPPER(cv.status) = 'FAILED'     THEN 1 ELSE 0 END),0) AS failed
         FROM certificate_verification cv
         JOIN resume_certificate rc ON rc.id = cv.certificate_id
        WHERE rc.resume_id = :resumeId
         """, nativeQuery = true)
     Object[] countCertificateVerificationRaw(@Param("resumeId") UUID resumeId);
+
 
     // 가중치 조회: resume → company_template -> evaluation_profile -> evaluation_weight
     interface WeightRow {
@@ -62,13 +63,12 @@ public interface CalculateQueryRepository extends JpaRepository<Resume, UUID> {
     @Query(value = """
         SELECT ew.weight_type AS weightType, ew.weight_value AS weightValue
           FROM resume r
-          JOIN company_template ct ON ct.id = r.template_id
+          JOIN company_template   ct ON ct.id = r.template_id
           JOIN evaluation_profile ep ON ep.id = ct.evaluation_profile_id
-          JOIN evaluation_weight ew ON ew.evaluation_profile_id = ep.id
+          JOIN evaluation_weight  ew ON ew.evaluation_profile_id = ep.id
          WHERE r.id = :resumeId
         """, nativeQuery = true)
     List<WeightRow> findWeightsByResume(@Param("resumeId") UUID resumeId);
-
 
 
     default Map<String, Object> countCertificateVerification(UUID resumeId) {

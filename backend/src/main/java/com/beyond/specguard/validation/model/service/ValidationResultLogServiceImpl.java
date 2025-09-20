@@ -28,33 +28,15 @@ public class ValidationResultLogServiceImpl implements ValidationResultLogServic
         }
     }
 
-    private void validateWriteRole(ClientUser.Role role) {
-        if (!EnumSet.of(ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role)) {
-            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
-        }
-    }
 
 
 
-    @Override
-    @Transactional(readOnly = true)
+
+    @Override @Transactional(readOnly = true)
     public List<ValidationResultLogResponseDto> getLogsByResumeId(ClientUser clientUser, UUID resumeId) {
         validateReadRole(clientUser.getRole());
-
         return validationResultLogRepository.findAllDtosByResumeId(resumeId);
-
     }
 
-    @Override
-    @Transactional
-    public ValidationResultLogResponseDto updateComment(ClientUser clientUser, UUID logId, String comment) {
-        validateWriteRole(clientUser.getRole());
-        int updated = validationResultLogRepository.updateDescriptionComment(logId, comment);
-        if (updated == 0) {
-            throw new CustomException(ValidationErrorCode.RESUME_NOT_FOUND);
-        }
-        return validationResultLogRepository.findDtoByLogId(logId)
-                .orElseThrow(() -> new CustomException(ValidationErrorCode.RESUME_NOT_FOUND));
-    }
 
 }
