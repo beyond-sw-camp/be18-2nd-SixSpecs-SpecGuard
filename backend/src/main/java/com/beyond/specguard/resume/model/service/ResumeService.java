@@ -200,6 +200,8 @@ public class ResumeService {
             Resume resume = resumeRepository.findById(resumeId)
                             .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
 
+            validateDraft(resume);
+            
             validateOwnerShip(resume, email, templateId);
 
             Optional<ResumeBasic> opt = basicRepository.findByResume_Id(resume.getId());
@@ -230,6 +232,8 @@ public class ResumeService {
     public void upsertAggregate(UUID resumeId, UUID templateId, String email, ResumeAggregateUpdateRequest req) {
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
+
+        validateDraft(resume);
 
         validateOwnerShip(resume, email, templateId);
 
@@ -346,6 +350,8 @@ public class ResumeService {
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
 
+        validateDraft(resume);
+
         validateResumeCertificate(req);
 
         validateOwnerShip(resume, email, templateId);
@@ -458,6 +464,8 @@ public class ResumeService {
     ) {
         validateOwnerShip(resume, email, templateId);
 
+        validateDraft(resume);
+
         List<CompanyTemplateResponse> updatedFields = new ArrayList<>();
 
         // 요청된 response 들을 Map<id, dto>로 변환 (업데이트용)
@@ -511,10 +519,18 @@ public class ResumeService {
 
     //최종 제출
     @Transactional
-    public ResumeSubmitResponse submit(Resume resume, UUID companyId) {
+    public ResumeSubmitResponse submit(UUID resumeId) {
+
+        Resume resume = resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
+
+        validateDraft(resume);
+
         if (resume.getResumeBasic() == null) {
             throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
+
+        UUID companyId = resume.getTemplate().getClientCompany().getId();
 
         if (submissionRepository.existsByResume_IdAndCompanyId(resume.getId(), companyId)) {
             throw new CustomException(ResumeErrorCode.ALREADY_SUBMITTED);
@@ -536,6 +552,12 @@ public class ResumeService {
         resumeRepository.updateStatus(resume.getId(), resume.getStatus());
 
         return ResumeSubmitResponse.fromEntity(submission);
+    }
+
+    private void validateDraft(Resume resume) {
+        if (!resume.getStatus().equals(Resume.ResumeStatus.DRAFT)) {
+            throw new  CustomException(ResumeErrorCode.ALREADY_SUBMITTED);
+        }
     }
 
     private void cascadeDeleteByResume(UUID resumeId) {

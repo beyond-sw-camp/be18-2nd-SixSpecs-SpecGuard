@@ -204,7 +204,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                        .maximumSessions(1)
+                        .maximumSessions(5)
                         .maxSessionsPreventsLogin(true)
                 )
                 .formLogin(AbstractHttpConfigurer::disable)

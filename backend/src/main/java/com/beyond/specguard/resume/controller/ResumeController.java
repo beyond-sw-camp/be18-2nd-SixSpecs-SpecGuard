@@ -5,7 +5,6 @@ import com.beyond.specguard.resume.model.dto.request.ResumeAggregateUpdateReques
 import com.beyond.specguard.resume.model.dto.request.ResumeBasicCreateRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeCertificateUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeCreateRequest;
-import com.beyond.specguard.resume.model.dto.request.ResumeSubmitRequest;
 import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeBasicResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
@@ -174,12 +173,11 @@ public class ResumeController {
     @PostMapping("/submit")
     @ResponseStatus(HttpStatus.CREATED)
     public ResumeSubmitResponse submit(
-            @AuthenticationPrincipal ResumeDetails resumeDetails,
-            @Valid @RequestBody ResumeSubmitRequest req
+            @AuthenticationPrincipal ResumeDetails resumeDetails
     ) {
-        Resume resume = resumeDetails.getResume();
+        UUID resumeId = resumeDetails.getResume().getId();
 
-        return resumeService.submit(resume, req.companyId());
+        return resumeService.submit(resumeId);
     }
 
     // 세션 기반의 로그아웃
