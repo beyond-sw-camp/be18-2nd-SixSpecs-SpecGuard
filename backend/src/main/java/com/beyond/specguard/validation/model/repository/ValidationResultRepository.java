@@ -11,15 +11,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ValidationResultRepository extends JpaRepository<ValidationResult, UUID> {
+    //이 쿼리에 ResumeStatus가 PROCESSING 말고 VALIDATED인게 맞는데 resume 상태가 안바뀜
     @Query("""
     select vr
-    from ValidationResult vr
-    join vr.resume r
-    join r.template t
-    where t.id = :templateId
-    and r.status =  com.beyond.specguard.resume.model.entity.Resume.ResumeStatus.PROCESSING
-    and vr.adjustedTotal is not null
-            """)
+      from ValidationResult vr
+      join vr.resume r
+      join r.template t
+     where t.id = :templateId
+       and r.status = com.beyond.specguard.resume.model.entity.Resume.ResumeStatus.VALIDATED
+       and vr.adjustedTotal is not null
+""")
     List<ValidationResult> findAllValidatedByTemplateId(@Param("templateId") UUID templateId);
 
     // Resume 단건에 연결된 ValidationResult 조회

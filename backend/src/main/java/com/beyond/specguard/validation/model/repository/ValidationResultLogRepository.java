@@ -12,13 +12,13 @@ import java.util.UUID;
 public interface ValidationResultLogRepository extends JpaRepository<ValidationResultLog, UUID> {
     @Query("""
         select new com.beyond.specguard.validation.model.dto.response.ValidationResultLogResponseDto(
-            l.id, r.id, l.validationScore, l.validatedAt, l.keywordList, l.mismatchFields, l.matchFields
+            l.id, r.id, CAST(l.logType as string), l.validationScore, l.validatedAt, l.keywordList, l.mismatchFields, l.matchFields
         )
           from ValidationResultLog l
           join l.validationResult vr
           join vr.resume r
          where r.id = :resumeId
-         order by l.validatedAt desc
+         order by l.validatedAt desc, l.id desc
     """)
     List<ValidationResultLogResponseDto> findAllDtosByResumeId(@Param("resumeId") UUID resumeId);
 

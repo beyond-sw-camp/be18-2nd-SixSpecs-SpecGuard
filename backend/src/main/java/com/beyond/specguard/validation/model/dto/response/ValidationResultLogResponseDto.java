@@ -15,6 +15,7 @@ public class ValidationResultLogResponseDto {
 
     private UUID id;
     private UUID resumeId;
+    private String category;
     private Double validationScore;
     private LocalDateTime validatedAt;
     private String keywordList;

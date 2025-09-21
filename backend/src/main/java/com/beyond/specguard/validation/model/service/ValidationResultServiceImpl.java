@@ -32,12 +32,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ValidationResultServiceImpl implements ValidationResultService{
+public class ValidationResultServiceImpl implements ValidationResultService {
+
     private final ValidationResultRepository validationResultRepository;
     private final ValidationResultLogRepository validationResultLogRepository;
     private final CalculateQueryRepository calculateQueryRepository;
@@ -54,19 +56,37 @@ public class ValidationResultServiceImpl implements ValidationResultService{
     private static final double COMMIT_MAX = 1000.0;
     private static final double VELOG_POST_MAX = 100.0;
 
+    // ===== match/mismatch 유틸 =====
+    private record MM(String matchCsv, String mismatchJson) {}
+
+    // 템플릿 키워드(tpl)와 관측 키워드(obs)로 match/mismatch 계산
+    private final BiFunction<Set<String>, Set<String>, MM> mm = (tpl, obs) -> {
+        Set<String> matchSet = new LinkedHashSet<>(tpl);
+        matchSet.retainAll(obs);
+
+        Set<String> misSet = new LinkedHashSet<>(tpl);
+        misSet.removeAll(obs);
+
+        String matchCsv = String.join(", ", matchSet);
+        String mismatchJson;
+        try {
+            mismatchJson = OM.writeValueAsString(misSet); // JSON 배열 문자열
+        } catch (Exception e) {
+            mismatchJson = "[]";
+        }
+        return new MM(matchCsv, mismatchJson);
+    };
+
     private void validateWriteRole(ClientUser.Role role) {
         if (!EnumSet.of(ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role)) {
             throw new CustomException(CommonErrorCode.ACCESS_DENIED);
         }
     }
-
     private void validateReadRole(ClientUser.Role role) {
         if (!EnumSet.of(ClientUser.Role.VIEWER, ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role)) {
             throw new CustomException(CommonErrorCode.ACCESS_DENIED);
         }
     }
-
-
 
     @Override
     @Transactional
@@ -74,28 +94,29 @@ public class ValidationResultServiceImpl implements ValidationResultService{
         validateWriteRole(clientUser.getRole());
         final UUID resumeId = request.getResumeId();
 
-
-
         try {
-            // 1) 템플릿 키워드 수집 (company_template_response_analysis.keyword)
+            // 1) 템플릿 키워드 수집
             List<String> templateKeywordJsons = calculateQueryRepository.findTemplateAnalysisKeywordsJson(resumeId);
             Set<String> templateKeywords = new LinkedHashSet<>();
             for (String json : templateKeywordJsons) templateKeywords.addAll(KeywordUtils.parseKeywords(json));
-            // 2) 플랫폼별 포트폴리오 정제 결과 수집
-            Set<String> ghKeywords = new LinkedHashSet<>();     //깃허브 키워드
-            Set<String> ghTech     = new LinkedHashSet<>();     //깃허브 기술 키워드
-            int githubCommitCount = 0;                          //깃허브 커밋수
-            int githubRepoCount = 0;                            //깃허브 레포수
+
+            // 2) 포트폴리오 정제 결과 수집
+            Set<String> ghKeywords = new LinkedHashSet<>();
+            Set<String> ghTech     = new LinkedHashSet<>();
+            int githubCommitCount = 0;
+            int githubRepoCount   = 0;
             for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.GITHUB.name())) {
                 ghKeywords.addAll(KeywordUtils.parseKeywords(pc));
                 ghTech.addAll(KeywordUtils.parseTech(pc));
                 githubCommitCount += KeywordUtils.commitCount(pc);
                 githubRepoCount   += KeywordUtils.repoCount(pc);
             }
+
             Set<String> notionKeywords = new LinkedHashSet<>();
             for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.NOTION.name())) {
                 notionKeywords.addAll(KeywordUtils.parseKeywords(pc));
             }
+
             Set<String> velogKeywords = new LinkedHashSet<>();
             int velogPostCount = 0, velogDateCount = 0;
             for (String pc : calculateQueryRepository.findProcessedContentsByPlatform(resumeId, ResumeLink.LinkType.VELOG.name())) {
@@ -104,8 +125,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
                 velogDateCount += KeywordUtils.dateCount(pc);
             }
 
-
-            // 4) 자격증 매칭 COMPLETED / (COMPLETED + FAILED)
+            // 3) 자격증 매칭 COMPLETED / (COMPLETED + FAILED)
             var certAgg = calculateQueryRepository.countCertificateVerification(resumeId);
             int completed = ((Number) certAgg.getOrDefault("completed", 0)).intValue();
             int failed    = ((Number) certAgg.getOrDefault("failed", 0)).intValue();
@@ -121,8 +141,7 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             double velogPostScore       = clamp01(velogPostCount / VELOG_POST_MAX);
             double velogDateScore       = clamp01(velogDateCount / VELOG_POST_MAX);
 
-
-            // 6) 가중치 적용 (존재하는 지표만 합산)
+            // 5) 가중치 적용
             Map<WeightType, Double> metrics = new EnumMap<>(WeightType.class);
             metrics.put(WeightType.GITHUB_REPO_COUNT,     githubRepoScore);
             metrics.put(WeightType.GITHUB_COMMIT_COUNT,   githubCommitScore);
@@ -134,11 +153,9 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             metrics.put(WeightType.VELOG_RECENT_ACTIVITY, velogDateScore);
             metrics.put(WeightType.CERTIFICATE_MATCH,     certScore);
 
-            //가중치
             var weights = calculateQueryRepository.findWeightsByResume(resumeId);
 
-
-            //정합성 점수 종합
+            // Source diversity 보정
             int sourceCount = 0;
             for (double v : new double[]{
                     githubRepoScore, githubCommitScore, githubKeywordMatch, githubTopicMatch,
@@ -152,22 +169,18 @@ public class ValidationResultServiceImpl implements ValidationResultService{
                 if (!metrics.containsKey(wt)) continue;
                 rawTotal += Optional.ofNullable(w.getWeightValue()).orElse(0.0) * metrics.get(wt);
             }
-
             double adjustedTotal = rawTotal * sourceDiversityFactor;
 
-            // 일치/불일치 집합 (이번 로그 기준)
+            // 6) 일치/불일치(이번 실행 기준)
             Set<String> observedUnion = new LinkedHashSet<>();
             observedUnion.addAll(ghKeywords); observedUnion.addAll(ghTech);
             observedUnion.addAll(notionKeywords); observedUnion.addAll(velogKeywords);
 
-            Set<String> match = new LinkedHashSet<>(templateKeywords);
-            match.retainAll(observedUnion);
-            Set<String> mismatch = new LinkedHashSet<>(templateKeywords);
-            mismatch.removeAll(observedUnion);
+            Set<String> match = new LinkedHashSet<>(templateKeywords); match.retainAll(observedUnion);
+            Set<String> mismatch = new LinkedHashSet<>(templateKeywords); mismatch.removeAll(observedUnion);
 
-            // 5) 성공 이슈 & 결과 저장
+            // 7) 결과 upsert
             Resume resumeRef = em.getReference(Resume.class, resumeId);
-
             Optional<ValidationResult> opt = validationResultRepository.findByResumeId(resumeId);
 
             ValidationResult result;
@@ -177,7 +190,6 @@ public class ValidationResultServiceImpl implements ValidationResultService{
                                 .validationResult(ValidationIssue.ValidationResult.SUCCESS)
                                 .build()
                 );
-                // 없으면 새로 생성
                 result = validationResultRepository.save(
                         ValidationResult.builder()
                                 .resume(resumeRef)
@@ -186,13 +198,11 @@ public class ValidationResultServiceImpl implements ValidationResultService{
                                 .build()
                 );
             } else {
-                // 있으면 업데이트 쿼리로 필드만 갱신
                 result = opt.get();
                 validationResultRepository.updateAdjustedTotal(result.getId(), adjustedTotal);
             }
 
-
-            // 6) 리포트 JSON + 로그 적재
+            // 8) 리포트 JSON 생성
             String reportJson = buildReportJson(
                     templateKeywords, ghKeywords, ghTech, notionKeywords, velogKeywords,
                     githubRepoCount, githubCommitCount, velogPostCount, velogDateCount,
@@ -201,25 +211,117 @@ public class ValidationResultServiceImpl implements ValidationResultService{
                     certScore, sourceDiversityFactor, adjustedTotal, weights
             );
 
-            String mismatchJson = OM.writeValueAsString(mismatch);
-            String matchText    = String.join(", ", match);
+            // 9) 카테고리별 로그 9건 적재
+            List<ValidationResultLog> logs = new ArrayList<>();
 
-            validationResultLogRepository.save(
-                    ValidationResultLog.builder()
-                            .validationResult(result)
-                            .validationScore(adjustedTotal)
-                            .keywordList(reportJson)
-                            .mismatchFields(mismatchJson)
-                            .matchFields(matchText)
-                            .validatedAt(LocalDateTime.now())
-                            .build()
-            );
+            logs.add(ValidationResultLog.builder()
+                    .validationResult(result)
+                    .logType(ValidationResultLog.ValidationLogType.GITHUB_REPO_COUNT)
+                    .validationScore(githubRepoScore)
+                    .keywordList(reportJson)
+                    .matchFields("")
+                    .mismatchFields("[]")
+                    .validatedAt(LocalDateTime.now())
+                    .build());
 
+            logs.add(ValidationResultLog.builder()
+                    .validationResult(result)
+                    .logType(ValidationResultLog.ValidationLogType.GITHUB_COMMIT_COUNT)
+                    .validationScore(githubCommitScore)
+                    .keywordList(reportJson)
+                    .matchFields("")
+                    .mismatchFields("[]")
+                    .validatedAt(LocalDateTime.now())
+                    .build());
 
-            // 7) 이력서 상태 전환
-            resumeRepository.updateStatus(resumeId, Resume.ResumeStatus.VALIDATED);
+            {
+                MM p = mm.apply(templateKeywords, ghKeywords);
+                logs.add(ValidationResultLog.builder()
+                        .validationResult(result)
+                        .logType(ValidationResultLog.ValidationLogType.GITHUB_KEYWORD_MATCH)
+                        .validationScore(githubKeywordMatch)
+                        .keywordList(reportJson)
+                        .matchFields(p.matchCsv())
+                        .mismatchFields(p.mismatchJson())
+                        .validatedAt(LocalDateTime.now())
+                        .build());
+            }
+            {
+                MM p = mm.apply(templateKeywords, ghTech);
+                logs.add(ValidationResultLog.builder()
+                        .validationResult(result)
+                        .logType(ValidationResultLog.ValidationLogType.GITHUB_TOPIC_MATCH)
+                        .validationScore(githubTopicMatch)
+                        .keywordList(reportJson)
+                        .matchFields(p.matchCsv())
+                        .mismatchFields(p.mismatchJson())
+                        .validatedAt(LocalDateTime.now())
+                        .build());
+            }
+            {
+                MM p = mm.apply(templateKeywords, notionKeywords);
+                logs.add(ValidationResultLog.builder()
+                        .validationResult(result)
+                        .logType(ValidationResultLog.ValidationLogType.NOTION_KEYWORD_MATCH)
+                        .validationScore(notionKeywordMatch)
+                        .keywordList(reportJson)
+                        .matchFields(p.matchCsv())
+                        .mismatchFields(p.mismatchJson())
+                        .validatedAt(LocalDateTime.now())
+                        .build());
+            }
+            {
+                MM p = mm.apply(templateKeywords, velogKeywords);
+                logs.add(ValidationResultLog.builder()
+                        .validationResult(result)
+                        .logType(ValidationResultLog.ValidationLogType.VELOG_KEYWORD_MATCH)
+                        .validationScore(velogKeywordMatch)
+                        .keywordList(reportJson)
+                        .matchFields(p.matchCsv())
+                        .mismatchFields(p.mismatchJson())
+                        .validatedAt(LocalDateTime.now())
+                        .build());
+            }
 
-            // 8) “현재까지의 로그”를 집계해 결과의 match/mismatch_keyword 갱신
+            logs.add(ValidationResultLog.builder()
+                    .validationResult(result)
+                    .logType(ValidationResultLog.ValidationLogType.VELOG_POST_COUNT)
+                    .validationScore(velogPostScore)
+                    .keywordList(reportJson)
+                    .matchFields("")
+                    .mismatchFields("[]")
+                    .validatedAt(LocalDateTime.now())
+                    .build());
+
+            logs.add(ValidationResultLog.builder()
+                    .validationResult(result)
+                    .logType(ValidationResultLog.ValidationLogType.VELOG_RECENT_ACTIVITY)
+                    .validationScore(velogDateScore)
+                    .keywordList(reportJson)
+                    .matchFields("")
+                    .mismatchFields("[]")
+                    .validatedAt(LocalDateTime.now())
+                    .build());
+
+            logs.add(ValidationResultLog.builder()
+                    .validationResult(result)
+                    .logType(ValidationResultLog.ValidationLogType.CERTIFICATE_MATCH)
+                    .validationScore(certScore)
+                    .keywordList(reportJson)
+                    .matchFields("")
+                    .mismatchFields("[]")
+                    .validatedAt(LocalDateTime.now())
+                    .build());
+
+            validationResultLogRepository.saveAll(logs);
+
+            // 10) 이력서 상태 VALIDATED 전환
+            int updated = resumeRepository.updateStatusValidation(resumeId, Resume.ResumeStatus.VALIDATED);
+            if (updated != 1) {
+                log.error("Resume status update affected {} rows (expected 1). resumeId={}", updated, resumeId);
+            }
+
+            // 11) 로그 집계로 결과 match/mismatch 키워드 갱신
             aggregateAndUpdateResultKeywords(result.getId());
 
             return result.getId();
@@ -229,10 +331,6 @@ public class ValidationResultServiceImpl implements ValidationResultService{
             return saveIssueAndLogsOnError(resumeId, ex);
         }
     }
-
-
-
-
 
     @Override
     @Transactional
@@ -258,12 +356,8 @@ public class ValidationResultServiceImpl implements ValidationResultService{
         double percentile = (less + 0.5 * equal) / n;
         double finalScore = Math.max(0.0, Math.min(1.0, percentile)) * 100.0;
 
-        // 최종 점수/시각 저장
         validationResultRepository.updateFinalScoreAndResultAt(target.getId(), finalScore, LocalDateTime.now());
-
-        // 안전하게 집계 키워드 최신화 한 번 더
         aggregateAndUpdateResultKeywords(target.getId());
-
         return target.getId();
     }
 
@@ -284,8 +378,6 @@ public class ValidationResultServiceImpl implements ValidationResultService{
                 .build();
     }
 
-
-
     @Override
     @Transactional
     public void updateResultComment(ClientUser clientUser, UUID resultId, String comment) {
@@ -297,20 +389,16 @@ public class ValidationResultServiceImpl implements ValidationResultService{
     // ===== 내부 유틸 =====
 
     private void aggregateAndUpdateResultKeywords(UUID resultId) {
-        // 모든 로그의 match/mismatch 집계
         List<ValidationResultLog> logs = validationResultLogRepository.findAllByResultId(resultId);
 
-        // match_fields TEXT -> split, normalize, count
         Map<String, Integer> freq = new HashMap<>();
         Set<String> mismatchUnion = new LinkedHashSet<>();
 
         for (ValidationResultLog l : logs) {
-            // match
             Set<String> matches = KeywordUtils.splitCsvToSet(l.getMatchFields());
             for (String m : matches) freq.merge(m, 1, Integer::sum);
 
-            // mismatch (JSON 배열)
-            mismatchUnion.addAll(KeywordUtils.parseKeywords(l.getMismatchFields()));
+            mismatchUnion.addAll(KeywordUtils.parseKeywords(l.getMismatchFields())); // JSON배열 파싱
         }
 
         String matchTop5 = freq.entrySet().stream()
@@ -322,7 +410,6 @@ public class ValidationResultServiceImpl implements ValidationResultService{
                 .map(Map.Entry::getKey)
                 .collect(Collectors.joining(", "));
 
-        // mismatch 랜덤 5개
         List<String> mis = new ArrayList<>(mismatchUnion);
         Collections.shuffle(mis);
         String mismatchRand5 = mis.stream().limit(5).collect(Collectors.joining(", "));

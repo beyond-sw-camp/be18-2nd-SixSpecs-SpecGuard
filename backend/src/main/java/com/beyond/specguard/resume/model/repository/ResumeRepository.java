@@ -33,6 +33,11 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID>, JpaSpecif
     @Query("update Resume r set r.status = :status where r.id = :resumeId")
     void updateStatus(@Param("resumeId") UUID id, @Param("status") Resume.ResumeStatus status);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Resume r set r.status = :status where r.id = :resumeId")
+    int updateStatusValidation(@Param("resumeId") UUID id, @Param("status") Resume.ResumeStatus status);
+
+
     UUID id(UUID id);
 
     @Override
