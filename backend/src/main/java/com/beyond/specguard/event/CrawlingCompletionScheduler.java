@@ -52,6 +52,12 @@ public class CrawlingCompletionScheduler {
                 Resume resume = resumeRepository.findById(resumeId)
                         .orElseThrow(() -> new IllegalStateException("Resume not found: " + resumeId));
 
+                // 만약을 대비해서 여기에서 검증한번 더 진행
+                if (resume.getStatus() == Resume.ResumeStatus.PROCESSING) {
+                    log.debug("이미 PROCESSING 상태이므로 skip: resumeId={}", resumeId);
+                    continue;
+                }
+
                 //  resumeId 기준 CrawlingResult,portfolioResult,Analaysis 전부 조회
                 List<CrawlingResult> results = crawlingResultRepository.findByResume_Id(resumeId);
                 List<PortfolioResult> portfolioResults = portfolioResultRepository.findAllByResumeId(resumeId);
