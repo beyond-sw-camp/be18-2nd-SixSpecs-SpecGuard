@@ -606,11 +606,11 @@ public class ResumeService {
                 new ResumeSubmittedEvent(resume.getId(), resume.getTemplate().getId())
         );
 
-        log.info("[Submit] BEFORE publish CertificateVerificationEvent - resumeId={}, thread={}, time={}",
+/*        log.info("[Submit] BEFORE publish CertificateVerificationEvent - resumeId={}, thread={}, time={}",
                 resume.getId(), threadName, System.currentTimeMillis());
         eventPublisher.publishEvent(
                 new CertificateVerificationEvent(resume.getId())
-        );
+        );*/
 
         resumeRepository.updateStatus(resume.getId(), resume.getStatus());
 
