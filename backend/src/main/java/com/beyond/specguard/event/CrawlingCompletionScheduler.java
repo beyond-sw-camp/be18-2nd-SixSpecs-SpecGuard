@@ -31,7 +31,7 @@ public class CrawlingCompletionScheduler {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    @Scheduled(fixedDelay = 30000)
+    @Scheduled(fixedDelay = 50000)
     public void checkCrawlingStatus() {
         if (!lock.tryLock()) {
             log.warn("이전 스케줄러 실행 중 → 이번 실행 스킵");
@@ -55,7 +55,12 @@ public class CrawlingCompletionScheduler {
                 List<CrawlingResult> results = crawlingResultRepository.findByResume_Id(resumeId);
 
                 // [NLP 호출 위치]
-                keywordNlpClient.extractKeywords(resumeId);
+                if(resume.getStatus() != Resume.ResumeStatus.PROCESSING){
+                    log.info("스케줄러 NLP 실행 resumeId={}", resumeId);
+                    keywordNlpClient.extractKeywords(resumeId);
+                }else{
+                    log.info("이미 상태값이 processing이므로 호출 스킵 resumeId={}", resumeId);
+                }
 
 
                 //  resumeId 기준 PortfolioResult 전부 조회 (한 번에)
