@@ -18,5 +18,5 @@ public interface CompanyTemplateRepository extends JpaRepository<CompanyTemplate
     """)
     List<UUID> findExpiredTemplateIds(LocalDateTime now);
 
-  List<CompanyTemplate> findByClientCompany_Slug(String companySlug);
+  List<CompanyTemplate> findAllByClientCompany_Slug(String companySlug);
 }

@@ -18,7 +18,6 @@ import com.beyond.specguard.resume.model.dto.request.ResumeCertificateUpsertRequ
 import com.beyond.specguard.resume.model.dto.request.ResumeCreateRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeEducationUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeExperienceUpsertRequest;
-import com.beyond.specguard.resume.model.dto.request.ResumeLinkUpsertRequest;
 import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeBasicResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeListResponseDto;
@@ -61,7 +60,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -394,7 +400,7 @@ public class ResumeService {
         List<ResumeCertificate> updatedFields = new ArrayList<>();
 
         // 입력이 아예 없으면 -> NULL 값 row 하나 추가
-        if (req.certificates() == null || req.certificates().isEmpty()) {
+        if (req.certificates().isEmpty()) {
             ResumeCertificate emptyCert = ResumeCertificate.builder()
                     .resume(resume)
                     .certificateName(null)
