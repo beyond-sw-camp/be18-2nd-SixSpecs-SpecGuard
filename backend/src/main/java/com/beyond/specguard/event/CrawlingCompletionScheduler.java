@@ -52,27 +52,15 @@ public class CrawlingCompletionScheduler {
                 Resume resume = resumeRepository.findById(resumeId)
                         .orElseThrow(() -> new IllegalStateException("Resume not found: " + resumeId));
 
-                //  resumeId 기준 CrawlingResult 전부 조회
+                //  resumeId 기준 CrawlingResult,portfolioResult,Analaysis 전부 조회
                 List<CrawlingResult> results = crawlingResultRepository.findByResume_Id(resumeId);
-
-                // [NLP 호출 위치]
-                if(resume.getStatus() != Resume.ResumeStatus.PROCESSING){
-                    log.info("스케줄러 NLP 실행 resumeId={}", resumeId);
-                    keywordNlpClient.extractKeywords(resumeId);
-                }else{
-                    log.info("이미 상태값이 processing이므로 호출 스킵 resumeId={}", resumeId);
-                }
-
-
-                //  resumeId 기준 PortfolioResult 전부 조회 (한 번에)
                 List<PortfolioResult> portfolioResults = portfolioResultRepository.findAllByResumeId(resumeId);
+                List<CompanyTemplateResponseAnalysis> analyses = analysisRepository.findAllByResumeId(resumeId);
 
-                //  resumeId 기준 Analysis 조회
-                List<CompanyTemplateResponseAnalysis> analyses =
-                        analysisRepository.findAllByResumeId(resumeId);
 
-                // 상태 업데이트 호출
+                // NLP 호출까지 updateResumeStatus 안으로 이동
                 updateResumeStatus(resume, results, portfolioResults, analyses);
+
                 resumeRepository.save(resume);
 
                 log.info("[Scheduler] Resume 상태 갱신 완료: resumeId={}, status={}",
@@ -92,24 +80,27 @@ public class CrawlingCompletionScheduler {
         boolean anyRunning = results.stream()
                 .anyMatch(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.PENDING);
 
-        // 모든 값의 합이 3개일때로 수정해야함.
         boolean allCrawlingCompleted = (results.size() == 3);
-
-        // PortfolioResult 상태 상관없이 개수 합이 3개면 완료
         boolean portfolioCompleted = (portfolioResults.size() == 3);
-
-        //자소서 nlp 임 이건
         boolean allNlpProcessed = analyses.stream()
                 .allMatch(a -> a.getSummary() != null && !a.getSummary().isBlank());
 
         if (anyRunning) {
-            //  실행 중인 크롤링이 있으면 전체 상태는 PENDING
+            // 아직 크롤링 중인 게 있음 → 상태는 PENDING
             resume.changeStatus(Resume.ResumeStatus.PENDING);
+
+        } else if (allCrawlingCompleted && !portfolioCompleted) {
+            // 크롤링은 끝났는데 포트폴리오 결과 아직 없음 → 여기서 NLP 실행 (Python 트리거를 여기에 둬서 중복 호출 방지)
+            log.info("크롤링 완료 → NLP(키워드 추출) 실행 resumeId={}", resume.getId());
+            keywordNlpClient.extractKeywords(resume.getId());
+            resume.changeStatus(Resume.ResumeStatus.PENDING);
+
         } else if (allCrawlingCompleted && portfolioCompleted && allNlpProcessed) {
-            //  전부 완료된 경우에 PROCESSING
+            // 크롤링 완료 + 포트폴리오 결과 채워짐 + 자소서 NLP도 끝남 → 최종 완료 상태
             resume.changeStatus(Resume.ResumeStatus.PROCESSING);
+
         } else {
-            // 애매한거 전부 PENDING
+            // 그 외는 다 PENDING
             resume.changeStatus(Resume.ResumeStatus.PENDING);
         }
     }

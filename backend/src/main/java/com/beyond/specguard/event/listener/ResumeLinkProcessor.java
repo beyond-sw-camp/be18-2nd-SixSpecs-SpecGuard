@@ -57,7 +57,6 @@ public class ResumeLinkProcessor {
                     log.info("[GITHUB] GitHub 크롤링 시작 resumeId={}, url={}, thread={}",
                             resume.getId(), link.getUrl(), threadName);
                     gitHubService.analyzeGitHubUrl(result.getId());
-                    log.info("[GITHUB] 크롤링 종료");
                 }
                 case VELOG -> {
                     log.info("[VELOG] Python API 호출 시작 resumeId={}, url={}, thread={}",
@@ -69,7 +68,6 @@ public class ResumeLinkProcessor {
                     log.info("[NOTION] Notion 크롤링 시작 resumeId={}, url={}, thread={}",
                             resume.getId(), link.getUrl(), threadName);
                     notionCrawlerService.crawlAndUpdate(result.getId(), link.getUrl());
-                    log.info("[NOTION 크롤링 종료");
                 }
                 default -> log.warn("지원하지 않는 링크 타입 - {}", link.getLinkType());
             }
