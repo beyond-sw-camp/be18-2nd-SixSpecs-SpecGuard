@@ -24,7 +24,7 @@ public class ValidationResultLogServiceImpl implements ValidationResultLogServic
 
     private void validateReadRole(ClientUser.Role role) {
         if (!EnumSet.of(ClientUser.Role.VIEWER, ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role)) {
-            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
+            throw new CustomException(ValidationErrorCode.FORBIDDEN);
         }
     }
 

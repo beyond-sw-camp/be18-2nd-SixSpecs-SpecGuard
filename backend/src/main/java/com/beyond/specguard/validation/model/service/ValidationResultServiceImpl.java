@@ -79,12 +79,12 @@ public class ValidationResultServiceImpl implements ValidationResultService {
 
     private void validateWriteRole(ClientUser.Role role) {
         if (!EnumSet.of(ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role)) {
-            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
+            throw new CustomException(ValidationErrorCode.FORBIDDEN);
         }
     }
     private void validateReadRole(ClientUser.Role role) {
         if (!EnumSet.of(ClientUser.Role.VIEWER, ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role)) {
-            throw new CustomException(CommonErrorCode.ACCESS_DENIED);
+            throw new CustomException(ValidationErrorCode.FORBIDDEN);
         }
     }
 
@@ -344,7 +344,7 @@ public class ValidationResultServiceImpl implements ValidationResultService {
 
         ValidationResult target = validationResultRepository.findLatestByResume(resumeId)
                 .orElseThrow(() -> new CustomException(ValidationErrorCode.RESUME_NOT_FOUND));
-        if (target.getAdjustedTotal() == null) throw new CustomException(CommonErrorCode.INVALID_REQUEST);
+        if (target.getAdjustedTotal() == null) throw new CustomException(ValidationErrorCode.INVALID_REQUEST);
 
         double x = target.getAdjustedTotal();
         int n = population.size(), less = 0, equal = 0;
