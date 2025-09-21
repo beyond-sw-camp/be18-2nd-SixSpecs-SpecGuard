@@ -25,6 +25,9 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID>, JpaSpecif
     """)
     List<UUID> findUnsubmittedIdsByTemplateIds(List<UUID> templateIds, Pageable pageable);
 
+    @Query("select r.id from Resume r where r.status <> 'PROCESSING'")
+    List<UUID> findUnprocessedResumeIds();
+
     @Query("SELECT r FROM Resume r JOIN FETCH r.template WHERE r.email = :email AND r.template.id = :templateId")
     Optional<Resume> findByEmailAndTemplateId(@Param("email") String email, @Param("templateId") UUID templateId);
 

@@ -37,4 +37,4 @@ async def extract_keywords_(request: KeywordRequest):
     keywords = await extract_keywords(request.text)
 
     # 8) 최종 성공 응답
-    return BaseResponse(status="sucesss", data={"keywords" : keywords})
+    return BaseResponse(status="success", data={"keywords" : keywords})

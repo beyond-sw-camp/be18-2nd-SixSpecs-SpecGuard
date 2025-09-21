@@ -32,7 +32,7 @@ public class CrawlingCompletionScheduler {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    @Scheduled(fixedDelay = 50000)
+    @Scheduled(fixedDelay = 210000)
     public void checkCrawlingStatus() {
         if (!lock.tryLock()) {
             log.warn("이전 스케줄러 실행 중 → 이번 실행 스킵");
@@ -42,9 +42,9 @@ public class CrawlingCompletionScheduler {
         try {
             log.info("[Scheduler] Resume 상태 확인 시작");
 
-            //  findAll은 전수조사라 리소스 많이 잡아먹어서 최근 3분 안에 update가 되어있는 애들만 수행 할 수 있도록 변경
-            LocalDateTime cutoff = LocalDateTime.now().minusMinutes(3);
-            List<UUID> resumeIds = crawlingResultRepository.findUpdatedResumeIds(cutoff);
+            //  findAll은 전수조사라 리소스 많이 잡아먹어기때문에 processing이 아닌것만 하도록 수정
+            List<UUID> resumeIds = resumeRepository.findUnprocessedResumeIds();
+
             log.info("[Scheduler] 최근 변경된 Resume 갯수={}", resumeIds.size());
 
 
@@ -86,7 +86,12 @@ public class CrawlingCompletionScheduler {
         boolean anyRunning = results.stream()
                 .anyMatch(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.PENDING);
 
-        boolean allCrawlingCompleted = (results.size() == 3);
+        // 지금 3으로 default로 걸어뒀는데 향후 확장성을 고려했을때 resume table에 colum 하나 추가해서 count를 넣는 방식으로 수정한다면 유동적으로 변경가능
+        boolean allCrawlingCompleted = results.size() == 3 &&
+                results.stream().allMatch(r ->
+                        r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.COMPLETED
+                                || r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.NOTEXISTED
+                );
         boolean portfolioCompleted = (portfolioResults.size() == 3);
         boolean allNlpProcessed = analyses.stream()
                 .allMatch(a -> a.getSummary() != null && !a.getSummary().isBlank());
@@ -99,10 +104,9 @@ public class CrawlingCompletionScheduler {
             // 크롤링은 끝났는데 포트폴리오 결과 아직 없음 → 여기서 NLP 실행 (Python 트리거를 여기에 둬서 중복 호출 방지)
             log.info("크롤링 완료 → NLP(키워드 추출) 실행 resumeId={}", resume.getId());
             keywordNlpClient.extractKeywords(resume.getId());
-            resume.changeStatus(Resume.ResumeStatus.PENDING);
 
         } else if (allCrawlingCompleted && portfolioCompleted && allNlpProcessed) {
-            // 크롤링 완료 + 포트폴리오 결과 채워짐 + 자소서 NLP도 끝남 → 최종 완료 상태
+            // 크롤링 완료 + 포트폴리오 결과 채워짐 + 자소서 NLP도 끝남 -> 최종 완료 상태
             resume.changeStatus(Resume.ResumeStatus.PROCESSING);
 
         } else {

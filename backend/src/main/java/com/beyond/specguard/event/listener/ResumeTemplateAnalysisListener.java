@@ -2,6 +2,7 @@ package com.beyond.specguard.event.listener;
 
 import com.beyond.specguard.event.ResumeSubmittedEvent;
 import com.beyond.specguard.event.client.TemplateNlpClient;
+import com.beyond.specguard.event.dto.BaseResponse;
 import com.beyond.specguard.event.dto.KeywordRequest;
 import com.beyond.specguard.event.dto.KeywordResponse;
 import com.beyond.specguard.event.dto.SummaryRequest;
@@ -18,9 +19,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -36,7 +37,7 @@ public class ResumeTemplateAnalysisListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleResumeSubmitted(ResumeSubmittedEvent event) {
         UUID resumeId = event.resumeId();
-        log.info("[NLP] 분석 시작 resumeId={}", resumeId);
+        log.info("[NLP] 자소서 요약 및 키워드 추출 분석 시작 resumeId={}", resumeId);
 
         List<CompanyTemplateResponse> responses =
                 responseRepository.findAllByResume_Id(resumeId);
@@ -49,11 +50,11 @@ public class ResumeTemplateAnalysisListener {
             try {
                 // 1) 요약 요청
                 SummaryRequest summaryReq = new SummaryRequest("cover_letter", response.getAnswer());
-                SummaryResponse summaryRes = nlpClient.summarize(summaryReq);
+                BaseResponse<SummaryResponse> summaryRes = nlpClient.summarize(summaryReq);
 
                 // 2) 키워드 요청
                 KeywordRequest keywordReq = new KeywordRequest("cover_letter", response.getAnswer());
-                KeywordResponse keywordRes = nlpClient.extractKeywords(keywordReq);
+                BaseResponse<KeywordResponse> keywordRes = nlpClient.extractKeywords(keywordReq);
 
                 // 3) 결과 저장 (없으면 insert, 있으면 update)
                 CompanyTemplateResponseAnalysis analysis = analysisRepository
@@ -62,11 +63,19 @@ public class ResumeTemplateAnalysisListener {
                                 .responseId(response.getId())
                                 .build());
 
+                String summary = summaryRes.getData().getSummary();
 
-                Map<String, Object> keywordsMap = Map.of("keywords",keywordRes.getData().getKeywords() );
-                analysis.updateAnalysis(summaryRes.getData().getSummary(),
-                        new ObjectMapper().writeValueAsString(keywordsMap));
+                // 키워드 저장 (List<String> → JSON 문자열, null-safe)
+                List<String> keywords = Optional.ofNullable(keywordRes.getData())
+                        .map(KeywordResponse::getKeywords)
+                        .orElse(List.of());
 
+                String keywordsJson = new ObjectMapper().writeValueAsString(
+                        Map.of("keywords", keywords)
+                );
+
+                // 분석 업데이트
+                analysis.updateAnalysis(summary, keywordsJson);
                 analysisRepository.save(analysis);
 
                 log.info("[NLP] 분석 완료 responseId={}", response.getId());
