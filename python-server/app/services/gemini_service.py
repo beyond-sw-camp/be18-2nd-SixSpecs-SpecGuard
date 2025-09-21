@@ -1,9 +1,9 @@
 from app.services.gemini_client import client
-import json
 import re
 from fastapi import HTTPException
 from app.utils.codec import decompress_gzip
 import json
+import logging
 
 from app.db import (
     SessionLocal,
@@ -12,6 +12,8 @@ from app.db import (
 )
 
 MODEL = "gemini-2.0-flash-001"
+
+logger = logging.getLogger(__name__)
 
 async def insert_failed_data(session, row):
     processed_data = {"keywords": {}}
@@ -33,7 +35,7 @@ async def extract_keywrods_with_resume_id(resume_id: str):
             {"rid": resume_id},
         )
 
-        rows = res.all()
+        rows = res.fetchall()
 
         if not rows:
         # 주어진 resume_id로 crawling_result 행을 못 찾음
@@ -46,29 +48,33 @@ async def extract_keywrods_with_resume_id(resume_id: str):
 
         for row in rows:
 
-            if row.crawling_status == "FAILED" or row.crawling_status == "NOTEXISTED":
+            crawling_status = row.crawling_status
+            if crawling_status in ["FAILED", "NOTEXISTED", "NONEXISTED"]:
                 await insert_failed_data(session, row)
                 continue
 
+            elif crawling_status in ["RUNNING", "PENDING"]:
+                continue
 
             try:
                 raw_contents = await decompress_gzip(row.contents)
 
                 data_json = json.loads(raw_contents)
             except Exception as e:
-                print(e)
+                logger.error("Decompress/JSON parse error: {%s}", e)
+                await insert_failed_data(session, row)
                 continue  # 해당 row 스킵
             
             try:
                 if row.link_type == "VELOG":
-                    dumped_data = json.dumps(data_json["recent_activity"], indent=2, ensure_ascii=False)
+                    dumped_data = json.dumps(data_json.get("recent_activity", []), ensure_ascii=False)
                     processed_data = {
                         "keywords": await extract_keywords(dumped_data),
                         "count": int(data_json.get("postCount", 0)),
-                        "dateCount": int(await extract_dateCount(dumped_data)),
+                        "dateCount": await extract_dateCount(dumped_data),
                     }
                 elif row.link_type == "GITHUB":
-                    dumped_data = json.dumps(data_json["repoReadme"], indent=2, ensure_ascii=False)
+                    dumped_data = json.dumps(data_json.get("repoReadme", ""), ensure_ascii=False)
                     processed_data = {
                         "keywords": await extract_keywords(dumped_data),
                         "tech": await extract_keywords(dumped_data, "기술 스택 키워드"),
@@ -76,18 +82,25 @@ async def extract_keywrods_with_resume_id(resume_id: str):
                         "repos": int(data_json.get("repositoryCount", 0)),
                     }
                 elif row.link_type == "NOTION":
-                    dumped_data = json.dumps(data_json["content"], indent=2, ensure_ascii=False)
+                    dumped_data = json.dumps(data_json.get("content", ""), ensure_ascii=False)
                     processed_data = {
                         "keywords": await extract_keywords(dumped_data),
                     }
                 else:
-                    continue  # 지원하지 않는 링크 타입 스킵
+                    logger.warning("Unsupported link type: {%s}", row.link_type)
+                    await insert_failed_data(session, row)
+                    continue
 
                 status = "COMPLETED"
 
+            except KeywordExtractionError as e:
+                    logger.warning("키워드 추출 실패: %s", e)
+                    await insert_failed_data(session, row)
+                    continue
+            
             except Exception as e:
                 # 지원하지 않는 타입
-                    print(e)
+                    logger.error("Processing failed for row {%s}: {%s}", row.crawling_result, e)
                     await insert_failed_data(session, row)
                     continue
             
@@ -108,7 +121,7 @@ async def extract_keywrods_with_resume_id(resume_id: str):
     return {"resumeId": resume_id, "processed": portfolio_entries}
 
 
-async def extract_dateCount(text: str) -> list:
+async def extract_dateCount(text: str) -> int:
     prompt = f"""
     다음 텍스트에서 최근 1년 안에 작성된 게시글 수 반환해줘
     - 시간은 쿼리를 날린 현재시점 기준이야
@@ -124,16 +137,11 @@ async def extract_dateCount(text: str) -> list:
             contents=prompt
         )
         raw_output = response.text.strip()
-        return raw_output
+        return int(re.sub(r"\D", "", raw_output))  # 숫자만 추출
     
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": "DATE_EXTRACTION_FAILED",
-                "message": f"최근 시간 검색 에 실패했습니다. ({str(e)})"
-            }
-        )
+        logger.error("최근 시간 검색 에 실패했습니다. {%s}", str(e))
+        return 0
 
 
 
@@ -145,6 +153,7 @@ async def extract_keywords(text: str, type="기술 키워드") -> list:
     - 코드 블록 표시(````json`, ```), 설명 문장, 줄바꿈 같은 건 절대 포함하지 마.
     - 지원자의 활동 위주로 키워드를 뽑아야해.
     - 기업 사업 관련 키워드는 넣지 말아줘.
+    - 만약 키워드 추출에 실패하거나 텍스트에서 키워드를 찾을 수 없다면 반드시 빈 배열 [] 만 반환해.
     텍스트: {text.strip()}
     """
 
@@ -163,32 +172,21 @@ async def extract_keywords(text: str, type="기술 키워드") -> list:
         # 6) JSON 배열 파싱
         try:
             keywords = json.loads(clean_output)
-        except json.JSONDecodeError:
-            raise HTTPException(
-                status_code=500,
-                detail={
-                    "error": "INVALID_NLP_RESPONSE",
-                    "message": f"NLP 서버 응답이 올바른 JSON 배열이 아닙니다: {raw_output}"
-                }
-            )
+        except json.JSONDecodeError as e:
+            logger.error("NLP 서버 응답이 올바른 JSON 배열이 아닙니다: %s", clean_output)
+            raise KeywordExtractionError("JSON 파싱 실패") from e
 
         # 7) 결과 타입 검증
         if not isinstance(keywords, list):
-            raise HTTPException(
-                status_code=500,
-                detail={
-                    "error": "INVALID_KEYWORD_FORMAT",
-                    "message": "키워드 응답이 배열 형식이 아닙니다."
-                }
-            )
+            logger.error("키워드 응답이 배열 형식이 아닙니다.")
+            raise KeywordExtractionError("리턴값이 리스트 아님")
         
         return keywords
     
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": "KEYWORD_EXTRACTION_FAILED",
-                "message": f"키워드 추출에 실패했습니다. ({str(e)})"
-            }
-        )
+        logger.error("키워드 추출에 실패했습니다. : %s", e)
+        raise KeywordExtractionError(e) from e
+
+class KeywordExtractionError(Exception):
+    """키워드 추출 실패 예외"""
+    pass
