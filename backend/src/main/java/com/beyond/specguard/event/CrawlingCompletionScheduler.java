@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
@@ -41,11 +42,11 @@ public class CrawlingCompletionScheduler {
         try {
             log.info("[Scheduler] Resume 상태 확인 시작");
 
-            //  모든 resumeId distinct 추출
-            List<UUID> resumeIds = crawlingResultRepository.findAll().stream()
-                    .map(r -> r.getResume().getId())
-                    .distinct()
-                    .toList();
+            //  findAll은 전수조사라 리소스 많이 잡아먹어서 최근 3분 안에 update가 되어있는 애들만 수행 할 수 있도록 변경
+            LocalDateTime cutoff = LocalDateTime.now().minusMinutes(3);
+            List<UUID> resumeIds = crawlingResultRepository.findUpdatedResumeIds(cutoff);
+            log.info("[Scheduler] 최근 변경된 Resume 갯수={}", resumeIds.size());
+
 
             for (UUID resumeId : resumeIds) {
                 Resume resume = resumeRepository.findById(resumeId)
