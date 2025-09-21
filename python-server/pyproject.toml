@@ -17,6 +17,15 @@ dependencies = [
     "SQLAlchemy>=2.0,<3.0",
     "asyncmy>=0.2.10,<0.3.0",
     "tzdata (>=2025.2,<2026.0)",
+    "uvicorn (>=0.35.0,<0.36.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "requests (>=2.32.5,<3.0.0)",
+    "google-genai (>=1.38.0,<2.0.0)",
+    "pydantic (>=2.11)",
+    "pydantic-settings (>=2.10)",
+    "sqlalchemy (>=2.0.43,<3.0.0)",
+    "pymysql (>=1.1.2,<2.0.0)",
+    "aiomysql (>=0.2.0,<0.3.0)"
 ]
 
 [tool.poetry]

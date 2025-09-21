@@ -1,4 +1,5 @@
 import os
+import httpx, logging, os
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from fastapi import HTTPException
@@ -77,6 +78,8 @@ async def ingest_velog_single(resume_id: str, url: str | None):
         row = res.mappings().first()
 
     if not row:
+        if not url:   # url이 None → "" 변환된 케이스
+                    return {"claimed": False, "status": "NOTEXISTED"}
         # 주어진 resume_id/url로 VELOG 유형의 링크 행을 못 찾음
         raise HTTPException(
             status_code=404,
@@ -87,7 +90,15 @@ async def ingest_velog_single(resume_id: str, url: str | None):
 
     # URL 공란이면: NOTEXISTED + 더미 gzip 후 종료
     if not url:
-        dummy = to_gzip_bytes_from_text("제출된 링크 없음")
+        payload = {
+            "source": "velog",
+            "base_url": "",
+            "post_count": 0,
+            "recent_activity": ""
+        }
+        dummy = to_gzip_bytes_from_json(payload)
+
+        
         async with SessionLocal() as s0:
             await s0.execute(
                 SQL_SET_NOTEXISTED_IF_NOT_TERMINAL,

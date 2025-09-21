@@ -28,4 +28,6 @@ public interface CompanyTemplateService {
     CompanyTemplateResponseDto.BasicDto createBasicTemplate(CreateBasicCompanyTemplateCommand basicRequestDto);
 
     CompanyTemplateListResponseDto getTemplates(SearchTemplateCommand templateCommand);
+
+
 }

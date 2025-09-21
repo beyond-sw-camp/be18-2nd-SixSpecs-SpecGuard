@@ -23,7 +23,7 @@ public record ResumeLinkUpsertRequest (
                         .resume(resume)
                         .id(id)
                         .linkType(linkType)
-                        .url(url)
+                        .url((url == null || url.trim().isEmpty()) ? null : url)
                         .build();
         }
 }

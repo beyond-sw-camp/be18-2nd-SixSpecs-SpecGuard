@@ -49,21 +49,23 @@ public class ResumeCertificate {
     private Resume resume;
 
     //자격증 명
-    @Column(name = "certificate_name", nullable = false)
+    @Column(name = "certificate_name", nullable = true, length = 255)
     private String certificateName;
 
 
     //자격증 발급 번호
-    @Column(name = "certificate_number", nullable = false)
+    @Column(name = "certificate_number", nullable = true, length = 255)
     private String certificateNumber;
 
     //발행자
-    @Column(name="issuer", nullable = false)
+    @Column(name="issuer", nullable = true, length = 255)
     private String issuer;
 
+
     //취득 시기
-    @Column(name = "issued_date", nullable = false)
+    @Column(name = "issued_date", nullable = true)
     private LocalDate issuedDate;
+
 
     @CreationTimestamp
     @Column(name ="created_at", updatable = false)

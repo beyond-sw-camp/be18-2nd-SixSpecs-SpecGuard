@@ -77,7 +77,9 @@ public class SecurityConfig {
             "/api/v1/resumes/**",
 
             // verification
-            "/api/v1/verify/**"
+            "/api/v1/verify/**",
+
+            "/api/v1/companyTemplates/**"
     };
 
     private final static String[] ADMIN_AUTH_WHITE_LIST = {

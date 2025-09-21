@@ -71,8 +71,8 @@ public class CrawlingResult {
     private CrawlingStatus crawlingStatus;
 
     @Lob
-    @Column(name = "contents", columnDefinition = "LONGTEXT") // MariaDB 기준
-    private String contents;
+    @Column(name = "contents", columnDefinition = "LONGBLOB")
+    private byte[] contents;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -104,9 +104,10 @@ public class CrawlingResult {
         this.crawlingStatus = crawlingStatus != null ? crawlingStatus : CrawlingStatus.PENDING;
     }
 
-    public void updateContents(String contents) {
-        this.contents = contents;
+    public void updateContents(byte[] compressed) {
+        this.contents = compressed;
     }
+
 
     public void updateStatus(CrawlingStatus status) {
         this.crawlingStatus = status;
