@@ -8,7 +8,6 @@ import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateFieldRepository;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository;
-import com.beyond.specguard.event.CertificateVerificationEvent;
 import com.beyond.specguard.event.ResumeSubmittedEvent;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
@@ -140,15 +139,13 @@ public class ResumeService {
 
     //지원서 목록 조회에서 list
     @Transactional(readOnly = true)
-    public ResumeListResponseDto list(UUID templateId, Pageable pageable, ClientUser clientUser, Resume.ResumeStatus status, String name, String email) {
+    public ResumeListResponseDto list(UUID templateId, Pageable pageable, ClientUser clientUser, Resume.ResumeStatus status) {
         UUID companyId = clientUser.getCompany().getId();
 
         Specification<Resume> spec = Specification.allOf(
                 ResumeSpecification.hasCompany(companyId),
                 ResumeSpecification.hasTemplate(templateId),
-                ResumeSpecification.hasStatus(status),
-                ResumeSpecification.nameContains(name),
-                ResumeSpecification.emailContains(email)
+                ResumeSpecification.hasStatus(status)
         );
 
         long totalElements = resumeRepository.count(spec);
@@ -339,40 +336,6 @@ public class ResumeService {
 
         resumeRepository.saveAndFlush(resume);
     }
-    /*// 중복 + 입력 유효성 검증  지금 테이블을 nullable로 바꿔뒀으니 코드단에서 이렇게 해서 입력값이 전부다 차있는지 검증하는건 어떤지해서 올려뒀습니다
-    private void validateResumeCertificate(List<ResumeCertificateUpsertRequest> certs) {
-        Set<String> seen = new HashSet<>();
-
-        for (var d : certs) {
-            //  입력값 검증
-            boolean allEmpty = isBlank(d.certificateName())
-                    && isBlank(d.certificateNumber())
-                    && isBlank(d.issuer())
-                    && isBlank(d.certUrl());
-
-            boolean allFilled = !isBlank(d.certificateName())
-                    && !isBlank(d.certificateNumber())
-                    && !isBlank(d.issuer())
-                    && !isBlank(d.certUrl());
-
-            if (!allEmpty && !allFilled) {
-                throw new CustomException(ResumeErrorCode.INVALID_CERTIFICATE_INPUT);
-            }
-
-            //  중복 검증 (모두 입력된 경우에만 체크)
-            if (allFilled) {
-                String key = d.certificateName().trim().toLowerCase()
-                        + "|" + d.certificateNumber().trim().toLowerCase();
-                if (!seen.add(key)) {
-                    throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
-                }
-            }
-        }
-    }
-
-    private boolean isBlank(String s) {
-        return s == null || s.trim().isEmpty();
-    }*/
     // 중복 자격증 검증
     private void validateResumeCertificate(ResumeCertificateUpsertRequest request) {
         List<ResumeCertificateUpsertRequest.Item> certs = request.certificates();
@@ -618,11 +581,11 @@ public class ResumeService {
                 new ResumeSubmittedEvent(resume.getId(), resume.getTemplate().getId())
         );
 
-        log.info("[Submit] BEFORE publish CertificateVerificationEvent - resumeId={}, thread={}, time={}",
+/*        log.info("[Submit] BEFORE publish CertificateVerificationEvent - resumeId={}, thread={}, time={}",
                 resume.getId(), threadName, System.currentTimeMillis());
         eventPublisher.publishEvent(
                 new CertificateVerificationEvent(resume.getId())
-        );
+        );*/
 
         resumeRepository.updateStatus(resume.getId(), resume.getStatus());
 

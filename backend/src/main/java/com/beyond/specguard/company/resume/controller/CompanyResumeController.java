@@ -39,14 +39,12 @@ public class CompanyResumeController {
             @AuthenticationPrincipal CustomUserDetails customUserDetails,
             @RequestParam(required = false) UUID templateId,
             @RequestParam(required = false) Resume.ResumeStatus status,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String email,
             @ParameterObject @Parameter(description = "페이지 정보") @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         if (pageable.getPageSize() > 100) {
             throw new CustomException(ResumeErrorCode.INVALID_PARAMETER);
         }
         ClientUser clientUser = customUserDetails.getUser();
-        return resumeService.list(templateId, pageable, clientUser, status, name, email);
+        return resumeService.list(templateId, pageable, clientUser, status);
     }
 }
