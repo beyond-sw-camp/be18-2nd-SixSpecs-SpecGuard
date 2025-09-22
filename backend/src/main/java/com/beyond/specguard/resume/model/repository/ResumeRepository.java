@@ -1,11 +1,10 @@
 package com.beyond.specguard.resume.model.repository;
 
 import com.beyond.specguard.resume.model.entity.Resume;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
@@ -14,7 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface ResumeRepository extends JpaRepository<Resume, UUID>, JpaSpecificationExecutor<Resume> {
-    boolean existsByEmail(String email);
+
     @Query("""
         select r.id
         from Resume r
@@ -39,12 +38,20 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID>, JpaSpecif
       and r.updatedAt >= :cutoff
 """)
     List<UUID> findUnprocessedResumeIdsSince(@Param("cutoff") LocalDateTime cutoff);
-    boolean existsByEmailAndTemplateId(String email, UUID uuid);
+    boolean existsByEmailAndTemplateId(String email, UUID templateId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Resume r set r.status = :status where r.id = :resumeId")
     void updateStatus(@Param("resumeId") UUID id, @Param("status") Resume.ResumeStatus status);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Resume r set r.status = :status where r.id = :resumeId")
+    int updateStatusValidation(@Param("resumeId") UUID id, @Param("status") Resume.ResumeStatus status);
+
 
     UUID id(UUID id);
+
+    @Override
+    @EntityGraph(attributePaths = {"validationResult"})
+    Page<Resume> findAll(Specification<Resume> spec, Pageable pageable);
 }

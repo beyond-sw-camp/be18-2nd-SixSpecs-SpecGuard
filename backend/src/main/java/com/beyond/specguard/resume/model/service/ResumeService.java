@@ -17,7 +17,6 @@ import com.beyond.specguard.resume.model.dto.request.ResumeCertificateUpsertRequ
 import com.beyond.specguard.resume.model.dto.request.ResumeCreateRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeEducationUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeExperienceUpsertRequest;
-import com.beyond.specguard.resume.model.dto.request.ResumeLinkUpsertRequest;
 import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeBasicResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeListResponseDto;
@@ -40,6 +39,7 @@ import com.beyond.specguard.resume.model.repository.ResumeExperienceRepository;
 import com.beyond.specguard.resume.model.repository.ResumeLinkRepository;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import com.beyond.specguard.resume.model.spec.ResumeSpecification;
+import com.beyond.specguard.validation.model.repository.ValidationResultRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,7 +60,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -79,9 +86,8 @@ public class ResumeService {
     private final PasswordEncoder passwordEncoder;
     private final LocalFileStorageService storageService;
     private final ApplicationEventPublisher eventPublisher;
-
+    private final ValidationResultRepository  validationResultRepository;
     private final CompanyTemplateFieldRepository companyTemplateFieldRepository;
-    private final CompanyTemplateResponseRepository companyTemplateResponseRepository;
 
     //이력서 생성에서 create
     @Transactional
@@ -133,11 +139,12 @@ public class ResumeService {
 
     //지원서 목록 조회에서 list
     @Transactional(readOnly = true)
-    public ResumeListResponseDto list(Pageable pageable, ClientUser clientUser, Resume.ResumeStatus status, String name, String email) {
+    public ResumeListResponseDto list(UUID templateId, Pageable pageable, ClientUser clientUser, Resume.ResumeStatus status, String name, String email) {
         UUID companyId = clientUser.getCompany().getId();
 
         Specification<Resume> spec = Specification.allOf(
                 ResumeSpecification.hasCompany(companyId),
+                ResumeSpecification.hasTemplate(templateId),
                 ResumeSpecification.hasStatus(status),
                 ResumeSpecification.nameContains(name),
                 ResumeSpecification.emailContains(email)
@@ -145,15 +152,16 @@ public class ResumeService {
 
         long totalElements = resumeRepository.count(spec);
 
-        Page<Resume> response = resumeRepository.findAll(spec, pageable);
+        Page<Resume> page = resumeRepository.findAll(spec, pageable);
 
-        Page<ResumeListResponseDto.Item> results = response.map(ResumeListResponseDto.Item::fromEntity);
+        Page<ResumeListResponseDto.Item> mapped = page.map(ResumeListResponseDto.Item::fromEntity);
+
         return ResumeListResponseDto.builder()
                 .totalElements(totalElements)
-                .totalPages(results.getTotalPages())
-                .pageNumber(results.getNumber())
-                .pageSize(results.getSize())
-                .contents(results.getContent())
+                .totalPages(mapped.getTotalPages())
+                .pageNumber(mapped.getNumber())
+                .pageSize(mapped.getSize())
+                .contents(mapped.getContent())
                 .build();
     }
 
@@ -187,27 +195,14 @@ public class ResumeService {
         }
     }
 
-    // 링크 중복 검증
-    private void validateLinkDuplicates(List<ResumeLinkUpsertRequest> links) {
-        Set<String> keys = new HashSet<>();
-        for (var link : links) {
-            String url = link.url();
-            if (url == null || url.isBlank()) {
-                continue;
-            }
-            String norm = url.trim().toLowerCase();
-            if (!keys.add(norm)) {
-                throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
-            }
-        }
-    }
-
     //이력서 기본 정보 UPDATE/INSERT 에서 upsertBasic
     @Transactional
     public ResumeBasicResponse upsertBasic(UUID resumeId, UUID templateId, String email, ResumeBasicCreateRequest req, MultipartFile profileImage) {
         try {
             Resume resume = resumeRepository.findById(resumeId)
                             .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
+
+            validateDraft(resume);
 
             validateOwnerShip(resume, email, templateId);
 
@@ -239,6 +234,8 @@ public class ResumeService {
     public void upsertAggregate(UUID resumeId, UUID templateId, String email, ResumeAggregateUpdateRequest req) {
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
+
+        validateDraft(resume);
 
         validateOwnerShip(resume, email, templateId);
 
@@ -314,7 +311,6 @@ public class ResumeService {
             resume.getResumeLinks().addAll(defaultLinks);
 
         } else{
-            validateLinkDuplicates(req.links());
 
             List<ResumeLink> processed = req.links().stream()
                     .map(l -> ResumeLink.builder()
@@ -377,7 +373,9 @@ public class ResumeService {
         return s == null || s.trim().isEmpty();
     }*/
     // 중복 자격증 검증
-    private void validateResumeCertificate(List<ResumeCertificateUpsertRequest> certs) {
+    private void validateResumeCertificate(ResumeCertificateUpsertRequest request) {
+        List<ResumeCertificateUpsertRequest.Item> certs = request.certificates();
+
         Set<String> seen = new HashSet<>();
 
         for (var d : certs) {
@@ -390,22 +388,25 @@ public class ResumeService {
 
     //이력서 자격증 정보 UPDATE/INSERT upsertCertificates
     @Transactional
-    public void upsertCertificates(UUID resumeId, UUID templateId, String email, List<ResumeCertificateUpsertRequest> certs) {
+    public void upsertCertificates(UUID resumeId, UUID templateId, String email, ResumeCertificateUpsertRequest req) {
+        if(req.certificates() == null || req.certificates().isEmpty()) return;
+
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
+
+        validateDraft(resume);
 
         validateOwnerShip(resume, email, templateId);
 
         List<ResumeCertificate> updatedFields = new ArrayList<>();
 
         // 입력이 아예 없으면 -> NULL 값 row 하나 추가
-        if (certs == null || certs.isEmpty()) {
+        if (req.certificates().isEmpty()) {
             ResumeCertificate emptyCert = ResumeCertificate.builder()
                     .resume(resume)
                     .certificateName(null)
                     .certificateNumber(null)
                     .issuer(null)
-                    .certUrl(null)
                     .build();
 
             resume.getResumeCertificates().clear();
@@ -415,12 +416,12 @@ public class ResumeService {
         }
 
 
-        validateResumeCertificate(certs);
+        validateResumeCertificate(req);
 
 
-        Map<UUID, ResumeCertificateUpsertRequest> dtoMap = certs.stream()
+        Map<UUID, ResumeCertificateUpsertRequest.Item> dtoMap = req.certificates().stream()
                 .filter(f -> f.id() != null)
-                .collect(Collectors.toMap(ResumeCertificateUpsertRequest::id, f -> f));
+                .collect(Collectors.toMap(ResumeCertificateUpsertRequest.Item::id, f -> f));
 
 
         for (ResumeCertificate existing : resume.getResumeCertificates()) {
@@ -431,7 +432,7 @@ public class ResumeService {
         }
 
 
-        List<ResumeCertificate> newCertificates = certs.stream()
+        List<ResumeCertificate> newCertificates = req.certificates().stream()
                 .filter(f -> f.id() == null)
                 .map(l -> l.toEntity(resume))
                 .toList();
@@ -439,6 +440,7 @@ public class ResumeService {
 
         resume.getResumeCertificates().clear();
         updatedFields.addAll(newCertificates);
+
         resume.getResumeCertificates().addAll(updatedFields);
 
 
@@ -525,6 +527,8 @@ public class ResumeService {
     ) {
         validateOwnerShip(resume, email, templateId);
 
+        validateDraft(resume);
+
         List<CompanyTemplateResponse> updatedFields = new ArrayList<>();
 
         // 요청된 response 들을 Map<id, dto>로 변환 (업데이트용)
@@ -566,7 +570,7 @@ public class ResumeService {
         // resume 연관관계 업데이트
         resume.setTemplateResponses(updatedFields);
 
-        List<CompanyTemplateResponse> responses = companyTemplateResponseRepository.saveAllAndFlush(updatedFields);
+        List<CompanyTemplateResponse> responses = templateResponseRepository.saveAllAndFlush(updatedFields);
 
         return CompanyTemplateResponseResponse.builder()
                 .savedCount(responses.size())
@@ -578,10 +582,18 @@ public class ResumeService {
 
     //최종 제출
     @Transactional
-    public ResumeSubmitResponse submit(Resume resume, UUID companyId) {
+    public ResumeSubmitResponse submit(UUID resumeId) {
+
+        Resume resume = resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND));
+
+        validateDraft(resume);
+
         if (resume.getResumeBasic() == null) {
             throw new CustomException(ResumeErrorCode.INVALID_REQUEST);
         }
+
+        UUID companyId = resume.getTemplate().getClientCompany().getId();
 
         if (submissionRepository.existsByResume_IdAndCompanyId(resume.getId(), companyId)) {
             throw new CustomException(ResumeErrorCode.ALREADY_SUBMITTED);
@@ -614,6 +626,12 @@ public class ResumeService {
         resumeRepository.updateStatus(resume.getId(), resume.getStatus());
 
         return ResumeSubmitResponse.fromEntity(submission);
+    }
+
+    private void validateDraft(Resume resume) {
+        if (!resume.getStatus().equals(Resume.ResumeStatus.DRAFT)) {
+            throw new  CustomException(ResumeErrorCode.ALREADY_SUBMITTED);
+        }
     }
 
     private void cascadeDeleteByResume(UUID resumeId) {
