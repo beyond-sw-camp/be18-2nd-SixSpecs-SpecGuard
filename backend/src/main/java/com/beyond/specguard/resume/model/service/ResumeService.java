@@ -140,15 +140,13 @@ public class ResumeService {
 
     //지원서 목록 조회에서 list
     @Transactional(readOnly = true)
-    public ResumeListResponseDto list(UUID templateId, Pageable pageable, ClientUser clientUser, Resume.ResumeStatus status, String name, String email) {
+    public ResumeListResponseDto list(UUID templateId, Pageable pageable, ClientUser clientUser, Resume.ResumeStatus status) {
         UUID companyId = clientUser.getCompany().getId();
 
         Specification<Resume> spec = Specification.allOf(
                 ResumeSpecification.hasCompany(companyId),
                 ResumeSpecification.hasTemplate(templateId),
-                ResumeSpecification.hasStatus(status),
-                ResumeSpecification.nameContains(name),
-                ResumeSpecification.emailContains(email)
+                ResumeSpecification.hasStatus(status)
         );
 
         long totalElements = resumeRepository.count(spec);
