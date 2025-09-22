@@ -80,9 +80,9 @@ public record ResumeListResponseDto(
             return new Item(
                     resume.getTemplate().getId(),
                     resume.getId(),
-                    resume.getResumeBasic() != null ? resume.getName() : "",
-                    resume.getResumeBasic() != null ? resume.getEmail() : "",
-                    resume.getResumeBasic() != null ? resume.getPhone() : "",
+                    resume.getName(),
+                    resume.getEmail(),
+                    resume.getPhone(),
                     resume.getStatus(),
                     resume.getUpdatedAt(),
                     highestEducation,
