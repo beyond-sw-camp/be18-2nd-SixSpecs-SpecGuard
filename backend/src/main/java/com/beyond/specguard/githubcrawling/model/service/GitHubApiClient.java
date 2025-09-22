@@ -3,6 +3,7 @@ package com.beyond.specguard.githubcrawling.model.service;
 import com.beyond.specguard.common.properties.AppProperties;
 import com.beyond.specguard.githubcrawling.model.dto.GitHubStatsDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class GitHubApiClient {
@@ -65,10 +66,9 @@ public class GitHubApiClient {
         return Optional.ofNullable(response.getBody()).orElse(Collections.emptyList());
     }
 
-    private int fetchUserCommitCount(String username, String repoName) {
+    private int fetchUserCommitCount(String username, String ignoredRepoName) {
         String url = "https://api.github.com/graphql";
 
-        // 최근 1년 기준 (오늘 날짜에서 -1년)
         String from = java.time.LocalDate.now().minusYears(1) + "T00:00:00Z";
         String to = java.time.LocalDate.now() + "T23:59:59Z";
 
@@ -91,16 +91,28 @@ public class GitHubApiClient {
         Map<String, String> body = Map.of("query", query);
         HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
 
-        ResponseEntity<Map> response =
-                githubRestTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
+        ResponseEntity<Map> response;
+        try {
+            response = githubRestTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
+        } catch (Exception e) {
+            log.error("GitHub GraphQL 호출 실패", e);
+            return 0; // 또는 예외 처리
+        }
 
-        Map<String, Object> data = (Map<String, Object>) response.getBody().get("data");
-        Map<String, Object> user = (Map<String, Object>) data.get("user");
-        Map<String, Object> contributionsCollection = (Map<String, Object>) user.get("contributionsCollection");
-        Map<String, Object> contributionCalendar = (Map<String, Object>) contributionsCollection.get("contributionCalendar");
+        Map data = (Map) response.getBody().get("data");
+        if (data == null || data.get("user") == null) return 0;
 
-        return (Integer) contributionCalendar.get("totalContributions");
+        Map user = (Map) data.get("user");
+        Map contributionsCollection = (Map) user.get("contributionsCollection");
+        if (contributionsCollection == null) return 0;
+
+        Map contributionCalendar = (Map) contributionsCollection.get("contributionCalendar");
+        if (contributionCalendar == null || contributionCalendar.get("totalContributions") == null) return 0;
+
+        Number total = (Number) contributionCalendar.get("totalContributions");
+        return total != null ? total.intValue() : 0;
     }
+
 
     private void mergeLanguageStats(String username, String repoName, Map<String, Integer> totalStats) {
         String url = "https://api.github.com/repos/" + username + "/" + repoName + "/languages";
