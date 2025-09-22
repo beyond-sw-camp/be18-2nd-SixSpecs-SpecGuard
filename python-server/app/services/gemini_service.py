@@ -8,10 +8,10 @@ import logging
 from app.db import (
     SessionLocal,
     SQL_FIND_CRAWLING_RESULTS_BY_RID,
-    SQL_INSERT_PORTFOLIO_RESULT
+    SQL_UPSERT_PORTFOLIO_RESULT
 )
 
-MODEL = "gemini-2.0-flash-001"
+MODEL = "gemini-2.5-flash"
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ async def insert_failed_data(session, row):
     processed_data = {"keywords": {}}
     status = "FAILED"
     await session.execute(
-        SQL_INSERT_PORTFOLIO_RESULT,
+        SQL_UPSERT_PORTFOLIO_RESULT,
         {
             "crawling_result_id": row.crawling_result_id,
             "processed_contents": json.dumps(processed_data, ensure_ascii=False),
@@ -49,7 +49,7 @@ async def extract_keywrods_with_resume_id(resume_id: str):
         for row in rows:
 
             crawling_status = row.crawling_status
-            if crawling_status in ["FAILED", "NOTEXISTED", "NONEXISTED"]:
+            if crawling_status in ["FAILED", "NOTEXISTED"]:
                 await insert_failed_data(session, row)
                 continue
 
@@ -59,6 +59,7 @@ async def extract_keywrods_with_resume_id(resume_id: str):
             try:
                 raw_contents = await decompress_gzip(row.contents)
 
+                print(raw_contents[:100])
                 data_json = json.loads(raw_contents)
             except Exception as e:
                 logger.error("Decompress/JSON parse error: {%s}", e)
@@ -106,7 +107,7 @@ async def extract_keywrods_with_resume_id(resume_id: str):
             
             # 4. portfolio_result 삽입
             await session.execute(
-                SQL_INSERT_PORTFOLIO_RESULT,
+                SQL_UPSERT_PORTFOLIO_RESULT,
                 {
                     "crawling_result_id": row.crawling_result_id,
                     "processed_contents": json.dumps(processed_data, indent=2, ensure_ascii=False),
@@ -147,15 +148,17 @@ async def extract_dateCount(text: str) -> int:
 
 async def extract_keywords(text: str, type="기술 키워드") -> list:
     prompt = f"""
-    다음 텍스트에서 {type} 위주로 모두 뽑아줘.
+    다음은 조건들이야. 이 조건들을 활용해서 '텍스트:' 이후 내용에서 {type} 위주로 모두 뽑아줘.
     - 출력은 JSON 배열 형식으로만 반환해.
     - 예시: ["AI", "백엔드", "Docker", "라즈베리파이", "MQTT"]
     - 코드 블록 표시(````json`, ```), 설명 문장, 줄바꿈 같은 건 절대 포함하지 마.
     - 지원자의 활동 위주로 키워드를 뽑아야해.
     - 기업 사업 관련 키워드는 넣지 말아줘.
     - 만약 키워드 추출에 실패하거나 텍스트에서 키워드를 찾을 수 없다면 반드시 빈 배열 [] 만 반환해.
-    텍스트: {text.strip()}
+    '텍스트': {text.strip()}
     """
+
+    print(prompt)
 
     try:
         # 4) Gemini API 호출
@@ -168,7 +171,7 @@ async def extract_keywords(text: str, type="기술 키워드") -> list:
         # 5) 전처리: 코드블록 제거
         clean_output = re.sub(r"```(?:json)?", "", raw_output)
         clean_output = clean_output.replace("```", "").strip()
-
+        print(clean_output)
         # 6) JSON 배열 파싱
         try:
             keywords = json.loads(clean_output)
