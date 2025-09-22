@@ -42,6 +42,9 @@ public record ResumeResponse(
         @JsonProperty("educations")
         List<ResumeEducationResponseDto> resumeEducations,
 
+        @JsonProperty("certificates")
+        List<ResumeCertificateResponseDto> resumeCertificates,
+
         @JsonProperty("fields")
         List<TemplateFieldResponseDto> templateFields,
 
@@ -66,6 +69,7 @@ public record ResumeResponse(
                                 .resumeExperiences(r.getResumeExperiences().stream().map(ResumeExperienceResponseDto::fromEntity).toList())
                                 .resumeLinks(r.getResumeLinks().stream().map(ResumeLinkResponseDto::fromEntity).toList())
                                 .resumeEducations(r.getResumeEducations().stream().map(ResumeEducationResponseDto::fromEntity).toList())
+                                .resumeCertificates(r.getResumeCertificates().stream().map(ResumeCertificateResponseDto::fromEntity).toList())
                                 .templateFields(r.getTemplate().getFields().stream().map(TemplateFieldResponseDto::fromEntity).toList())
                                 .companyTemplateResponses(r.getTemplateResponses().stream().map(CompanyTemplateResponseResponse.Item::fromEntity).toList())
                                 .createdAt(r.getCreatedAt())
