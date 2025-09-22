@@ -29,9 +29,9 @@ public record ResumeBasicCreateRequest(
         @NotBlank
         String address,
 
-        @Schema(description = "지원 분야", example = "웹 개발")
+        @Schema(description = "우편번호", example = "16538")
         @NotBlank
-        String applyField,
+        String zip,
 
         @Schema(description = "특기", example = "프론트엔드 개발")
         String specialty,
@@ -46,7 +46,7 @@ public record ResumeBasicCreateRequest(
                         .gender(gender)
                         .birthDate(birthDate)
                         .nationality(nationality)
-                        .applyField(applyField)
+                        .zip(zip)
                         .address(address)
                         .specialty(specialty)
                         .hobbies(hobbies)

@@ -5,7 +5,6 @@ import com.beyond.specguard.resume.model.dto.request.ResumeAggregateUpdateReques
 import com.beyond.specguard.resume.model.dto.request.ResumeBasicCreateRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeCertificateUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeCreateRequest;
-import com.beyond.specguard.resume.model.dto.request.ResumeSubmitRequest;
 import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeBasicResponse;
 import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
@@ -34,7 +33,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -99,7 +97,7 @@ public class ResumeController {
     public ResumeBasicResponse upsertBasic(
             @AuthenticationPrincipal  ResumeDetails resumeDetails,
             @RequestPart("basic") @Valid ResumeBasicCreateRequest req,
-            @RequestPart(value = "profileImage", required = true) MultipartFile profileImage
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage
     ) throws IOException {
         UUID templateId = resumeDetails.getResume().getTemplate().getId();
         String email = resumeDetails.getUsername();
@@ -139,7 +137,7 @@ public class ResumeController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void upsertCertificates(
             @AuthenticationPrincipal ResumeDetails resumeDetails,
-            @Valid @RequestBody List<ResumeCertificateUpsertRequest> certificates
+            @Valid @RequestBody ResumeCertificateUpsertRequest certificates
     ) {
         UUID templateId = resumeDetails.getResume().getTemplate().getId();
         String email = resumeDetails.getUsername();
@@ -175,12 +173,11 @@ public class ResumeController {
     @PostMapping("/submit")
     @ResponseStatus(HttpStatus.CREATED)
     public ResumeSubmitResponse submit(
-            @AuthenticationPrincipal ResumeDetails resumeDetails,
-            @Valid @RequestBody ResumeSubmitRequest req
+            @AuthenticationPrincipal ResumeDetails resumeDetails
     ) {
-        Resume resume = resumeDetails.getResume();
+        UUID resumeId = resumeDetails.getResume().getId();
 
-        return resumeService.submit(resume, req.companyId());
+        return resumeService.submit(resumeId);
     }
 
     // 세션 기반의 로그아웃

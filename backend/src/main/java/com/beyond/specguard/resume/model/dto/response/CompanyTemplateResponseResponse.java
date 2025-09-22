@@ -4,7 +4,6 @@ import com.beyond.specguard.resume.model.entity.CompanyTemplateResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,20 +19,14 @@ public record CompanyTemplateResponseResponse(
     @Builder
     public record Item(
             UUID id,
-            UUID resumeId,
             UUID fieldId,
-            String answer,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt
+            String answer
     ) {
         public static Item fromEntity(CompanyTemplateResponse save) {
             return Item.builder()
                     .answer(save.getAnswer())
                     .id(save.getId())
-                    .resumeId(save.getResume().getId())
                     .fieldId(save.getCompanyTemplateField().getId())
-                    .createdAt(save.getCreatedAt())
-                    .updatedAt(save.getUpdatedAt())
                     .build();
 
         }

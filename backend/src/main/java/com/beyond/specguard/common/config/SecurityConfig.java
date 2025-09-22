@@ -91,7 +91,8 @@ public class SecurityConfig {
 
     private static final String[] APPLICANT_AUTH_WHITE_LIST = {
             "/api/v1/resumes/login",
-            "/api/v1/resumes/**"
+            "/api/v1/verify/**",
+            "/api/v1/resumes/companies/*/templates"
     };
 
     @Bean
@@ -205,7 +206,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                        .maximumSessions(1)
+                        .maximumSessions(5)
                         .maxSessionsPreventsLogin(true)
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -216,6 +217,7 @@ public class SecurityConfig {
         http.securityMatcher("/api/v1/resumes/**")
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(APPLICANT_AUTH_WHITE_LIST).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/resumes").permitAll()
                         .anyRequest().hasRole("APPLICANT")
                 );
         http
