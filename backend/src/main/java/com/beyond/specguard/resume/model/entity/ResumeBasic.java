@@ -81,9 +81,9 @@ public class ResumeBasic {
     @Column(name = "nationality", nullable = false, length = 50)
     private String nationality;
 
-    //지원 분야
-    @Column(name = "apply_field", nullable = false, length = 100)
-    private String applyField;
+    //우편번호
+    @Column(name = "zip", nullable = false, length = 100)
+    private String zip;
 
     //프로필 사진 - 일단 URL로
     @Column(name = "profile_image_url", length = 512)
@@ -116,7 +116,7 @@ public class ResumeBasic {
         if (req.gender() != null)      this.gender = req.gender();
         if (req.birthDate() != null)   this.birthDate = req.birthDate();
         if (req.nationality() != null) this.nationality = req.nationality();
-        if (req.applyField() != null)  this.applyField = req.applyField();
+        if (req.zip() != null)  this.zip = req.zip();
         if (req.address() != null)     this.address = req.address();
         if (req.specialty() != null)   this.specialty = req.specialty();
         if (req.hobbies() != null)     this.hobbies = req.hobbies();

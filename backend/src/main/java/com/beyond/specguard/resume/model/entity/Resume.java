@@ -1,6 +1,7 @@
 package com.beyond.specguard.resume.model.entity;
 
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
+import com.beyond.specguard.validation.model.entity.ValidationResult;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.ConstraintMode;
@@ -102,6 +103,13 @@ public class Resume {
     )
     private ResumeBasic resumeBasic;
 
+    @OneToOne(
+            mappedBy = "resume",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private ValidationResult validationResult;
+
     @OneToMany(
             mappedBy = "resume",
             cascade = CascadeType.ALL,
@@ -167,12 +175,8 @@ public class Resume {
         DRAFT,
         PENDING,
         PROCESSING,
-        COMPLETED,
-        REVIEWED,
-        REJECTED,
-        ACCEPTED,
-        WITHDRAWN,
-        FAILED
+        VALIDATED
+
     }
 
 }

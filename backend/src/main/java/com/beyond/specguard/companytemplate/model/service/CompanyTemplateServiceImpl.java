@@ -96,6 +96,25 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public CompanyTemplateListResponseDto getTemplates(String companySlug) {
+
+        List<CompanyTemplate> response = companyTemplateRepository.findAllByClientCompany_Slug(companySlug);
+
+        return CompanyTemplateListResponseDto.builder()
+                .companyTemplateResponse(response.stream().map(
+                        r ->
+                                CompanyTemplateResponseDto.builder()
+                                        .basicDto(CompanyTemplateResponseDto.BasicDto.toDto(r))
+                                        .detailDto(CompanyTemplateResponseDto.DetailDto.toDto(r))
+                                        .build()
+                        ).toList())
+                .totalElements((long) response.size())
+                .build();
+    }
+
+
+    @Override
     @Transactional
     public void deleteTemplate(UUID templateId, ClientUser clientUser) {
         // 권한 검증

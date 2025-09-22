@@ -15,6 +15,8 @@ MODEL = "gemini-2.5-flash"
 
 logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
+
 async def insert_failed_data(session, row):
     processed_data = {"keywords": {}}
     status = "FAILED"
@@ -49,7 +51,9 @@ async def extract_keywrods_with_resume_id(resume_id: str):
         for row in rows:
 
             crawling_status = row.crawling_status
+            
             if crawling_status in ["FAILED", "NOTEXISTED"]:
+
                 await insert_failed_data(session, row)
                 continue
 

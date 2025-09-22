@@ -1,7 +1,7 @@
 package com.beyond.specguard.common.exception;
 
-import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import com.beyond.specguard.auth.exception.AuthException;
+import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,7 +29,11 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         } else if (ex instanceof org.springframework.security.authentication.BadCredentialsException) {
             errorCode = AuthErrorCode.INVALID_ACCESS_TOKEN;
         } else if (ex instanceof org.springframework.security.authentication.InsufficientAuthenticationException) {
-            errorCode = AuthErrorCode.UNAUTHORIZED;
+            if (request.getRequestedSessionId() != null && !request.isRequestedSessionIdValid()) {
+                errorCode = AuthErrorCode.SESSION_EXPIRED;
+            } else {
+                errorCode = AuthErrorCode.UNAUTHORIZED;
+            }
         } else {
             errorCode = AuthErrorCode.UNAUTHORIZED;
         }
