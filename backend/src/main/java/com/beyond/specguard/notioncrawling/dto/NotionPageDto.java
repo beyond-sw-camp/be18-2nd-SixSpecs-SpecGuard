@@ -1,5 +1,9 @@
 package com.beyond.specguard.notioncrawling.dto;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 
 public class NotionPageDto {
@@ -23,4 +27,13 @@ public class NotionPageDto {
     public String getContent() { return content; }
     public List<String> getCodeBlocks() { return codeBlocks; }
     public List<String> getTags() { return tags; }
+
+    @Override
+    public String toString() {
+        try {
+            return new ObjectMapper().writeValueAsString(this);
+        } catch (Exception e) {
+            return "NotionPageDto{error converting to JSON}";
+        }
+    }
 }
