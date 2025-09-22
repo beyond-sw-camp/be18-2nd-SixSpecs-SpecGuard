@@ -45,7 +45,7 @@ public class CrawlingCompletionScheduler {
             //  findAll은 전수조사라 리소스 많이 잡아먹어기때문에 processing이 아닌것만 하도록 수정
             //  List<UUID> resumeIds = resumeRepository.findUnprocessedResumeIds();
 
-            // 얘는 최근 업데이트한걸 조회하고 그걸 여기 위로 올려서 검증을 수행하는거임
+            // 얘는 최근 업데이트한걸 조회하고 그걸 여기 위로 올려서 검증을 수행하는거임 성능 낫베드 근데 타이밍 오류 발생가능함
             LocalDateTime cutoff = LocalDateTime.now().minusMinutes(30); //  30분으로 늘림
             List<UUID> resumeIds = resumeRepository.findUnprocessedResumeIdsSince(cutoff);
 
@@ -87,8 +87,8 @@ public class CrawlingCompletionScheduler {
                                     List<PortfolioResult> portfolioResults,
                                     List<CompanyTemplateResponseAnalysis> analyses) {
 
-        boolean anyRunning = results.stream()
-                .anyMatch(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.PENDING);
+/*        boolean anyRunning = results.stream()
+                .anyMatch(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.PENDING);*/
 
         // 지금 3으로 default로 걸어뒀는데 향후 확장성을 고려했을때 resume table에 colum 하나 추가해서 count를 넣는 방식으로 수정한다면 유동적으로 변경가능
         boolean allCrawlingCompleted = results.size() == 3 &&
@@ -110,9 +110,9 @@ public class CrawlingCompletionScheduler {
             // 크롤링 완료 + 포트폴리오 결과 채워짐 + 자소서 NLP도 끝남 -> 최종 완료 상태
             resume.changeStatus(Resume.ResumeStatus.PROCESSING);
 
-        } else {
+        } /*else {
             // 그 외는 다 PENDING
             resume.changeStatus(Resume.ResumeStatus.PENDING);
-        }
+        }*/
     }
 }

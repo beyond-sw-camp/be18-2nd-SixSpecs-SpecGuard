@@ -338,40 +338,6 @@ public class ResumeService {
 
         resumeRepository.saveAndFlush(resume);
     }
-    /*// 중복 + 입력 유효성 검증  지금 테이블을 nullable로 바꿔뒀으니 코드단에서 이렇게 해서 입력값이 전부다 차있는지 검증하는건 어떤지해서 올려뒀습니다
-    private void validateResumeCertificate(List<ResumeCertificateUpsertRequest> certs) {
-        Set<String> seen = new HashSet<>();
-
-        for (var d : certs) {
-            //  입력값 검증
-            boolean allEmpty = isBlank(d.certificateName())
-                    && isBlank(d.certificateNumber())
-                    && isBlank(d.issuer())
-                    && isBlank(d.certUrl());
-
-            boolean allFilled = !isBlank(d.certificateName())
-                    && !isBlank(d.certificateNumber())
-                    && !isBlank(d.issuer())
-                    && !isBlank(d.certUrl());
-
-            if (!allEmpty && !allFilled) {
-                throw new CustomException(ResumeErrorCode.INVALID_CERTIFICATE_INPUT);
-            }
-
-            //  중복 검증 (모두 입력된 경우에만 체크)
-            if (allFilled) {
-                String key = d.certificateName().trim().toLowerCase()
-                        + "|" + d.certificateNumber().trim().toLowerCase();
-                if (!seen.add(key)) {
-                    throw new CustomException(ResumeErrorCode.DUPLICATE_ENTRY);
-                }
-            }
-        }
-    }
-
-    private boolean isBlank(String s) {
-        return s == null || s.trim().isEmpty();
-    }*/
     // 중복 자격증 검증
     private void validateResumeCertificate(ResumeCertificateUpsertRequest request) {
         List<ResumeCertificateUpsertRequest.Item> certs = request.certificates();
