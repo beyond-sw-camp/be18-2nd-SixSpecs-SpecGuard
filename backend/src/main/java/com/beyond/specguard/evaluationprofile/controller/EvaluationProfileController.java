@@ -52,7 +52,7 @@ public class EvaluationProfileController {
         return (CustomUserDetails) authentication.getPrincipal();
     }
 
-    @Operation(summary = "평가 프로필 생성", description = "기업 유저 또는 어드민이 새로운 평가 프로필을 생성합니다.")
+    @Operation(summary = "가중치 프로필과 가중치 생성", description = "기업 유저 또는 어드민이 새로운 평가 프로필을 생성합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "프로필 생성 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청 값"),

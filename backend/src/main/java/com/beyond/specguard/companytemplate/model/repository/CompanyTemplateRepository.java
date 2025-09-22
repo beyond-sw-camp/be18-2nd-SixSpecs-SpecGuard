@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.Query;
+
+import java.util.Optional;
 import java.util.UUID;
 
 public interface CompanyTemplateRepository extends JpaRepository<CompanyTemplate, UUID>, JpaSpecificationExecutor<CompanyTemplate> {
@@ -16,4 +18,6 @@ public interface CompanyTemplateRepository extends JpaRepository<CompanyTemplate
           and t.endDate < :now
     """)
     List<UUID> findExpiredTemplateIds(LocalDateTime now);
+
+  Optional<CompanyTemplate> findByIdAndClientCompany_Id(UUID id, UUID companyId);
 }

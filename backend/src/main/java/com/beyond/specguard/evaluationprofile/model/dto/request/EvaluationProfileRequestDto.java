@@ -11,8 +11,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
+import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
@@ -23,6 +24,10 @@ public class EvaluationProfileRequestDto {
 
 
     private String description;
+
+
+    @NotNull(message = "companyTemplateId는 필수입니다.")
+    private UUID companyTemplateId;
 
     @NotEmpty(message = "최소 1개 이상의 가중치가 필요합니다.")
     private List<WeightCreateDto> weights;
@@ -47,9 +52,10 @@ public class EvaluationProfileRequestDto {
         }
     }
 
-    public EvaluationProfile fromEntity(ClientCompany company) {
+    public EvaluationProfile toEntity(ClientCompany company, CompanyTemplate template ) {
         return EvaluationProfile.builder()
                 .company(company)
+                .companyTemplate(template)
                 .name(name)
                 .description(description)
                 .build();

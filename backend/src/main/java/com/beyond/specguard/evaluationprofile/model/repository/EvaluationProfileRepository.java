@@ -10,6 +10,6 @@ import java.util.UUID;
 
 public interface EvaluationProfileRepository extends JpaRepository<EvaluationProfile, UUID> {
     Page<EvaluationProfile> findByCompanyAndIsActive(ClientCompany company, Boolean active, Pageable pageable);
-
+    boolean existsByCompanyTemplate_Id(UUID companyTemplateId);
     Page<EvaluationProfile> findByCompany(ClientCompany company, Pageable pageable);
 }
