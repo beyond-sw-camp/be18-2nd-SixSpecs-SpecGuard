@@ -103,11 +103,11 @@ public class PublicNotionCrawlerService {
 
 
             // ----------------------------
-            // 압축 전 DTO 출력
+            // 압축 전 DTO 출력 테스트용 무시
             // ----------------------------
-            System.out.println("====== 압축 전 NotionPageDto ======");
-            System.out.println(pageDto.toString());
-            System.out.println("===================================");
+//            System.out.println("====== 압축 전 NotionPageDto ======");
+//            System.out.println(pageDto.toString());
+//            System.out.println("===================================");
 
 
             // ----------------------------
