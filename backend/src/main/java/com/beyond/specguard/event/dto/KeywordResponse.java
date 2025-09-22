@@ -1,8 +1,8 @@
 package com.beyond.specguard.event.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 import java.util.List;
 
@@ -10,13 +10,5 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class KeywordResponse {
-    private String status;
-    private Data data;
-
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class Data {
-        private List<String> keywords;
-    }
+    private List<String> keywords;
 }

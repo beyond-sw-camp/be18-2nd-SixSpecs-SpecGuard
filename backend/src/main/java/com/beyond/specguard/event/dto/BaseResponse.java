@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SummaryResponse {
-    private String summary;
+public class BaseResponse<T> {
+    private String status;
+    private T data;
 }
