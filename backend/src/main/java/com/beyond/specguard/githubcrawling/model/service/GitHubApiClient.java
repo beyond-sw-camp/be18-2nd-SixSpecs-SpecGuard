@@ -66,25 +66,40 @@ public class GitHubApiClient {
     }
 
     private int fetchUserCommitCount(String username, String repoName) {
-        String url = "https://api.github.com/repos/" + username + "/" + repoName + "/contributors";
-        ResponseEntity<List<Map<String, Object>>> response =
-                githubRestTemplate.exchange(
-                        url,
-                        HttpMethod.GET,
-                        buildAuthEntity(),
-                        new ParameterizedTypeReference<>() {}
-                );
+        String url = "https://api.github.com/graphql";
 
-        List<Map<String, Object>> contributors = response.getBody();
-        if (contributors == null) return 0;
+        // 최근 1년 기준 (오늘 날짜에서 -1년)
+        String from = java.time.LocalDate.now().minusYears(1) + "T00:00:00Z";
+        String to = java.time.LocalDate.now() + "T23:59:59Z";
 
-        for (Map<String, Object> contributor : contributors) {
-            if (username.equalsIgnoreCase((String) contributor.get("login"))) {
-                Object contrib = contributor.get("contributions");
-                return contrib instanceof Number ? ((Number) contrib).intValue() : 0;
+        String query = """
+        {
+          user(login: "%s") {
+            contributionsCollection(from: "%s", to: "%s") {
+              contributionCalendar {
+                totalContributions
+              }
             }
+          }
         }
-        return 0;
+        """.formatted(username, from, to);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + appProperties.getGithub().getToken());
+        headers.set("Content-Type", "application/json");
+
+        Map<String, String> body = Map.of("query", query);
+        HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<Map> response =
+                githubRestTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
+
+        Map<String, Object> data = (Map<String, Object>) response.getBody().get("data");
+        Map<String, Object> user = (Map<String, Object>) data.get("user");
+        Map<String, Object> contributionsCollection = (Map<String, Object>) user.get("contributionsCollection");
+        Map<String, Object> contributionCalendar = (Map<String, Object>) contributionsCollection.get("contributionCalendar");
+
+        return (Integer) contributionCalendar.get("totalContributions");
     }
 
     private void mergeLanguageStats(String username, String repoName, Map<String, Integer> totalStats) {
