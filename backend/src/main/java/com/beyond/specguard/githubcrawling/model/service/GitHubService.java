@@ -2,9 +2,9 @@ package com.beyond.specguard.githubcrawling.model.service;
 
 import com.beyond.specguard.crawling.entity.CrawlingResult;
 import com.beyond.specguard.crawling.entity.CrawlingResult.CrawlingStatus;
-import com.beyond.specguard.crawling.entity.GitHubResumeSummary;
+import com.beyond.specguard.crawling.entity.GitHubMetadata;
 import com.beyond.specguard.crawling.repository.CrawlingResultRepository;
-import com.beyond.specguard.crawling.repository.GitHubResumeSummaryRepository;
+import com.beyond.specguard.crawling.repository.GithubMetadataRepository;
 import com.beyond.specguard.githubcrawling.exception.GitException;
 import com.beyond.specguard.githubcrawling.exception.errorcode.GitErrorCode;
 import com.beyond.specguard.githubcrawling.model.dto.GitHubStatsDto;
@@ -19,7 +19,6 @@ import java.io.ByteArrayOutputStream;
 
 
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
 
@@ -31,7 +30,7 @@ public class GitHubService {
     private final CrawlingResultRepository crawlingResultRepository;
     private final GitHubApiClient gitHubApiClient;
     private final ObjectMapper objectMapper;
-    private final GitHubResumeSummaryRepository summaryRepository;
+    private final GithubMetadataRepository summaryRepository;
 
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -89,17 +88,18 @@ public class GitHubService {
             result.updateStatus(CrawlingStatus.COMPLETED);
             crawlingResultRepository.save(result);
 
+
             // 6. GitHubResumeSummary upsert
-            GitHubResumeSummary summary = summaryRepository.findByResumeId(result.getResume().getId())
-                    .orElseGet(() -> GitHubResumeSummary.builder()
-                            .resume(result.getResume())
+            GitHubMetadata summary = summaryRepository.findByResumeLinkId(result.getResume().getId())
+                    .orElseGet(() -> GitHubMetadata.builder()
+                            .resumeLink(result.getResumeLink())
                             .build()
                     );
 
             summary.updateStats(
-                    stats.getRepositoryCount(),
-                    stats.getLanguageStats(),
-                    stats.getCommitCount()
+
+                    stats.getLanguageStats()
+
             );
 
             summaryRepository.save(summary);
