@@ -41,6 +41,7 @@ import com.beyond.specguard.resume.model.repository.ResumeExperienceRepository;
 import com.beyond.specguard.resume.model.repository.ResumeLinkRepository;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import com.beyond.specguard.resume.model.spec.ResumeSpecification;
+import com.beyond.specguard.validation.model.repository.ValidationResultRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -80,9 +81,8 @@ public class ResumeService {
     private final PasswordEncoder passwordEncoder;
     private final LocalFileStorageService storageService;
     private final ApplicationEventPublisher eventPublisher;
-
+    private final ValidationResultRepository  validationResultRepository;
     private final CompanyTemplateFieldRepository companyTemplateFieldRepository;
-    private final CompanyTemplateResponseRepository companyTemplateResponseRepository;
 
     //이력서 생성에서 create
     @Transactional
@@ -134,11 +134,12 @@ public class ResumeService {
 
     //지원서 목록 조회에서 list
     @Transactional(readOnly = true)
-    public ResumeListResponseDto list(Pageable pageable, ClientUser clientUser, Resume.ResumeStatus status, String name, String email) {
+    public ResumeListResponseDto list(UUID templateId, Pageable pageable, ClientUser clientUser, Resume.ResumeStatus status, String name, String email) {
         UUID companyId = clientUser.getCompany().getId();
 
         Specification<Resume> spec = Specification.allOf(
                 ResumeSpecification.hasCompany(companyId),
+                ResumeSpecification.hasTemplate(templateId),
                 ResumeSpecification.hasStatus(status),
                 ResumeSpecification.nameContains(name),
                 ResumeSpecification.emailContains(email)
@@ -146,15 +147,16 @@ public class ResumeService {
 
         long totalElements = resumeRepository.count(spec);
 
-        Page<Resume> response = resumeRepository.findAll(spec, pageable);
+        Page<Resume> page = resumeRepository.findAll(spec, pageable);
 
-        Page<ResumeListResponseDto.Item> results = response.map(ResumeListResponseDto.Item::fromEntity);
+        Page<ResumeListResponseDto.Item> mapped = page.map(ResumeListResponseDto.Item::fromEntity);
+
         return ResumeListResponseDto.builder()
                 .totalElements(totalElements)
-                .totalPages(results.getTotalPages())
-                .pageNumber(results.getNumber())
-                .pageSize(results.getSize())
-                .contents(results.getContent())
+                .totalPages(mapped.getTotalPages())
+                .pageNumber(mapped.getNumber())
+                .pageSize(mapped.getSize())
+                .contents(mapped.getContent())
                 .build();
     }
 
@@ -567,7 +569,7 @@ public class ResumeService {
         // resume 연관관계 업데이트
         resume.setTemplateResponses(updatedFields);
 
-        List<CompanyTemplateResponse> responses = companyTemplateResponseRepository.saveAllAndFlush(updatedFields);
+        List<CompanyTemplateResponse> responses = templateResponseRepository.saveAllAndFlush(updatedFields);
 
         return CompanyTemplateResponseResponse.builder()
                 .savedCount(responses.size())

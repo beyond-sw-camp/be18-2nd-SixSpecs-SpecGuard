@@ -52,10 +52,7 @@ public class PortfolioResult {
     }
 
     public enum PortfolioStatus {
-        PENDING,     // 대기
-        RUNNING,     // 진행 중
         COMPLETED,   // 완료
         FAILED,      // 실패
-        NOTEXISTED   // (선택) 없는 경우 표시
     }
 }

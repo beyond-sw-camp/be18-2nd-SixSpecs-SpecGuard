@@ -3,18 +3,7 @@ package com.beyond.specguard.evaluationprofile.model.entity;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.evaluationprofile.exception.errorcode.EvaluationProfileErrorCode;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import jakarta.persistence.Column;
-import jakarta.persistence.ConstraintMode;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ForeignKey;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,7 +25,7 @@ import java.util.UUID;
 public class EvaluationWeight {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "CHAR(36)")
     private UUID id;
 
@@ -75,10 +64,9 @@ public class EvaluationWeight {
 
     public enum WeightType {
         GITHUB_REPO_COUNT,
-        GITHUB_COMMIT_FREQUENCY,
+        GITHUB_COMMIT_COUNT,
         GITHUB_TOPIC_MATCH,
-        GITHUB_CONSISTENCY,
-        NOTION_PROJECT_COUNT,
+        GITHUB_KEYWORD_MATCH,
         NOTION_KEYWORD_MATCH,
         VELOG_POST_COUNT,
         VELOG_RECENT_ACTIVITY,
