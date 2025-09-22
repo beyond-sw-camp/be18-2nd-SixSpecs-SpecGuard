@@ -43,6 +43,7 @@ public class EvaluationProfile {
     @JoinColumn(
             name="company_template_id",
             nullable = false,
+            unique = true,
             columnDefinition = "CHAR(36)",
             foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
     )
