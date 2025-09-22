@@ -1,5 +1,6 @@
 package com.beyond.specguard.resume.controller;
 
+import com.beyond.specguard.company.common.model.service.CustomUserDetails;
 import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeAggregateUpdateRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeBasicCreateRequest;
@@ -55,21 +56,7 @@ public class ResumeController {
         return resumeService.create(req);
     }
 
-    //지원서 단건 조회
-    @Operation(
-            summary = "지원서 단건 조회",
-            description = "특정 지원서(resume.id) 단건 조회."
-    )
-    @GetMapping("/{resumeId}")
-    public ResumeResponse get(
-            @PathVariable UUID resumeId,
-            @AuthenticationPrincipal ResumeDetails resumeDetails
-    ) {
-        UUID templateId = resumeDetails.getResume().getTemplate().getId();
-        String email = resumeDetails.getUsername();
 
-        return resumeService.get(resumeId, email, templateId);
-    }
 
     //지원서 단건 조회
     @Operation(

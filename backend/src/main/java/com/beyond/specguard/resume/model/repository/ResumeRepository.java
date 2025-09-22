@@ -34,7 +34,7 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID>, JpaSpecif
     @Query("""
     select r.id
     from Resume r
-    where r.status <> 'PROCESSING'
+    where r.status not in ('PROCESSING', 'VALIDATED')
       and r.updatedAt >= :cutoff
 """)
     List<UUID> findUnprocessedResumeIdsSince(@Param("cutoff") LocalDateTime cutoff);

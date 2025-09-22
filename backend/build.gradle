@@ -77,6 +77,14 @@ dependencies {
     // Jsoup
     implementation 'org.jsoup:jsoup:1.16.1'
 
+
+    // Selenium Java
+    implementation 'org.seleniumhq.selenium:selenium-java:4.18.0'
+
+    // WebDriverManager (ChromeDriver 자동 다운로드)
+    implementation 'io.github.bonigarcia:webdrivermanager:5.5.0'
+
+
 }
 
 

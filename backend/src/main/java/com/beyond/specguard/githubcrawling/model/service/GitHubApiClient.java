@@ -3,6 +3,7 @@ package com.beyond.specguard.githubcrawling.model.service;
 import com.beyond.specguard.common.properties.AppProperties;
 import com.beyond.specguard.githubcrawling.model.dto.GitHubStatsDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class GitHubApiClient {
@@ -65,27 +66,53 @@ public class GitHubApiClient {
         return Optional.ofNullable(response.getBody()).orElse(Collections.emptyList());
     }
 
-    private int fetchUserCommitCount(String username, String repoName) {
-        String url = "https://api.github.com/repos/" + username + "/" + repoName + "/contributors";
-        ResponseEntity<List<Map<String, Object>>> response =
-                githubRestTemplate.exchange(
-                        url,
-                        HttpMethod.GET,
-                        buildAuthEntity(),
-                        new ParameterizedTypeReference<>() {}
-                );
+    private int fetchUserCommitCount(String username, String ignoredRepoName) {
+        String url = "https://api.github.com/graphql";
 
-        List<Map<String, Object>> contributors = response.getBody();
-        if (contributors == null) return 0;
+        String from = java.time.LocalDate.now().minusYears(1) + "T00:00:00Z";
+        String to = java.time.LocalDate.now() + "T23:59:59Z";
 
-        for (Map<String, Object> contributor : contributors) {
-            if (username.equalsIgnoreCase((String) contributor.get("login"))) {
-                Object contrib = contributor.get("contributions");
-                return contrib instanceof Number ? ((Number) contrib).intValue() : 0;
+        String query = """
+        {
+          user(login: "%s") {
+            contributionsCollection(from: "%s", to: "%s") {
+              contributionCalendar {
+                totalContributions
+              }
             }
+          }
         }
-        return 0;
+        """.formatted(username, from, to);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + appProperties.getGithub().getToken());
+        headers.set("Content-Type", "application/json");
+
+        Map<String, String> body = Map.of("query", query);
+        HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
+
+        ResponseEntity<Map> response;
+        try {
+            response = githubRestTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
+        } catch (Exception e) {
+            log.error("GitHub GraphQL 호출 실패", e);
+            return 0; // 또는 예외 처리
+        }
+
+        Map data = (Map) response.getBody().get("data");
+        if (data == null || data.get("user") == null) return 0;
+
+        Map user = (Map) data.get("user");
+        Map contributionsCollection = (Map) user.get("contributionsCollection");
+        if (contributionsCollection == null) return 0;
+
+        Map contributionCalendar = (Map) contributionsCollection.get("contributionCalendar");
+        if (contributionCalendar == null || contributionCalendar.get("totalContributions") == null) return 0;
+
+        Number total = (Number) contributionCalendar.get("totalContributions");
+        return total != null ? total.intValue() : 0;
     }
+
 
     private void mergeLanguageStats(String username, String repoName, Map<String, Integer> totalStats) {
         String url = "https://api.github.com/repos/" + username + "/" + repoName + "/languages";

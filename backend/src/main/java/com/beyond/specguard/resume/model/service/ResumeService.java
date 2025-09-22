@@ -635,4 +635,9 @@ public class ResumeService {
         }
         return totalDeleted;
     }
+
+    public ResumeResponse get(UUID resumeId, String email) {
+        return ResumeResponse.fromEntity(resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND)));
+    }
 }
