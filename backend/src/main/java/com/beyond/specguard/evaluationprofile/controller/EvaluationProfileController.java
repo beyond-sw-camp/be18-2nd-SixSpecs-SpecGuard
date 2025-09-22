@@ -12,6 +12,9 @@ import com.beyond.specguard.evaluationprofile.model.dto.response.EvaluationProfi
 import com.beyond.specguard.evaluationprofile.model.service.EvaluationProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,15 +28,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 
 import java.util.UUID;
 
@@ -51,8 +47,38 @@ public class EvaluationProfileController {
     private CustomUserDetails getUserDetails(Authentication authentication) {
         return (CustomUserDetails) authentication.getPrincipal();
     }
-
-    @Operation(summary = "가중치 프로필과 가중치 생성", description = "기업 유저 또는 어드민이 새로운 평가 프로필을 생성합니다.")
+    @Operation(
+            summary = "가중치 프로필과 가중치 생성",
+            description = "기업 유저 또는 어드민이 새로운 평가 프로필을 생성합니다.",
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = EvaluationProfileRequestDto.class),
+                            examples = @ExampleObject(
+                                    name = "createEvaluationProfile",
+                                    value = """
+                {
+                  "name": "string",
+                  "description": "string",
+                  "companyTemplateId": "6d6bb9f2-f696-418c-a8db-84e859bca5fb",
+                  "weights": [
+                    { "weightType": "GITHUB_REPO_COUNT",     "weightValue": 0.1 },
+                    { "weightType": "GITHUB_COMMIT_COUNT",   "weightValue": 0.1 },
+                    { "weightType": "GITHUB_KEYWORD_MATCH",  "weightValue": 0.1 },
+                    { "weightType": "GITHUB_TOPIC_MATCH",    "weightValue": 0.1 },
+                    { "weightType": "NOTION_KEYWORD_MATCH",  "weightValue": 0.1 },
+                    { "weightType": "VELOG_POST_COUNT",      "weightValue": 0.1 },
+                    { "weightType": "VELOG_RECENT_ACTIVITY", "weightValue": 0.1 },
+                    { "weightType": "VELOG_KEYWORD_MATCH",   "weightValue": 0.1 },
+                    { "weightType": "CERTIFICATE_MATCH",     "weightValue": 0.2 }
+                  ]
+                }
+                """
+                            )
+                    )
+            )
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "프로필 생성 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청 값"),
@@ -110,7 +136,35 @@ public class EvaluationProfileController {
         return ResponseEntity.ok(profilesResponseDto);
     }
 
-    @Operation(summary = "평가 프로필 수정", description = "프로필 이름, 설명 등 정보를 수정합니다.")
+    @Operation(summary = "평가 프로필 수정", description = "프로필 이름, 설명 등 정보를 수정합니다.",
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = EvaluationProfileRequestDto.class),
+                            examples = @ExampleObject(
+                                    value = """
+                {
+                  "name": "string",
+                  "description": "string",
+                  "companyTemplateId": "6d6bb9f2-f696-418c-a8db-84e859bca5fb",
+                  "weights": [
+                    { "weightType": "GITHUB_REPO_COUNT",     "weightValue": 0.1 },
+                    { "weightType": "GITHUB_COMMIT_COUNT",   "weightValue": 0.1 },
+                    { "weightType": "GITHUB_KEYWORD_MATCH",  "weightValue": 0.1 },
+                    { "weightType": "GITHUB_TOPIC_MATCH",    "weightValue": 0.1 },
+                    { "weightType": "NOTION_KEYWORD_MATCH",  "weightValue": 0.1 },
+                    { "weightType": "VELOG_POST_COUNT",      "weightValue": 0.1 },
+                    { "weightType": "VELOG_RECENT_ACTIVITY", "weightValue": 0.1 },
+                    { "weightType": "VELOG_KEYWORD_MATCH",   "weightValue": 0.1 },
+                    { "weightType": "CERTIFICATE_MATCH",     "weightValue": 0.2 }
+                  ]
+                }
+                """
+                            )
+                    )
+            )
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청 값"),
