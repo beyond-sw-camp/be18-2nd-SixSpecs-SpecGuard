@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,6 +32,13 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID>, JpaSpecif
     @Query("SELECT r FROM Resume r JOIN FETCH r.template WHERE r.email = :email AND r.template.id = :templateId")
     Optional<Resume> findByEmailAndTemplateId(@Param("email") String email, @Param("templateId") UUID templateId);
 
+    @Query("""
+    select r.id
+    from Resume r
+    where r.status <> 'PROCESSING'
+      and r.updatedAt >= :cutoff
+""")
+    List<UUID> findUnprocessedResumeIdsSince(@Param("cutoff") LocalDateTime cutoff);
     boolean existsByEmailAndTemplateId(String email, UUID uuid);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

@@ -32,7 +32,7 @@ public class CrawlingCompletionScheduler {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    @Scheduled(fixedDelay = 210000)
+    @Scheduled(fixedDelay = 180000)
     public void checkCrawlingStatus() {
         if (!lock.tryLock()) {
             log.warn("이전 스케줄러 실행 중 → 이번 실행 스킵");
@@ -43,7 +43,11 @@ public class CrawlingCompletionScheduler {
             log.info("[Scheduler] Resume 상태 확인 시작");
 
             //  findAll은 전수조사라 리소스 많이 잡아먹어기때문에 processing이 아닌것만 하도록 수정
-            List<UUID> resumeIds = resumeRepository.findUnprocessedResumeIds();
+            //  List<UUID> resumeIds = resumeRepository.findUnprocessedResumeIds();
+
+            // 얘는 최근 업데이트한걸 조회하고 그걸 여기 위로 올려서 검증을 수행하는거임
+            LocalDateTime cutoff = LocalDateTime.now().minusMinutes(30); //  30분으로 늘림
+            List<UUID> resumeIds = resumeRepository.findUnprocessedResumeIdsSince(cutoff);
 
             log.info("[Scheduler] 최근 변경된 Resume 갯수={}", resumeIds.size());
 
@@ -96,11 +100,8 @@ public class CrawlingCompletionScheduler {
         boolean allNlpProcessed = analyses.stream()
                 .allMatch(a -> a.getSummary() != null && !a.getSummary().isBlank());
 
-        if (anyRunning) {
-            // 아직 크롤링 중인 게 있음 → 상태는 PENDING
-            resume.changeStatus(Resume.ResumeStatus.PENDING);
 
-        } else if (allCrawlingCompleted && !portfolioCompleted) {
+        if (allCrawlingCompleted && !portfolioCompleted) {
             // 크롤링은 끝났는데 포트폴리오 결과 아직 없음 → 여기서 NLP 실행 (Python 트리거를 여기에 둬서 중복 호출 방지)
             log.info("크롤링 완료 → NLP(키워드 추출) 실행 resumeId={}", resume.getId());
             keywordNlpClient.extractKeywords(resume.getId());
