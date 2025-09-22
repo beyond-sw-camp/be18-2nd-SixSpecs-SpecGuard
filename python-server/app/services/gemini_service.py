@@ -15,8 +15,6 @@ MODEL = "gemini-2.5-flash"
 
 logger = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
-
 async def insert_failed_data(session, row):
     processed_data = {"keywords": {}}
     status = "FAILED"

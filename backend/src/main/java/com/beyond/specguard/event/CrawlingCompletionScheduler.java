@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
@@ -31,7 +32,7 @@ public class CrawlingCompletionScheduler {
 
     private final ReentrantLock lock = new ReentrantLock();
 
-    @Scheduled(fixedDelay = 30000)
+    @Scheduled(fixedDelay = 180000)
     public void checkCrawlingStatus() {
         if (!lock.tryLock()) {
             log.warn("이전 스케줄러 실행 중 → 이번 실행 스킵");
@@ -41,32 +42,35 @@ public class CrawlingCompletionScheduler {
         try {
             log.info("[Scheduler] Resume 상태 확인 시작");
 
-            //  모든 resumeId distinct 추출
-            List<UUID> resumeIds = crawlingResultRepository.findAll().stream()
-                    .map(r -> r.getResume().getId())
-                    .distinct()
-                    .toList();
+            //  findAll은 전수조사라 리소스 많이 잡아먹어기때문에 processing이 아닌것만 하도록 수정
+            //  List<UUID> resumeIds = resumeRepository.findUnprocessedResumeIds();
+
+            // 얘는 최근 업데이트한걸 조회하고 그걸 여기 위로 올려서 검증을 수행하는거임 성능 낫베드 근데 타이밍 오류 발생가능함
+            LocalDateTime cutoff = LocalDateTime.now().minusMinutes(30); //  30분으로 늘림
+            List<UUID> resumeIds = resumeRepository.findUnprocessedResumeIdsSince(cutoff);
+
+            log.info("[Scheduler] 최근 변경된 Resume 갯수={}", resumeIds.size());
+
 
             for (UUID resumeId : resumeIds) {
                 Resume resume = resumeRepository.findById(resumeId)
                         .orElseThrow(() -> new IllegalStateException("Resume not found: " + resumeId));
 
-                //  resumeId 기준 CrawlingResult 전부 조회
+                // 만약을 대비해서 여기에서 검증한번 더 진행
+                if (resume.getStatus() == Resume.ResumeStatus.PROCESSING) {
+                    log.debug("이미 PROCESSING 상태이므로 skip: resumeId={}", resumeId);
+                    continue;
+                }
+
+                //  resumeId 기준 CrawlingResult,portfolioResult,Analaysis 전부 조회
                 List<CrawlingResult> results = crawlingResultRepository.findByResume_Id(resumeId);
-
-                // [NLP 호출 위치]
-                keywordNlpClient.extractKeywords(resumeId);
-
-
-                //  resumeId 기준 PortfolioResult 전부 조회 (한 번에)
                 List<PortfolioResult> portfolioResults = portfolioResultRepository.findAllByResumeId(resumeId);
+                List<CompanyTemplateResponseAnalysis> analyses = analysisRepository.findAllByResumeId(resumeId);
 
-                //  resumeId 기준 Analysis 조회
-                List<CompanyTemplateResponseAnalysis> analyses =
-                        analysisRepository.findAllByResumeId(resumeId);
 
-                // 상태 업데이트 호출
+                // NLP 호출까지 updateResumeStatus 안으로 이동
                 updateResumeStatus(resume, results, portfolioResults, analyses);
+
                 resumeRepository.save(resume);
 
                 log.info("[Scheduler] Resume 상태 갱신 완료: resumeId={}, status={}",
@@ -83,28 +87,32 @@ public class CrawlingCompletionScheduler {
                                     List<PortfolioResult> portfolioResults,
                                     List<CompanyTemplateResponseAnalysis> analyses) {
 
-        boolean anyRunning = results.stream()
-                .anyMatch(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.PENDING);
+/*        boolean anyRunning = results.stream()
+                .anyMatch(r -> r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.PENDING);*/
 
-        // 모든 값의 합이 3개일때로 수정해야함.
-        boolean allCrawlingCompleted = (results.size() == 3);
-
-        // PortfolioResult 상태 상관없이 개수 합이 3개면 완료
+        // 지금 3으로 default로 걸어뒀는데 향후 확장성을 고려했을때 resume table에 colum 하나 추가해서 count를 넣는 방식으로 수정한다면 유동적으로 변경가능
+        boolean allCrawlingCompleted = results.size() == 3 &&
+                results.stream().allMatch(r ->
+                        r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.COMPLETED
+                                || r.getCrawlingStatus() == CrawlingResult.CrawlingStatus.NOTEXISTED
+                );
         boolean portfolioCompleted = (portfolioResults.size() == 3);
-
-        //자소서 nlp 임 이건
         boolean allNlpProcessed = analyses.stream()
                 .allMatch(a -> a.getSummary() != null && !a.getSummary().isBlank());
 
-        if (anyRunning) {
-            //  실행 중인 크롤링이 있으면 전체 상태는 PENDING
-            resume.changeStatus(Resume.ResumeStatus.PENDING);
+
+        if (allCrawlingCompleted && !portfolioCompleted) {
+            // 크롤링은 끝났는데 포트폴리오 결과 아직 없음 → 여기서 NLP 실행 (Python 트리거를 여기에 둬서 중복 호출 방지)
+            log.info("크롤링 완료 → NLP(키워드 추출) 실행 resumeId={}", resume.getId());
+            keywordNlpClient.extractKeywords(resume.getId());
+
         } else if (allCrawlingCompleted && portfolioCompleted && allNlpProcessed) {
-            //  전부 완료된 경우에 PROCESSING
+            // 크롤링 완료 + 포트폴리오 결과 채워짐 + 자소서 NLP도 끝남 -> 최종 완료 상태
             resume.changeStatus(Resume.ResumeStatus.PROCESSING);
-        } else {
-            // 애매한거 전부 PENDING
+
+        } /*else {
+            // 그 외는 다 PENDING
             resume.changeStatus(Resume.ResumeStatus.PENDING);
-        }
+        }*/
     }
 }
