@@ -53,7 +53,7 @@ public class ResumeTemplateAnalysisListener {
                 BaseResponse<SummaryResponse> summaryRes = nlpClient.summarize(summaryReq);
 
                 // 2) 키워드 요청
-                KeywordRequest keywordReq = new KeywordRequest("cover_letter", response.getAnswer());
+                KeywordRequest keywordReq = new KeywordRequest("portfolio", response.getAnswer());
                 BaseResponse<KeywordResponse> keywordRes = nlpClient.extractKeywords(keywordReq);
 
                 // 3) 결과 저장 (없으면 insert, 있으면 update)

@@ -11,7 +11,7 @@ from app.db import (
     SQL_INSERT_PORTFOLIO_RESULT
 )
 
-MODEL = "gemini-2.0-flash-001"
+MODEL = "gemini-2.5-flash"
 
 logger = logging.getLogger(__name__)
 
