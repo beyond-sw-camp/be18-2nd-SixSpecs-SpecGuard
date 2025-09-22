@@ -22,11 +22,9 @@ public record ResumeEducationUpsertRequest(
         String schoolName,
 
         @Schema(description = "전공", example = "컴퓨터공학과")
-        @NotBlank
         String major,
 
         @Schema(description = "학위", example = "BACHELOR")
-        @NotNull
         ResumeEducation.Degree degree,
 
         @Schema(description = "졸업 구분", example = "GRADUATED")
@@ -34,16 +32,21 @@ public record ResumeEducationUpsertRequest(
         ResumeEducation.GraduationStatus graduationStatus,
 
         @Schema(description = "입학 유형", example = "REGULAR")
-        @NotNull
         ResumeEducation.AdmissionType admissionType,
 
         @Schema(description = "평점", example = "3.8")
-        @NotNull
         Double gpa,
 
         @Schema(description = "최대 평점", example = "4.5")
-        @NotNull
         Double maxGpa,
+
+        @Schema(description = "시/도", example = "서울시")
+        @NotNull
+        String city,
+
+        @Schema(description = "구/군", example = "강남구")
+        @NotNull
+        String district,
 
         @Schema(description = "입학일", type = "string", format = "date", example = "2015-03-01")
         @NotNull
@@ -66,6 +69,8 @@ public record ResumeEducationUpsertRequest(
                         .endDate(endDate)
                         .schoolType(schoolType)
                         .schoolName(schoolName)
+                        .city(city)
+                        .district(district)
                         .major(major)
                         .build();
         }

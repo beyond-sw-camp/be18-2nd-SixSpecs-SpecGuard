@@ -31,7 +31,7 @@ public class CertificateVerificationCodefService implements CertificateVerificat
     public void verifyCertificateAsync(UUID resumeId) {
         log.info("[CertificateVerification] 시작 - resumeId={}", resumeId);
         List<ResumeCertificate> resumeCertificates = resumeCertificateRepository
-                .findAllByResumeId(resumeId);
+                .findAllByResume_Id(resumeId);
 
         // 자격증 순회
         for (ResumeCertificate certificate : resumeCertificates) {

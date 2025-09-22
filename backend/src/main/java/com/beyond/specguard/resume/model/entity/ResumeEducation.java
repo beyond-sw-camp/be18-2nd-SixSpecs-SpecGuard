@@ -62,7 +62,7 @@ public class ResumeEducation {
     private String schoolName;
 
     //전공 -계열/학과 계열
-    @Column(name = "major", nullable = true, length = 255)
+    @Column(name = "major", length = 255)
     private String major;
 
     //졸업 구분
@@ -72,20 +72,20 @@ public class ResumeEducation {
 
     //학위 구분
     @Enumerated(EnumType.STRING)
-    @Column(name = "degree", nullable = false, length = 100)
+    @Column(name = "degree", length = 100)
     private Degree degree;
 
     //입학, 편입
     @Enumerated(EnumType.STRING)
-    @Column(name = "admission_type", nullable = false)
+    @Column(name = "admission_type")
     private AdmissionType admissionType;
 
     //학점
-    @Column(name = "gpa", nullable = false)
+    @Column(name = "gpa")
     private Double gpa;
 
     //최대 학점
-    @Column(name = "max_gpa", nullable = false)
+    @Column(name = "max_gpa")
     private Double maxGpa;
 
     //입학일
@@ -100,6 +100,13 @@ public class ResumeEducation {
     @Enumerated(EnumType.STRING)
     @Column(name = "school_type", nullable = false, length = 20)
     private SchoolType schoolType;
+
+    @Column(name = "city", nullable = false)
+    private String city;
+
+
+    @Column(name = "district", nullable = false)
+    private String district;
 
     @CreationTimestamp
     @Column(name ="created_at", updatable = false)
@@ -120,6 +127,8 @@ public class ResumeEducation {
         if (req.startDate() != null ) this.startDate = req.startDate();
         if (req.endDate() != null ) this.endDate = req.endDate();
         if (req.schoolType() != null ) this.schoolType = req.schoolType();
+        if (req.district() != null ) this.district = req.district();
+        if (req.city() != null ) this.city = req.city();
     }
 
     public enum AdmissionType {

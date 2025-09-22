@@ -25,7 +25,7 @@ public record ResumeBasicResponse(
 
         String address,
 
-        String applyField,
+        String zip,
 
         String specialty,
 
@@ -43,8 +43,8 @@ public record ResumeBasicResponse(
                         .gender(resumeBasic.getGender().name())
                         .birthDate(resumeBasic.getBirthDate())
                         .nationality(resumeBasic.getNationality())
+                        .zip(resumeBasic.getZip())
                         .address(resumeBasic.getAddress())
-                        .applyField(resumeBasic.getApplyField())
                         .specialty(resumeBasic.getSpecialty())
                         .hobbies(resumeBasic.getHobbies())
                         .profileImageUrl(resumeBasic.getProfileImageUrl())
