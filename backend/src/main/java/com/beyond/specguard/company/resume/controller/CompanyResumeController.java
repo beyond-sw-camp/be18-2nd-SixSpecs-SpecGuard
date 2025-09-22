@@ -5,6 +5,7 @@ import com.beyond.specguard.company.common.model.entity.ClientUser;
 import com.beyond.specguard.company.common.model.service.CustomUserDetails;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.model.dto.response.ResumeListResponseDto;
+import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
 import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.service.ResumeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,5 +48,20 @@ public class CompanyResumeController {
         }
         ClientUser clientUser = customUserDetails.getUser();
         return resumeService.list(templateId, pageable, clientUser, status);
+    }
+
+    //지원서 단건 조회
+    @Operation(
+            summary = "지원서 단건 조회",
+            description = "특정 지원서(resume.id) 단건 조회."
+    )
+    @GetMapping("/{resumeId}")
+    public ResumeResponse get(
+            @PathVariable UUID resumeId,
+            @AuthenticationPrincipal CustomUserDetails customUserDetails
+    ) {
+        String email = customUserDetails.getUsername();
+
+        return resumeService.get(resumeId, email);
     }
 }
