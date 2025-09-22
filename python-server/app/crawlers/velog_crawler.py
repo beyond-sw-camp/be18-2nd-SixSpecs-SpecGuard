@@ -3,12 +3,123 @@ from urllib.parse import urlparse, urljoin
 import re, asyncio, time, os, random, logging
 from playwright.async_api import async_playwright, TimeoutError as PWTimeout
 
+from app.crawlers import velog_crawler as vc
+
 from . import CONF, UA
 from app.utils.text import mask_pii, content_hash
 
 DELAY_LOW  = float(os.environ.get("CRAWL_DELAY_LOW_SEC", "0.8"))
 DELAY_HIGH = float(os.environ.get("CRAWL_DELAY_HIGH_SEC", "2.0"))
 MAX_CONCURRENCY = int(os.environ.get("CRAWLER_MAX_CONCURRENCY", "4"))
+
+
+_HANDLE_RE = re.compile(r"/@(?P<handle>[A-Za-z0-9_]{1,30})")
+_POST_PATH_RE_TPL = (
+    r"^/@{handle}/(?!posts$|series(?:/|$)|about(?:/|$)|followers(?:/|$)|"
+    r"following(?:/|$)|likes(?:/|$)|portfolio(?:/|$)|lists(?:/|$)|tag(?:/|$)|categories(?:/|$))[^/?#]+$"
+)
+
+def _is_post_permalink(href: str, handle: str) -> bool:
+    pat = _POST_PATH_RE_TPL.format(handle=re.escape(handle))
+    return re.match(pat, href or "") is not None
+
+async def collect_post_links(ctx, base_url: str, max_scrolls: int) -> list[str]:
+    page = await ctx.new_page()
+    try:
+        page.set_default_timeout(CONF["list"]["timeout_ms"])
+        page.set_default_navigation_timeout(CONF["list"]["timeout_ms"])
+        await _safe_goto(page, base_url)
+
+        handle = _extract_handle_from_url(base_url) or ""
+        seen, hrefs = set(), []
+
+        async def collect_once() -> list[str]:
+            anchors = await page.eval_on_selector_all(
+                f'a[href^="/@{handle}/"]',
+                "els => els.map(e => e.getAttribute('href') || '')"
+            )
+            out = []
+            for h in anchors:
+                if not h:
+                    continue
+                if _is_post_permalink(h, handle):
+                    full = urljoin("https://velog.io", h)
+                    if full not in seen:
+                        seen.add(full)
+                        out.append(full)
+            return out
+
+        last_len, stagnant = -1, 0
+        for _ in range(max_scrolls):
+            new_links = await collect_once()
+            if new_links:
+                hrefs.extend(new_links)
+
+            if len(hrefs) == last_len:
+                stagnant += 1
+            else:
+                stagnant = 0
+            last_len = len(hrefs)
+
+            if stagnant >= CONF["list"]["stagnant_rounds"]:
+                break
+
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await _sleep_with_jitter()
+
+        # 최종 중복 제거
+        return list(dict.fromkeys(hrefs))
+    finally:
+        await page.close()
+
+
+
+
+
+async def collect_post_links(ctx, base_url: str, max_scrolls: int) -> list[str]:
+    page = await ctx.new_page()
+    try:
+        page.set_default_timeout(CONF["list"]["timeout_ms"])
+        page.set_default_navigation_timeout(CONF["list"]["timeout_ms"])
+        await _safe_goto(page, base_url)
+
+        handle = _extract_handle_from_url(base_url) or ""
+        seen, hrefs = set(), []
+
+        async def collect() -> list[str]:
+            anchors = await page.eval_on_selector_all(
+                f'a[href^="/@{handle}/"]',
+                "els => els.map(e => e.getAttribute('href') || '')"
+            )
+            out = []
+            for h in anchors:
+                if h and _is_post_permalink(h, handle):
+                    full = urljoin("https://velog.io", h)
+                    if full not in seen:
+                        seen.add(full)
+                        out.append(full)
+            return out
+
+        last_count, stagnant = -1, 0
+        for _ in range(max_scrolls):
+            new_links = await collect()
+            if new_links:
+                hrefs.extend(new_links)
+
+            stagnant = stagnant + 1 if len(hrefs) == last_count else 0
+            last_count = len(hrefs)
+            if stagnant >= CONF["list"]["stagnant_rounds"]:
+                break
+
+            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+            await _sleep_with_jitter()
+
+        return list(dict.fromkeys(hrefs)) 
+    finally:
+        await page.close()
+
+
+
 
 def _delay_range():
     pr = CONF["list"].get("pause_sec_range", (None, None))
@@ -71,8 +182,10 @@ async def collect_post_links(ctx, base_url: str, max_scrolls: int) -> List[str]:
             )
             out: List[str] = []
             for h in anchors:
-                if not h: continue
+                if not h:
+                    continue
                 full = urljoin("https://velog.io", h)
+            
                 if _HANDLE_RE.search(h) and h.count("/") >= 2:
                     if full not in seen:
                         seen.add(full)
@@ -82,10 +195,13 @@ async def collect_post_links(ctx, base_url: str, max_scrolls: int) -> List[str]:
         last_count, stagnant = -1, 0
         for _ in range(max_scrolls):
             new_links = await collect()
-            if new_links: hrefs.extend(new_links)
+            if new_links:
+                hrefs.extend(new_links)
 
-            if len(hrefs) == last_count: stagnant += 1
-            else: stagnant = 0
+            if len(hrefs) == last_count:
+                stagnant += 1
+            else:
+                stagnant = 0
             last_count = len(hrefs)
 
             if stagnant >= CONF["list"]["stagnant_rounds"]:
@@ -93,9 +209,11 @@ async def collect_post_links(ctx, base_url: str, max_scrolls: int) -> List[str]:
 
             await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             await _sleep_with_jitter()
+
         return hrefs
     finally:
         await page.close()
+
 
 async def fetch_post(ctx, url: str) -> Tuple[str, str, List[str], List[str], Optional[str]]:
     start = time.perf_counter()
@@ -106,6 +224,7 @@ async def fetch_post(ctx, url: str) -> Tuple[str, str, List[str], List[str], Opt
         page.set_default_navigation_timeout(CONF["post"]["timeout_ms"])
         await _safe_goto(page, url)
 
+        # 제목
         title = ""
         try:
             loc = page.locator("h1").first
@@ -114,6 +233,7 @@ async def fetch_post(ctx, url: str) -> Tuple[str, str, List[str], List[str], Opt
         except Exception:
             pass
 
+        # 태그 (유지)
         tags: List[str] = []
         try:
             tags = await page.evaluate("""
@@ -138,6 +258,7 @@ async def fetch_post(ctx, url: str) -> Tuple[str, str, List[str], List[str], Opt
         except Exception:
             pass
 
+    
         text = ""
         try:
             if await page.locator("article").count() > 0:
@@ -150,10 +271,12 @@ async def fetch_post(ctx, url: str) -> Tuple[str, str, List[str], List[str], Opt
                 try:
                     if await page.locator(sel).count() > 0:
                         text = (await page.locator(sel).first.inner_text()).strip()
-                        if text: break
+                        if text:
+                            break
                 except Exception:
                     continue
 
+        # 느린 로딩 대비 한 번 더 시도
         if not text and (time.perf_counter() - start) < HARD_LIMIT:
             try:
                 await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
@@ -163,16 +286,18 @@ async def fetch_post(ctx, url: str) -> Tuple[str, str, List[str], List[str], Opt
             except Exception:
                 pass
 
+        # 날짜
         published = None
         try:
             texts = await page.locator("time, span, div").all_inner_texts()
             for s in texts:
                 s2 = s.strip()
                 if re.search(r"\d{4}[.\-]\s*\d{1,2}[.\-]\s*\d{1,2}", s2) or \
-                ("시간 전" in s2) or ("분 전" in s2) or ("일 전" in s2):
+                   ("시간 전" in s2) or ("분 전" in s2) or ("일 전" in s2):
                     published = s2; break
         except Exception:
             pass
+
 
         if text:
             import re as _re
@@ -184,11 +309,120 @@ async def fetch_post(ctx, url: str) -> Tuple[str, str, List[str], List[str], Opt
     finally:
         await page.close()
 
+
+
+
+
+
+async def try_extract_total_count_on(ctx, base_url: str) -> Optional[int]:
+    """
+    좌측 '태그 목록'의 '전체보기 (N)'에서 숫자 N만 추출.
+    """
+    page = await ctx.new_page()
+    try:
+        page.set_default_timeout(CONF["list"]["timeout_ms"])
+        page.set_default_navigation_timeout(CONF["list"]["timeout_ms"])
+        await _safe_goto(page, base_url)
+
+        txt = await page.evaluate("""
+            () => {
+                const walk = (n) => {
+                    if (!n) return null;
+                    const t = (n.textContent || '').trim();
+                    // '전체보기' 문구가 들어간 가장 가까운 텍스트 블럭
+                    if (t && /전체보기\\s*\\(/.test(t)) return t;
+                    for (const ch of n.children || []) {
+                        const r = walk(ch);
+                        if (r) return r;
+                    }
+                    return null;
+                };
+                return walk(document.body);
+            }
+        """)
+        if not txt:
+            return None
+        const_re = re.compile(r"전체보기\s*\((\d[\d,]*)\)")
+        m = const_re.search(txt)
+        if m:
+            return int(m.group(1).replace(",", ""))
+        return None
+    except Exception:
+        return None
+    finally:
+        await page.close()
+
+async def try_extract_total_count_via_ui(ctx, base_url: str) -> Optional[int]:
+    page = await ctx.new_page()
+    try:
+        page.set_default_timeout(CONF["list"]["timeout_ms"])
+        page.set_default_navigation_timeout(CONF["list"]["timeout_ms"])
+        await _safe_goto(page, base_url)
+        txt = await page.evaluate("""
+            () => {
+                // '전체보기' 텍스트가 들어간 노드를 DFS로 찾아 첫 텍스트 반환
+                const walk = (n) => {
+                    if (!n) return null;
+                    const t = (n.textContent || '').trim();
+                    if (t && t.includes('전체보기')) return t;
+                    for (const ch of (n.children || [])) {
+                        const r = walk(ch);
+                        if (r) return r;
+                    }
+                    return null;
+                };
+                return walk(document.body);
+            }
+        """)
+        if not txt:
+            return None
+        const_num = re.search(r"(\d[\d,]*)", txt)
+        if const_num:
+            return int(const_num.group(1).replace(",", ""))
+    except Exception:
+        pass
+    finally:
+        await page.close()
+    return None
+
+
+# 전체보기 (N)
+# velog_crawler.py
+
+async def try_extract_total_count(page) -> Optional[int]:
+    """
+    좌측 태그 섹션의 '전체보기(97)' 같이 괄호 안 숫자만 정확히 추출.
+    다른 숫자(연도, 뷰 수 등)를 타지 않게 '전체보기(' 패턴만 인식.
+    """
+    try:
+        text = await page.evaluate("""
+            () => {
+                const getText = (el) => (el?.textContent || '').trim();
+                const nodes = document.querySelectorAll('a, span, div, li, button');
+                let best = null;
+                for (const n of nodes) {
+                    const t = getText(n);
+                    // '전체보기(97)' 또는 '전체보기 (97)' 형태만 허용
+                    if (/전체보기\s*\\(\d{1,6}\\)/.test(t)) {
+                        best = t;
+                        break;
+                    }
+                }
+                return best;
+            }
+        """)
+        if not text:
+            return None
+
+        import re
+        m = re.search(r"전체보기\s*\((\d{1,6})\)", text)
+        return int(m.group(1)) if m else None
+    except Exception:
+        return None
+
+
+
 async def _crawl_all_with_url_async(base_url: str) -> dict:
-    """
-    실제 Playwright 크롤링을 수행하는 비동기 함수.
-    이 함수는 Proactor 루프에서 실행되어야 함(아래 _worker_thread에서 보장).
-    """
     handle = _extract_handle_from_url(base_url) or ""
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -196,36 +430,52 @@ async def _crawl_all_with_url_async(base_url: str) -> dict:
             ctx = await browser.new_context(user_agent=UA, viewport=CONF["viewport"])
             await _block_heavy_assets(ctx)
 
-            links = await collect_post_links(ctx, base_url, CONF["list"]["max_scrolls"])
-            post_count = len(links)
+            # (1) UI에서 전체 글 수 시도
+            page = await ctx.new_page()
+            await _safe_goto(page, base_url)
+            ui_count = await try_extract_total_count(page)
+            await page.close()
 
+            # (2) 실제 글 링크 수집
+            links = await collect_post_links(ctx, base_url, CONF["list"]["max_scrolls"])
+
+            # (3) post_count 결정: UI에서 성공하면 그 값, 실패 시 링크 수
+            post_count = ui_count if ui_count is not None else len(links)
+
+            # (4) 각 글로 들어가 본문만 추출
             sem = asyncio.Semaphore(MAX_CONCURRENCY)
             results = []
 
             async def _one(u: str):
                 async with sem:
                     try:
-                        t, txt, _, tags, pub = await fetch_post(ctx, u)
-                        results.append((u, t, txt, tags, pub))
+                        title, text, _, tags, pub = await fetch_post(ctx, u)
+                        # 본문이 비어버린 글은 스킵(프리뷰/페이지 오류 방지)
+                        if text:
+                            results.append((u, title, text, tags, pub))
                     except Exception:
-                        return
+                        pass
 
             await asyncio.gather(*(_one(u) for u in links))
 
-            posts = []
-            for (u, title, text, tags, published) in results:
-                posts.append({
-                    "url": u,
-                    "title": title,
-                    "published_at": published or "",
-                    "text": text or "",
-                    "tags": tags or [],
-                    "content_hash": content_hash(text or "", fallback=u),
-                })
+            posts = [{
+                "url": u,
+                "title": t,
+                "published_at": (pub or ""),
+                "text": txt,
+                "tags": tags or [],
+                "content_hash": content_hash(txt or "", fallback=u),
+            } for (u, t, txt, tags, pub) in results]
 
-            return {"source": "velog", "author": {"handle": handle}, "posts": posts, "post_count": post_count}
+            return {
+                "source": "velog",
+                "author": {"handle": handle},
+                "posts": posts,
+                "post_count": post_count,
+            }
         finally:
             await browser.close()
+
 
 
 def _worker_thread(base_url: str) -> dict:
