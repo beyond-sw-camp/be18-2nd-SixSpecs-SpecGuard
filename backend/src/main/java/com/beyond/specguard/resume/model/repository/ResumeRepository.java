@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,4 +55,14 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID>, JpaSpecif
     @Override
     @EntityGraph(attributePaths = {"validationResult"})
     Page<Resume> findAll(Specification<Resume> spec, Pageable pageable);
+
+    // 전수 조사를 위한 메소드 추가
+    @Query("""
+    select r.id
+    from Resume r
+    where r.status not in :statuses
+""")
+    List<UUID> findAllByStatusNotIn(@Param("statuses") Collection<Resume.ResumeStatus> statuses);
+
+
 }
