@@ -22,8 +22,8 @@ async def debug_velog(url: str = Query(..., description="Velog 프로필 URL (�
     try:
         crawled = await vc.crawl_all_with_url(url)
         posts = crawled.get("posts", [])
-        recent_count = svc._count_recent_posts(posts, days=RECENT_WINDOW_DAYS, tz=LOCAL_TZ)
-        recent_count = math.floor((recent_count + 1) / 2)
+        raw_count = svc._count_recent_posts(posts, days=RECENT_WINDOW_DAYS, tz=LOCAL_TZ)
+        recent_count = math.floor((raw_count + 1) / 2)
         # recent_activity 형식
         lines = []
         for p in posts:
