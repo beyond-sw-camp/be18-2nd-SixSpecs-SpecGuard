@@ -108,7 +108,7 @@
 
 ### ERD
 
-![erd](docs/images/erd.png)
+![erd](docs/images/ERD2.png)
 
 <br>
 
@@ -146,6 +146,8 @@ Pull Request 템플릿 기반 작성 후 리뷰 요청
 ## 9. 향후 개선 계획
 
 분석 정확도 개선을 위한 모델 업그레이드
+
+통계 및 리포트 페이지 구현
 
 
 B2B 고객사를 위한 SaaS 대시보드 고도화
