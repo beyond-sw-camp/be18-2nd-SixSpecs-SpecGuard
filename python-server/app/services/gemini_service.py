@@ -71,6 +71,8 @@ async def extract_keywrods_with_resume_id(resume_id: str):
             try:
                 if row.link_type == "VELOG":
                     dumped_data = json.dumps(data_json.get("recent_activity", []), ensure_ascii=False)
+                    logger.warning("===== VELOG raw_contents ===== %s", raw_contents)
+                    logger.warning("===== VELOG dumped_data ===== %s", dumped_data)
                     processed_data = {
                         "keywords": await extract_keywords(dumped_data),
                         "count": int(data_json.get("postCount", 0)),
