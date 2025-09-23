@@ -108,7 +108,29 @@ JOIN {RL_TBL} AS rl
 WHERE cr.{CR_COL_RID} = :rid
 """)
 
-SQL_INSERT_PORTFOLIO_RESULT = text(f"""
+SQL_UPSERT_PORTFOLIO_RESULT = text(f"""
+INSERT INTO {PR_TBL} (
+    {PR_COL_CRAWLING_RESULT}, 
+    {PR_COL_PROCESSED}, 
+    {PR_COL_STATUS}, 
+    {PR_COL_CREATED_AT}, 
+    {PR_COL_UPDATED_AT}
+)
+VALUES (
+    :crawling_result_id, 
+    :processed_contents, 
+    :portfolio_status, 
+    NOW(), 
+    NOW()
+)
+ON DUPLICATE KEY UPDATE
+    {PR_COL_PROCESSED} = :processed_contents,
+    {PR_COL_STATUS} = :portfolio_status,
+    {PR_COL_UPDATED_AT} = NOW();
+""")
+
+
+SQL_UPSERT_PORTFOLIO_RESULT = text(f"""
 INSERT INTO {PR_TBL} (
     {PR_COL_ID},
     {PR_COL_CRAWLING_RESULT},

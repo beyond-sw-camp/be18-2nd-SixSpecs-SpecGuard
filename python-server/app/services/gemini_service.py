@@ -8,7 +8,7 @@ import logging
 from app.db import (
     SessionLocal,
     SQL_FIND_CRAWLING_RESULTS_BY_RID,
-    SQL_INSERT_PORTFOLIO_RESULT
+    SQL_UPSERT_PORTFOLIO_RESULT
 )
 
 MODEL = "gemini-2.5-flash"
@@ -19,7 +19,7 @@ async def insert_failed_data(session, row):
     processed_data = {"keywords": {}}
     status = "FAILED"
     await session.execute(
-        SQL_INSERT_PORTFOLIO_RESULT,
+        SQL_UPSERT_PORTFOLIO_RESULT,
         {
             "crawling_result_id": row.crawling_result_id,
             "processed_contents": json.dumps(processed_data, ensure_ascii=False),
@@ -49,7 +49,9 @@ async def extract_keywrods_with_resume_id(resume_id: str):
         for row in rows:
 
             crawling_status = row.crawling_status
-            if crawling_status in ["FAILED", "NOTEXISTED", "NONEXISTED"]:
+            
+            if crawling_status in ["FAILED", "NOTEXISTED"]:
+
                 await insert_failed_data(session, row)
                 continue
 
@@ -59,6 +61,7 @@ async def extract_keywrods_with_resume_id(resume_id: str):
             try:
                 raw_contents = await decompress_gzip(row.contents)
 
+                print(raw_contents[:100])
                 data_json = json.loads(raw_contents)
             except Exception as e:
                 logger.error("Decompress/JSON parse error: {%s}", e)
@@ -68,6 +71,8 @@ async def extract_keywrods_with_resume_id(resume_id: str):
             try:
                 if row.link_type == "VELOG":
                     dumped_data = json.dumps(data_json.get("recent_activity", []), ensure_ascii=False)
+                    logger.warning("===== VELOG raw_contents ===== %s", raw_contents)
+                    logger.warning("===== VELOG dumped_data ===== %s", dumped_data)
                     processed_data = {
                         "keywords": await extract_keywords(dumped_data),
                         "count": int(data_json.get("postCount", 0)),
@@ -106,7 +111,7 @@ async def extract_keywrods_with_resume_id(resume_id: str):
             
             # 4. portfolio_result 삽입
             await session.execute(
-                SQL_INSERT_PORTFOLIO_RESULT,
+                SQL_UPSERT_PORTFOLIO_RESULT,
                 {
                     "crawling_result_id": row.crawling_result_id,
                     "processed_contents": json.dumps(processed_data, indent=2, ensure_ascii=False),
@@ -125,7 +130,8 @@ async def extract_dateCount(text: str) -> int:
     prompt = f"""
     다음 텍스트에서 최근 1년 안에 작성된 게시글 수 반환해줘
     - 시간은 쿼리를 날린 현재시점 기준이야
-    - 텍스트 형태는 "2020-02-02 | [제목][본문]"일때 앞에 시간이 작성 날짜야.
+    - 본문 내용에서 "2025-00-00" 형태인 날짜들의 개수를 세줘
+    - 이러한 날짜들의 개수를 모두 카운트 한 뒤에 그 수에 나누기 2를 해줘
     - 정확히 단 한 개의 integer로 반환해.
     텍스트: {text.strip()}
     """
@@ -147,15 +153,17 @@ async def extract_dateCount(text: str) -> int:
 
 async def extract_keywords(text: str, type="기술 키워드") -> list:
     prompt = f"""
-    다음 텍스트에서 {type} 위주로 모두 뽑아줘.
+    다음은 조건들이야. 이 조건들을 활용해서 '텍스트:' 이후 내용에서 {type} 위주로 모두 뽑아줘.
     - 출력은 JSON 배열 형식으로만 반환해.
     - 예시: ["AI", "백엔드", "Docker", "라즈베리파이", "MQTT"]
     - 코드 블록 표시(````json`, ```), 설명 문장, 줄바꿈 같은 건 절대 포함하지 마.
     - 지원자의 활동 위주로 키워드를 뽑아야해.
     - 기업 사업 관련 키워드는 넣지 말아줘.
     - 만약 키워드 추출에 실패하거나 텍스트에서 키워드를 찾을 수 없다면 반드시 빈 배열 [] 만 반환해.
-    텍스트: {text.strip()}
+    '텍스트': {text.strip()}
     """
+
+    print(prompt)
 
     try:
         # 4) Gemini API 호출
@@ -168,7 +176,7 @@ async def extract_keywords(text: str, type="기술 키워드") -> list:
         # 5) 전처리: 코드블록 제거
         clean_output = re.sub(r"```(?:json)?", "", raw_output)
         clean_output = clean_output.replace("```", "").strip()
-
+        print(clean_output)
         # 6) JSON 배열 파싱
         try:
             keywords = json.loads(clean_output)

@@ -7,7 +7,7 @@
 
 | 서현원 | 김택곤 | 이원진 | 이인화 | 조상원 | 최정우 |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-|  이미지   | 이미지  |  이미지  |  이미지  | 이미지  | 이미지 |
+|  <img src="docs/images/현원님.png"  width="100"/> | <img src="docs/images/택곤님.png"  width="100"/>  |  <img src="docs/images/이원진.png"  width="100"/>  |  <img src="docs/images/인화님.png"  width="100"/> | <img src="docs/images/상원님.png"  width="100"/>  | <img src="docs/images/정우님.png"  width="100"/> |
 |<a href="https://github.com/viroovr" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/dobbyRR" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/sumgo-ssri" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/Inhwa1003" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/sangwon5579" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/JJJJungw" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> |
 
 ## 📚 목차
@@ -82,13 +82,48 @@
 
 ## 3. 기술 스택
 
-| 영역 | 기술 |
-|------|------|
-| Frontend | Vue.js |
-| Backend | Spring Boot, JPA, JWT, REST API |
-| 크롤러 | Python (FastAPI), BeautifulSoup |
-| NLP 분석 | Python (KoNLPy, transformers) |
-| Database | MariaDB |
+
+#**Frontend**
+<br>
+![Vue.js](https://img.shields.io/badge/Vue.js%203-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+
+#**Backend**
+<br>
+![Java 21](https://img.shields.io/badge/Java%2021-007396?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot%203.5-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-59666C?style=for-the-badge&logo=hibernate&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![ChromeDriver](https://img.shields.io/badge/ChromeDriver-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)
+
+
+#**Crawler**
+<br>
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![BeautifulSoup](https://img.shields.io/badge/BeautifulSoup-4B8BBE?style=for-the-badge&logo=python&logoColor=white)
+
+#**NLP 분석**
+<br>
+![KoNLPy](https://img.shields.io/badge/KoNLPy-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Transformers](https://img.shields.io/badge/Transformers-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)
+
+#**Database**
+<br>![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white)
+
+#**API Platform**
+<br>
+![Swagger UI](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
+![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)
+
+#**Tools&External References**
+<br>![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
+![Notion](https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white)
+![Figma](https://img.shields.io/badge/Figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white)
+![Velog](https://img.shields.io/badge/Velog-20C997?style=for-the-badge&logo=velog&logoColor=white)
+
+
 
 <br/>
 
@@ -107,9 +142,12 @@
 ## 5. 데이터베이스 설계 (ERD)
 
 ### ERD
+[ERD CLOUD](https://www.erdcloud.com/d/jAJ6DJnaAkz2GKoJX)
+<details>
+  
+![erd](docs/images/ERD2.png)
 
-![erd](docs/images/erd.png)
-
+</details>
 <br>
 
 
@@ -146,6 +184,8 @@ Pull Request 템플릿 기반 작성 후 리뷰 요청
 ## 9. 향후 개선 계획
 
 분석 정확도 개선을 위한 모델 업그레이드
+
+통계 및 리포트 페이지 구현
 
 
 B2B 고객사를 위한 SaaS 대시보드 고도화

@@ -69,6 +69,8 @@ public class SecurityConfig {
             "/api/v1/invite/accept/**",
 
             // OAuth2 관련 엔드포인트
+            "/oauth2/**",
+            "/login/oauth2/**",
             "/oauth2/authorization/**",
             "/login/oauth2/code/**",
             "/api/v1/auth",
@@ -170,7 +172,7 @@ public class SecurityConfig {
         http.with(configurer, Customizer.withDefaults());
 
         // 🔹 요청 인가 설정
-        http.securityMatcher("/api/**")
+        http.securityMatcher("/api/**", "/oauth2/**", "/login/oauth2/**")
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(AUTH_WHITE_LIST).permitAll()
                 .requestMatchers("/api/v1/invite/**").hasRole("OWNER")

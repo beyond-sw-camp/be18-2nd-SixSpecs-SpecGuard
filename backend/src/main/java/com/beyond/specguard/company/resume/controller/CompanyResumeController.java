@@ -6,6 +6,7 @@ import com.beyond.specguard.company.common.model.service.CustomUserDetails;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.model.dto.response.ResumeListResponseDto;
 import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
+import com.beyond.specguard.resume.model.dto.response.ResumeWithGitResponse;
 import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.service.ResumeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,12 +57,11 @@ public class CompanyResumeController {
             description = "특정 지원서(resume.id) 단건 조회."
     )
     @GetMapping("/{resumeId}")
-    public ResumeResponse get(
+    public ResumeWithGitResponse get(
             @PathVariable UUID resumeId,
             @AuthenticationPrincipal CustomUserDetails customUserDetails
     ) {
         String email = customUserDetails.getUsername();
-
-        return resumeService.get(resumeId, email);
+        return resumeService.getWithGit(resumeId, email);
     }
 }
