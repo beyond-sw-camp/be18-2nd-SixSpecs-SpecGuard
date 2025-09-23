@@ -6,9 +6,14 @@ from app.crawlers import velog_crawler as vc
 from app.utils.dates import normalize_created_at 
 from base64 import b64encode
 import gzip, json
+import tzdata
+from datetime import datetime, timedelta
+import os
+import math
+LOCAL_TZ = os.getenv("LOCAL_TZ", "Asia/Seoul")
 
 router = APIRouter(prefix="/api/v1", tags=["ingest"])
-
+RECENT_WINDOW_DAYS = int(os.getenv("RECENT_WINDOW_DAYS", "365"))
 @router.get("/debug/velog")
 async def debug_velog(url: str = Query(..., description="Velog 프로필 URL (예: https://velog.io/@handle/posts)")):
     """
@@ -17,6 +22,8 @@ async def debug_velog(url: str = Query(..., description="Velog 프로필 URL (�
     try:
         crawled = await vc.crawl_all_with_url(url)
         posts = crawled.get("posts", [])
+        recent_count = svc._count_recent_posts(posts, days=RECENT_WINDOW_DAYS, tz=LOCAL_TZ)
+        recent_count = math.floor((recent_count + 1) / 2)
         # recent_activity 형식
         lines = []
         for p in posts:
@@ -25,6 +32,9 @@ async def debug_velog(url: str = Query(..., description="Velog 프로필 URL (�
             c = (p.get("text") or "").strip()
             lines.append(f"{d} | [{t}]\n{c}")
         recent_activity = "\n---\n".join(lines)
+        if(len(posts) < recent_count):
+            recent_count = len(posts)
+    
 
         return {
             "status": "debug",
@@ -85,10 +95,15 @@ async def debug_get_payload(
                 lines.append(f"{d} | [{t}]\n{c}")
         recent_activity = "\n---\n".join(lines)
 
+        recent_count = svc._count_recent_posts(posts, days=RECENT_WINDOW_DAYS, tz=LOCAL_TZ)
+        recent_count = math.floor((recent_count+1)/2)
+        if(len(posts) < recent_count):
+            recent_count = len(posts)
         return {
             "source": "velog",
             "base_url": url,
             "post_count": int(crawled.get("post_count", len(posts))),
+            "recent_count": recent_count,
             "recent_activity": recent_activity,
             "posts": posts,
         }

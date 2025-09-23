@@ -3,6 +3,7 @@ import httpx, logging, os
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from fastapi import HTTPException
+import math
 
 from app.crawlers import velog_crawler as vc
 
@@ -81,8 +82,14 @@ def _build_recent_activity(posts: list[dict]) -> str:
 
 
 def _count_recent_posts(posts: list[dict], *, days: int, tz: str) -> int:
-    """published_at 기준으로 최근 N일 이내 글 개수"""
-    cutoff = (datetime.now(ZoneInfo(tz)).date() if tz else datetime.now().date()) - timedelta(days=days)
+    try:
+        z = ZoneInfo(tz) if tz else None
+    except Exception:
+        z = None
+
+    today = datetime.now(z).date() if z else datetime.now().date()
+    cutoff = today - timedelta(days=days)
+    
     cnt = 0
     for p in posts:
         iso = normalize_created_at(p.get("published_at"), tz=tz)
@@ -150,6 +157,8 @@ async def ingest_velog_single(resume_id: str, url: str | None):
     try:
         crawled = await vc.crawl_all_with_url(url)
         posts = crawled.get("posts", [])
+        recent_count = _count_recent_posts(posts, days=RECENT_WINDOW_DAYS, tz=LOCAL_TZ)
+        recent_count = math.floor((recent_count+1)/2)
         post_count = int(crawled.get("post_count", len(posts)))
 
         recent_count = _count_recent_posts(
@@ -157,6 +166,8 @@ async def ingest_velog_single(resume_id: str, url: str | None):
             days=RECENT_WINDOW_DAYS,
             tz=LOCAL_TZ,
         )
+        if(len(posts) < recent_count):
+            recent_count = len(posts)
 
         recent_activity = _build_recent_activity(posts)
 
