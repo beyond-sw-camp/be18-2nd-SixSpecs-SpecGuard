@@ -32,8 +32,9 @@ async def debug_velog(url: str = Query(..., description="Velog 프로필 URL (�
             c = (p.get("text") or "").strip()
             lines.append(f"{d} | [{t}]\n{c}")
         recent_activity = "\n---\n".join(lines)
-        if(len(posts) < recent_count):
-            recent_count = len(posts)
+        post_count = int(crawled.get("post_count", len(posts)))
+        if(post_count < recent_count):
+            recent_count = post_count
     
 
         return {
@@ -97,12 +98,13 @@ async def debug_get_payload(
 
         recent_count = svc._count_recent_posts(posts, days=RECENT_WINDOW_DAYS, tz=LOCAL_TZ)
         recent_count = math.floor((recent_count+1)/2)
-        if(len(posts) < recent_count):
-            recent_count = len(posts)
+        post_count = int(crawled.get("post_count", len(posts)))
+        if(post_count < recent_count):
+            recent_count = post_count
         return {
             "source": "velog",
             "base_url": url,
-            "post_count": int(crawled.get("post_count", len(posts))),
+            "post_count": post_count,
             "recent_count": recent_count,
             "recent_activity": recent_activity,
             "posts": posts,

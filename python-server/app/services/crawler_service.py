@@ -166,8 +166,8 @@ async def ingest_velog_single(resume_id: str, url: str | None):
             days=RECENT_WINDOW_DAYS,
             tz=LOCAL_TZ,
         )
-        if(len(posts) < recent_count):
-            recent_count = len(posts)
+        if(post_count < recent_count):
+            recent_count = post_count
 
         recent_activity = _build_recent_activity(posts)
 
