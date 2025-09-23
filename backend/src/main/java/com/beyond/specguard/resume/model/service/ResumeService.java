@@ -637,13 +637,36 @@ public class ResumeService {
         return ResumeResponse.fromEntity(resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND)));
     }
+    @Transactional(readOnly = true)
     public ResumeWithGitResponse getWithGit(UUID resumeId, String email) {
+        // 기본 이력서 조회는 그대로
         ResumeResponse resume = get(resumeId, email);
-        GitMetadataResponse gitMetadata = gitHubMetadataService.getLanguageStatsPercentage(resumeId);
+
+        GitMetadataResponse gitMetadata = null;
+        try {
+            // GitHub 링크가 유효할 때만 외부 호출
+            boolean hasGithub = linkRepository.findByResume_Id(resumeId).stream()
+                    .anyMatch(l ->
+                            l.getLinkType() == ResumeLink.LinkType.GITHUB &&
+                                    l.getUrl() != null &&
+                                    isValidGithubUrl(l.getUrl())
+                    );
+
+            if (hasGithub) {
+                gitMetadata = gitHubMetadataService.getLanguageStatsPercentage(resumeId);
+            }
+        } catch (Exception e) { // CustomException 포함 전부 차단
+            log.warn("GitHub API 호출 실패. resumeId={}", resumeId, e);
+            // 실패는 비치명. gitMetadata는 null로 둠.
+        }
 
         return ResumeWithGitResponse.builder()
                 .resume(resume)
-                .gitMetadata(gitMetadata)
+                .gitMetadata(gitMetadata) // null 가능
                 .build();
+    }
+
+    private boolean isValidGithubUrl(String url) {
+        return url != null && url.matches("^https?://(www\\.)?github\\.com/[^/]+(/[^/]+)?/?$");
     }
 }
