@@ -7,7 +7,8 @@
 
 | 서현원 | 김택곤 | 이원진 | 이인화 | 조상원 | 최정우 |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-|  이미지   | 이미지  |  이미지  |  이미지  | 이미지  | 이미지 |
+|  <img src="docs/images/현원님.png"  width="100"/>
+   | 이미지  |  이미지  |  이미지  | 이미지  | 이미지 |
 |<a href="https://github.com/viroovr" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/dobbyRR" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/sumgo-ssri" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/Inhwa1003" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/sangwon5579" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/JJJJungw" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> |
 
 ## 📚 목차
