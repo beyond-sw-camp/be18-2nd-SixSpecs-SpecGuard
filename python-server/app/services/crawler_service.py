@@ -80,6 +80,23 @@ def _build_recent_activity(posts: list[dict]) -> str:
     return "\n---\n".join([f"{d} | [{t}]\n{c}".strip() for (d, t, c) in filtered])
 
 
+def _count_recent_posts(posts: list[dict], *, days: int, tz: str) -> int:
+    """published_at 기준으로 최근 N일 이내 글 개수"""
+    cutoff = (datetime.now(ZoneInfo(tz)).date() if tz else datetime.now().date()) - timedelta(days=days)
+    cnt = 0
+    for p in posts:
+        iso = normalize_created_at(p.get("published_at"), tz=tz)
+        if not iso:
+            continue
+        try:
+            if datetime.fromisoformat(iso).date() >= cutoff:
+                cnt += 1
+        except Exception:
+            continue
+    return cnt
+
+
+
 async def ingest_velog_single(resume_id: str, url: str | None):
     url = (url or "").strip()
 
@@ -135,12 +152,19 @@ async def ingest_velog_single(resume_id: str, url: str | None):
         posts = crawled.get("posts", [])
         post_count = int(crawled.get("post_count", len(posts)))
 
+        recent_count = _count_resent_posts(
+            posts,
+            days=RECENT_WINDOW_DAYS,
+            tz=LOCAL_TZ,
+        )
+
         recent_activity = _build_recent_activity(posts)
 
         payload = {
             "source": "velog",
             "base_url": url,
             "post_count": post_count,
+            "recent_count": recent_count,
             "recent_activity": recent_activity,
         }
 
