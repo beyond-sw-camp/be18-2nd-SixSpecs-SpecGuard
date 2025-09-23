@@ -76,7 +76,8 @@ async def extract_keywrods_with_resume_id(resume_id: str):
                     processed_data = {
                         "keywords": await extract_keywords(dumped_data),
                         "count": int(data_json.get("post_count", 0)),
-                        "dateCount": await extract_dateCount(dumped_data),
+                        "dateCount": int(data_json.get("recent_count", 0)),
+                        # "dateCount": await extract_dateCount(dumped_data),
                     }
                 elif row.link_type == "GITHUB":
                     dumped_data = json.dumps(data_json.get("repoReadme", ""), ensure_ascii=False)
@@ -126,28 +127,28 @@ async def extract_keywrods_with_resume_id(resume_id: str):
     return {"resumeId": resume_id, "processed": portfolio_entries}
 
 
-async def extract_dateCount(text: str) -> int:
-    prompt = f"""
-    다음 텍스트에서 최근 1년 안에 작성된 게시글 수 반환해줘
-    - 시간은 쿼리를 날린 현재시점 기준이야
-    - 본문 내용에서 "2025-00-00" 형태인 날짜들의 개수를 세줘
-    - 이러한 날짜들의 개수를 모두 카운트 한 뒤에 그 수에 나누기 2를 해줘
-    - 정확히 단 한 개의 integer로 반환해.
-    텍스트: {text.strip()}
-    """
+# async def extract_dateCount(text: str) -> int:
+#     prompt = f"""
+#     다음 텍스트에서 최근 1년 안에 작성된 게시글 수 반환해줘
+#     - 시간은 쿼리를 날린 현재시점 기준이야
+#     - 본문 내용에서 "2025-00-00" 형태인 날짜들의 개수를 세줘
+#     - 이러한 날짜들의 개수를 모두 카운트 한 뒤에 그 수에 나누기 2를 해줘
+#     - 정확히 단 한 개의 integer로 반환해.
+#     텍스트: {text.strip()}
+#     """
 
-    try:
-        # 4) Gemini API 호출
-        response = client.models.generate_content(
-            model=MODEL,
-            contents=prompt
-        )
-        raw_output = response.text.strip()
-        return int(re.sub(r"\D", "", raw_output))  # 숫자만 추출
+#     try:
+#         # 4) Gemini API 호출
+#         response = client.models.generate_content(
+#             model=MODEL,
+#             contents=prompt
+#         )
+#         raw_output = response.text.strip()
+#         return int(re.sub(r"\D", "", raw_output))  # 숫자만 추출
     
-    except Exception as e:
-        logger.error("최근 시간 검색 에 실패했습니다. {%s}", str(e))
-        return 0
+#     except Exception as e:
+#         logger.error("최근 시간 검색 에 실패했습니다. {%s}", str(e))
+#         return 0
 
 
 

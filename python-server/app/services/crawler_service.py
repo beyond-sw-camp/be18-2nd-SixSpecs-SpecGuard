@@ -152,7 +152,7 @@ async def ingest_velog_single(resume_id: str, url: str | None):
         posts = crawled.get("posts", [])
         post_count = int(crawled.get("post_count", len(posts)))
 
-        recent_count = _count_resent_posts(
+        recent_count = _count_recent_posts(
             posts,
             days=RECENT_WINDOW_DAYS,
             tz=LOCAL_TZ,
