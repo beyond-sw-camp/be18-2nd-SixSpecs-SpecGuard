@@ -8,6 +8,8 @@ import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import com.beyond.specguard.companytemplate.model.entity.CompanyTemplateField;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateFieldRepository;
 import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository;
+import com.beyond.specguard.crawling.dto.GitMetadataResponse;
+import com.beyond.specguard.crawling.service.GitHubMetadataService;
 import com.beyond.specguard.event.ResumeSubmittedEvent;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.model.dto.request.CompanyTemplateResponseDraftUpsertRequest;
@@ -17,11 +19,7 @@ import com.beyond.specguard.resume.model.dto.request.ResumeCertificateUpsertRequ
 import com.beyond.specguard.resume.model.dto.request.ResumeCreateRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeEducationUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeExperienceUpsertRequest;
-import com.beyond.specguard.resume.model.dto.response.CompanyTemplateResponseResponse;
-import com.beyond.specguard.resume.model.dto.response.ResumeBasicResponse;
-import com.beyond.specguard.resume.model.dto.response.ResumeListResponseDto;
-import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
-import com.beyond.specguard.resume.model.dto.response.ResumeSubmitResponse;
+import com.beyond.specguard.resume.model.dto.response.*;
 import com.beyond.specguard.resume.model.entity.CompanyFormSubmission;
 import com.beyond.specguard.resume.model.entity.CompanyTemplateResponse;
 import com.beyond.specguard.resume.model.entity.Resume;
@@ -39,7 +37,6 @@ import com.beyond.specguard.resume.model.repository.ResumeExperienceRepository;
 import com.beyond.specguard.resume.model.repository.ResumeLinkRepository;
 import com.beyond.specguard.resume.model.repository.ResumeRepository;
 import com.beyond.specguard.resume.model.spec.ResumeSpecification;
-import com.beyond.specguard.validation.model.repository.ValidationResultRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -86,8 +83,8 @@ public class ResumeService {
     private final PasswordEncoder passwordEncoder;
     private final LocalFileStorageService storageService;
     private final ApplicationEventPublisher eventPublisher;
-    private final ValidationResultRepository  validationResultRepository;
     private final CompanyTemplateFieldRepository companyTemplateFieldRepository;
+    private final GitHubMetadataService gitHubMetadataService;
 
     //이력서 생성에서 create
     @Transactional
@@ -639,5 +636,14 @@ public class ResumeService {
     public ResumeResponse get(UUID resumeId, String email) {
         return ResumeResponse.fromEntity(resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND)));
+    }
+    public ResumeWithGitResponse getWithGit(UUID resumeId, String email) {
+        ResumeResponse resume = get(resumeId, email);
+        GitMetadataResponse gitMetadata = gitHubMetadataService.getLanguageStatsPercentage(resumeId);
+
+        return ResumeWithGitResponse.builder()
+                .resume(resume)
+                .gitMetadata(gitMetadata)
+                .build();
     }
 }

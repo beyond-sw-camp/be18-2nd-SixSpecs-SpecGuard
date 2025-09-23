@@ -10,4 +10,13 @@ import java.util.UUID;
 public interface GithubMetadataRepository extends JpaRepository<GitHubMetadata, UUID> {
     @Query("select s from GitHubMetadata s where s.resumeLink.id = :resumeLinkId")
     Optional<GitHubMetadata> findByResumeLinkId(UUID resumeLinkId);
+
+    @Query("""
+    select gm
+    from GitHubMetadata gm
+    join gm.resumeLink rl
+    join rl.resume r
+    where r.id = :resumeId
+""")
+    Optional<GitHubMetadata> findByResumeId(UUID resumeId);
 }
