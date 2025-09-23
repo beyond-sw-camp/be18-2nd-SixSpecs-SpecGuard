@@ -8,7 +8,7 @@
 | 서현원 | 김택곤 | 이원진 | 이인화 | 조상원 | 최정우 |
 | :---: | :---: | :---: | :---: | :---: | :---: |
 |  <img src="docs/images/현원님.png"  width="100"/>
-   | 이미지  |  이미지  |  이미지  | 이미지  | 이미지 |
+   | <img src="docs/images/택곤님.png"  width="100"/>  |  <img src="docs/images/이원진.png"  width="100"/>  |  <img src="docs/images/인화님.png"  width="100"/>  | <img src="docs/images/상원님.png"  width="100"/>  | <img src="docs/images/정우님.png"  width="100"/> |
 |<a href="https://github.com/viroovr" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/dobbyRR" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/sumgo-ssri" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/Inhwa1003" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/sangwon5579" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/JJJJungw" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> |
 
 ## 📚 목차
@@ -140,9 +140,12 @@
 ## 5. 데이터베이스 설계 (ERD)
 
 ### ERD
-
+[ERD CLOUD](https://www.erdcloud.com/d/jAJ6DJnaAkz2GKoJX)
+<details>
+  
 ![erd](docs/images/ERD2.png)
 
+</details>
 <br>
 
 
