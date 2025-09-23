@@ -4,6 +4,14 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from fastapi import HTTPException
 
+from app.crawlers import velog_crawler as vc
+
+
+#############
+DEBUG_RETURN = os.getenv("CRAWLER_DEBUG_RETURN", "0") == "1"  # 반환 토글
+DEBUG_LOG    = os.getenv("CRAWLER_DEBUG_LOG", "0") == "1" 
+#############
+
 from app.db import (
     SessionLocal,
     SQL_FIND_RESUME_LINK_ID,
@@ -129,6 +137,12 @@ async def ingest_velog_single(resume_id: str, url: str | None):
             "post_count": post_count,
             "recent_activity": recent_activity,
         }
+
+        ######################
+        if DEBUG_RETURN:
+                    return {"status": "DEBUG", "data": payload}
+############################
+
         gz = to_gzip_bytes_from_json(payload)
 
         # RUNNING -> COMPLETED + gzip 저장
