@@ -7,10 +7,10 @@ from fastapi import HTTPException
 from app.crawlers import velog_crawler as vc
 
 
-#############
+
 DEBUG_RETURN = os.getenv("CRAWLER_DEBUG_RETURN", "0") == "1"  # 반환 토글
 DEBUG_LOG    = os.getenv("CRAWLER_DEBUG_LOG", "0") == "1" 
-#############
+
 
 from app.db import (
     SessionLocal,
@@ -49,10 +49,16 @@ def _build_recent_activity(posts: list[dict]) -> str:
         iso = normalize_created_at(p.get("published_at"), tz=LOCAL_TZ)
         if not iso:
             continue
-        txt = p.get("text") or ""
-        if MAX_TEXT_LEN and len(txt) > MAX_TEXT_LEN:
-            txt = txt[:MAX_TEXT_LEN]
-        items.append((iso, p.get("title") or "", txt))
+        text = (p.get("text") or "").strip()
+        if not text:
+            continue  # 본문이 비어있으면 제외
+        if MAX_TEXT_LEN and len(text) > MAX_TEXT_LEN:
+            text = text[:MAX_TEXT_LEN]
+        title = (p.get("title") or "").strip()
+        items.append((iso, title, text))
+
+    if not items:
+        return ""
 
     # 최근 N일 컷오프
     cutoff = _today_local_date() - timedelta(days=RECENT_WINDOW_DAYS)
@@ -138,10 +144,10 @@ async def ingest_velog_single(resume_id: str, url: str | None):
             "recent_activity": recent_activity,
         }
 
-        ######################
+
         if DEBUG_RETURN:
                     return {"status": "DEBUG", "data": payload}
-############################
+
 
         gz = to_gzip_bytes_from_json(payload)
 

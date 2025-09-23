@@ -75,7 +75,7 @@ async def extract_keywrods_with_resume_id(resume_id: str):
                     logger.warning("===== VELOG dumped_data ===== %s", dumped_data)
                     processed_data = {
                         "keywords": await extract_keywords(dumped_data),
-                        "count": int(data_json.get("postCount", 0)),
+                        "count": int(data_json.get("post_count", 0)),
                         "dateCount": await extract_dateCount(dumped_data),
                     }
                 elif row.link_type == "GITHUB":

@@ -15,8 +15,10 @@ MAX_CONCURRENCY = int(os.environ.get("CRAWLER_MAX_CONCURRENCY", "4"))
 
 _HANDLE_RE = re.compile(r"/@(?P<handle>[A-Za-z0-9_]{1,30})")
 _POST_PATH_RE_TPL = (
-    r"^/@{handle}/(?!posts$|series(?:/|$)|about(?:/|$)|followers(?:/|$)|"
-    r"following(?:/|$)|likes(?:/|$)|portfolio(?:/|$)|lists(?:/|$)|tag(?:/|$)|categories(?:/|$))[^/?#]+$"
+    r"^/@{handle}/"
+    r"(?!posts$|series(?:/|$)|about(?:/|$)|followers(?:/|$)|following(?:/|$)|"
+    r"likes(?:/|$)|portfolio(?:/|$)|lists(?:/|$)|tag(?:/|$)|categories(?:/|$))"
+    r"[^/?#]+$"
 )
 
 def _is_post_permalink(href: str, handle: str) -> bool:
