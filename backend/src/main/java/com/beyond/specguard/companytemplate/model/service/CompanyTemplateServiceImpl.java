@@ -68,7 +68,13 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
     @Override
     @Transactional(readOnly = true)
     public CompanyTemplateListResponseDto getTemplates(SearchTemplateCommand c) {
+        validateReadRole(c.clientUser().getRole());
+
+        UUID companyId = c.clientUser() != null && c.clientUser().getCompany() != null
+                ? c.clientUser().getCompany().getId() : null;
+
         Specification<CompanyTemplate> spec = Specification.allOf(
+                CompanyTemplateSpecification.belongsToCompany(companyId),
                 CompanyTemplateSpecification.hasDepartment(c.department()),
                 CompanyTemplateSpecification.hasCategory(c.category()),
                 CompanyTemplateSpecification.startDateAfter(c.startDate() == null ? null : c.startDate().atStartOfDay()),
@@ -81,13 +87,32 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
         Page<CompanyTemplate> response = companyTemplateRepository.findAll(spec, c.pageable());
 
         return CompanyTemplateListResponseDto.builder()
-                .companyTemplateResponse(response.getContent().stream().map(CompanyTemplateResponseDto.BasicDto::toDto).toList())
+                .companyTemplateResponse(response.getContent().stream().map(t -> CompanyTemplateResponseDto.builder().basicDto(CompanyTemplateResponseDto.BasicDto.toDto(t)).detailDto(CompanyTemplateResponseDto.DetailDto.toDto(t)).build()).toList())
                 .totalElements(totalElements)
                 .totalPages(response.getTotalPages())
                 .pageNumber(response.getNumber())
                 .pageSize(response.getSize())
                 .build();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CompanyTemplateListResponseDto getTemplates(String companySlug) {
+
+        List<CompanyTemplate> response = companyTemplateRepository.findAllByClientCompany_Slug(companySlug);
+
+        return CompanyTemplateListResponseDto.builder()
+                .companyTemplateResponse(response.stream().map(
+                        r ->
+                                CompanyTemplateResponseDto.builder()
+                                        .basicDto(CompanyTemplateResponseDto.BasicDto.toDto(r))
+                                        .detailDto(CompanyTemplateResponseDto.DetailDto.toDto(r))
+                                        .build()
+                        ).toList())
+                .totalElements((long) response.size())
+                .build();
+    }
+
 
     @Override
     @Transactional
@@ -192,6 +217,8 @@ public class CompanyTemplateServiceImpl implements CompanyTemplateService {
         // 1. 기존 템플릿 조회
         CompanyTemplate template = companyTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new CustomException(CompanyTemplateErrorCode.TEMPLATE_NOT_FOUND));
+
+        template.update(command.requestDto());
 
         if (template.getStatus() !=  CompanyTemplate.TemplateStatus.DRAFT) {
             throw new CustomException(CompanyTemplateErrorCode.NOT_DRAFT_TEMPLATE);

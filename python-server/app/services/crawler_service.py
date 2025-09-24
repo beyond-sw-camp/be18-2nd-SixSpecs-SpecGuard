@@ -1,7 +1,17 @@
 import os
+import httpx, logging, os
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from fastapi import HTTPException
+import math
+
+from app.crawlers import velog_crawler as vc
+
+
+
+DEBUG_RETURN = os.getenv("CRAWLER_DEBUG_RETURN", "0") == "1"  # 반환 토글
+DEBUG_LOG    = os.getenv("CRAWLER_DEBUG_LOG", "0") == "1" 
+
 
 from app.db import (
     SessionLocal,
@@ -40,10 +50,16 @@ def _build_recent_activity(posts: list[dict]) -> str:
         iso = normalize_created_at(p.get("published_at"), tz=LOCAL_TZ)
         if not iso:
             continue
-        txt = p.get("text") or ""
-        if MAX_TEXT_LEN and len(txt) > MAX_TEXT_LEN:
-            txt = txt[:MAX_TEXT_LEN]
-        items.append((iso, p.get("title") or "", txt))
+        text = (p.get("text") or "").strip()
+        if not text:
+            continue  # 본문이 비어있으면 제외
+        if MAX_TEXT_LEN and len(text) > MAX_TEXT_LEN:
+            text = text[:MAX_TEXT_LEN]
+        title = (p.get("title") or "").strip()
+        items.append((iso, title, text))
+
+    if not items:
+        return ""
 
     # 최근 N일 컷오프
     cutoff = _today_local_date() - timedelta(days=RECENT_WINDOW_DAYS)
@@ -65,6 +81,29 @@ def _build_recent_activity(posts: list[dict]) -> str:
     return "\n---\n".join([f"{d} | [{t}]\n{c}".strip() for (d, t, c) in filtered])
 
 
+def _count_recent_posts(posts: list[dict], *, days: int, tz: str) -> int:
+    try:
+        z = ZoneInfo(tz) if tz else None
+    except Exception:
+        z = None
+
+    today = datetime.now(z).date() if z else datetime.now().date()
+    cutoff = today - timedelta(days=days)
+    
+    cnt = 0
+    for p in posts:
+        iso = normalize_created_at(p.get("published_at"), tz=tz)
+        if not iso:
+            continue
+        try:
+            if datetime.fromisoformat(iso).date() >= cutoff:
+                cnt += 1
+        except Exception:
+            continue
+    return cnt
+
+
+
 async def ingest_velog_single(resume_id: str, url: str | None):
     url = (url or "").strip()
 
@@ -77,6 +116,8 @@ async def ingest_velog_single(resume_id: str, url: str | None):
         row = res.mappings().first()
 
     if not row:
+        if not url:   # url이 None → "" 변환된 케이스
+                    return {"claimed": False, "status": "NOTEXISTED"}
         # 주어진 resume_id/url로 VELOG 유형의 링크 행을 못 찾음
         raise HTTPException(
             status_code=404,
@@ -87,7 +128,15 @@ async def ingest_velog_single(resume_id: str, url: str | None):
 
     # URL 공란이면: NOTEXISTED + 더미 gzip 후 종료
     if not url:
-        dummy = to_gzip_bytes_from_text("제출된 링크 없음")
+        payload = {
+            "source": "velog",
+            "base_url": "",
+            "post_count": 0,
+            "recent_activity": ""
+        }
+        dummy = to_gzip_bytes_from_json(payload)
+
+        
         async with SessionLocal() as s0:
             await s0.execute(
                 SQL_SET_NOTEXISTED_IF_NOT_TERMINAL,
@@ -110,14 +159,31 @@ async def ingest_velog_single(resume_id: str, url: str | None):
         posts = crawled.get("posts", [])
         post_count = int(crawled.get("post_count", len(posts)))
 
+        raw_count = _count_recent_posts(
+            posts,
+            days=RECENT_WINDOW_DAYS,
+            tz=LOCAL_TZ,
+        )
+
+        recent_count = math.floor((raw_count+1)/2)
+        if(post_count < recent_count):
+            recent_count = post_count
+
         recent_activity = _build_recent_activity(posts)
 
         payload = {
             "source": "velog",
             "base_url": url,
             "post_count": post_count,
+            "recent_count": recent_count,
             "recent_activity": recent_activity,
         }
+
+
+        if DEBUG_RETURN:
+                    return {"status": "DEBUG", "data": payload}
+
+
         gz = to_gzip_bytes_from_json(payload)
 
         # RUNNING -> COMPLETED + gzip 저장

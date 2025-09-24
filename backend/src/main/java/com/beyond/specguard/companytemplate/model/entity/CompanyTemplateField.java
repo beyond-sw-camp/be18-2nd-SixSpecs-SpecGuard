@@ -1,6 +1,7 @@
 package com.beyond.specguard.companytemplate.model.entity;
 
 import com.beyond.specguard.companytemplate.model.dto.request.TemplateFieldRequestDto;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
@@ -45,6 +46,7 @@ public class CompanyTemplateField {
             nullable = false,
             foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT)
     )
+    @JsonIgnore
     private CompanyTemplate template;
 
     @Column(name = "field_name", nullable = false, length = 100)

@@ -1,8 +1,9 @@
 package com.beyond.specguard.evaluationprofile.model.service;
 
-import com.beyond.specguard.auth.model.entity.ClientUser;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.common.exception.errorcode.CommonErrorCode;
+import com.beyond.specguard.company.common.model.entity.ClientUser;
+import com.beyond.specguard.companytemplate.model.repository.CompanyTemplateRepository;
 import com.beyond.specguard.evaluationprofile.exception.errorcode.EvaluationProfileErrorCode;
 import com.beyond.specguard.evaluationprofile.model.dto.command.CreateEvaluationProfileCommand;
 import com.beyond.specguard.evaluationprofile.model.dto.command.CreateEvaluationWeightCommand;
@@ -32,6 +33,7 @@ public class EvaluationProfileServiceImpl implements EvaluationProfileService {
 
     private final EvaluationProfileRepository evaluationProfileRepository;
     private final EvaluationWeightService evaluationWeightService;
+    private final CompanyTemplateRepository companyTemplateRepository;
 
     private void validateWriteRole(ClientUser.Role role) {
         if (!EnumSet.of(ClientUser.Role.OWNER, ClientUser.Role.MANAGER).contains(role))
@@ -63,12 +65,27 @@ public class EvaluationProfileServiceImpl implements EvaluationProfileService {
         // request weights 합 1.0 체크
         validateWeights(command.evaluationProfileRequestDto().getWeights());
 
+
+        var company = command.user().getCompany();
+        var templateId = command.evaluationProfileRequestDto().getCompanyTemplateId();
+        var template = companyTemplateRepository
+                .findByIdAndClientCompany_Id(templateId, company.getId())
+                .orElseThrow(() -> new CustomException(EvaluationProfileErrorCode.COMPANY_TEMPLATE_NOT_FOUND));
+
+        EvaluationProfile profile = command.evaluationProfileRequestDto().toEntity(company, template);
+        profile = evaluationProfileRepository.save(profile);
+
         // EvaluationProfile 생성
-        EvaluationProfile profile = evaluationProfileRepository.save(command.evaluationProfileRequestDto().fromEntity(command.user().getCompany()));
+//        EvaluationProfile profile = evaluationProfileRepository.save(command.evaluationProfileRequestDto().fromEntity(command.user().getCompany()));
+
+
+
+        var weights = evaluationWeightService.createWeights(
+                new CreateEvaluationWeightCommand(profile, command.evaluationProfileRequestDto().getWeights()));
 
         // EvaluationWeight 들 생성
-        List<EvaluationWeight> weights = evaluationWeightService.createWeights(
-                new CreateEvaluationWeightCommand(profile, command.evaluationProfileRequestDto().getWeights()));
+//        List<EvaluationWeight> weights = evaluationWeightService.createWeights(
+//                new CreateEvaluationWeightCommand(profile, command.evaluationProfileRequestDto().getWeights()));
 
         weights.forEach(profile::addWeight);
 

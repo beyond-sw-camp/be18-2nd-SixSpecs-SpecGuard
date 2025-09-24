@@ -13,6 +13,7 @@ import com.beyond.specguard.auth.model.provider.ClientAuthenticationProvider;
 import com.beyond.specguard.auth.model.provider.ResumeAuthenticationProvider;
 import com.beyond.specguard.common.exception.RestAccessDeniedHandler;
 import com.beyond.specguard.common.exception.RestAuthenticationEntryPoint;
+import com.beyond.specguard.resume.model.service.ResumeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -70,12 +71,19 @@ public class SecurityConfig {
             "/api/v1/invite/accept/**",
 
             // OAuth2 관련 엔드포인트
+            "/oauth2/**",
+            "/login/oauth2/**",
             "/oauth2/authorization/**",
             "/login/oauth2/code/**",
             "/api/v1/auth",
 
             //resume
-            "/api/v1/resumes/**"
+            "/api/v1/resumes/**",
+
+            // verification
+            "/api/v1/verify/**",
+
+            "/api/v1/companyTemplates/**"
     };
 
     private final static String[] ADMIN_AUTH_WHITE_LIST = {
@@ -89,7 +97,8 @@ public class SecurityConfig {
     private static final String[] APPLICANT_AUTH_WHITE_LIST = {
             "/api/v1/resumes/login",
 
-            "/api/v1/resumes/**"
+            "/api/v1/verify/**",
+            "/api/v1/resumes/companies/*/templates"
     };
 
     @Bean
@@ -123,7 +132,7 @@ public class SecurityConfig {
      * Admin 전용 SecurityFilterChain
      */
     @Bean
-    @Order(1)
+    @Order(2)
     public SecurityFilterChain adminSecurityFilterChain(
             HttpSecurity http,
             @Qualifier("adminAuthenticationManager") AuthenticationManager adminAuthenticationManager,
@@ -167,7 +176,7 @@ public class SecurityConfig {
         http.with(configurer, Customizer.withDefaults());
 
         // 🔹 요청 인가 설정
-        http.securityMatcher("/api/**")
+        http.securityMatcher("/api/**", "/oauth2/**", "/login/oauth2/**")
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(AUTH_WHITE_LIST).permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/plans/**").permitAll()
@@ -195,16 +204,16 @@ public class SecurityConfig {
     }
 
     @Bean
-    @Order(2)
+    @Order(1)
     public SecurityFilterChain resumeSecurityFilterChain(
             HttpSecurity http,
-            @Qualifier("resumeAuthenticationManager") AuthenticationManager resumeAuthenticationManager
-    ) throws Exception {
+            @Qualifier("resumeAuthenticationManager") AuthenticationManager resumeAuthenticationManager,
+            ResumeService resumeService) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                        .maximumSessions(1)
+                        .maximumSessions(5)
                         .maxSessionsPreventsLogin(true)
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -215,6 +224,7 @@ public class SecurityConfig {
         http.securityMatcher("/api/v1/resumes/**")
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(APPLICANT_AUTH_WHITE_LIST).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/resumes").permitAll()
                         .anyRequest().hasRole("APPLICANT")
                 );
         http
@@ -223,7 +233,7 @@ public class SecurityConfig {
                 .accessDeniedHandler(restAccessDeniedHandler)   // 403
                 );
 
-        ResumeLoginFilter loginFilter = new ResumeLoginFilter(resumeAuthenticationManager, customFailureHandler);
+        ResumeLoginFilter loginFilter = new ResumeLoginFilter(resumeAuthenticationManager, customFailureHandler, resumeService);
         http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
@@ -239,7 +249,7 @@ public class SecurityConfig {
 
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173")); // 프론트 주소
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000")); // 프론트 주소
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // 쿠키 허용

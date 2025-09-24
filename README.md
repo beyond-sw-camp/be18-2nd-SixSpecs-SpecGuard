@@ -1,13 +1,14 @@
 <p align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Noto+Sans+KR&weight=900&size=48&duration=2300&pause=900&color=00FF7F&background=0D1117&center=true&vCenter=true&width=1000&lines=SpecGuard;%EC%9D%B4%EB%A0%A5+%EA%B2%80%EC%A6%9D+%EC%8B%9C%EC%8A%A4%ED%85%9C" alt="SpecGuard Typing">
+  <img src="https://readme-typing-svg.demolab.com?font=Noto+Sans+KR&weight=900&size=48&duration=2300&pause=900&color=00FF7F&background=00000000&center=true&vCenter=true&width=1000&lines=SpecGuard;%EC%9D%B4%EB%A0%A5+%EA%B2%80%EC%A6%9D+%EC%8B%9C%EC%8A%A4%ED%85%9C" alt="SpecGuard Typing">
 </p>
+
 
 
 ## 👥팀원  
 
 | 서현원 | 김택곤 | 이원진 | 이인화 | 조상원 | 최정우 |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-|  이미지   | 이미지  |  이미지  |  이미지  | 이미지  | 이미지 |
+|  <img src="docs/images/현원님.png"  width="100"/> | <img src="docs/images/택곤님.png"  width="100"/>  |  <img src="docs/images/이원진.png"  width="100"/>  |  <img src="docs/images/인화님.png"  width="100"/> | <img src="docs/images/상원님.png"  width="100"/>  | <img src="docs/images/정우님.png"  width="100"/> |
 |<a href="https://github.com/viroovr" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/dobbyRR" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/sumgo-ssri" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/Inhwa1003" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/sangwon5579" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> | <a href="https://github.com/JJJJungw" target="_blank"><img src="https://img.shields.io/badge/github-181717.svg?style=for-the-badge&logo=github&logoColor=white" /></a> |
 
 ## 📚 목차
@@ -82,24 +83,57 @@
 
 ## 3. 기술 스택
 
-| 영역 | 기술 |
-|------|------|
-| Frontend | Vue.js |
-| Backend | Spring Boot, JPA, JWT, REST API |
-| 크롤러 | Python (FastAPI), BeautifulSoup |
-| NLP 분석 | Python (KoNLPy, transformers) |
-| Database | MariaDB |
+
+#**Frontend**
+<br>
+![Vue.js](https://img.shields.io/badge/Vue.js%203-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+
+#**Backend**
+<br>
+![Java 21](https://img.shields.io/badge/Java%2021-007396?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot%203.5-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-59666C?style=for-the-badge&logo=hibernate&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![ChromeDriver](https://img.shields.io/badge/ChromeDriver-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+
+
+#**Crawler**
+<br>
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Playwright](https://img.shields.io/badge/-playwright-%232EAD33?style=for-the-badge&logo=playwright&logoColor=white)
+
+#**NLP 분석**
+<br>![google-genai](https://img.shields.io/badge/google--genai-1.38-green?style=for-the-badge)
+
+
+
+#**Database**
+<br>![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+
+#**API Platform**
+<br>
+![Swagger UI](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
+![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white)
+
+#**Tools&External References**
+<br>![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
+![Notion](https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white)
+![Figma](https://img.shields.io/badge/Figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white)
+![Velog](https://img.shields.io/badge/Velog-20C997?style=for-the-badge&logo=velog&logoColor=white)
+  <a href="https://www.erdcloud.com" target="_blank"> <img src="https://img.shields.io/badge/ERD%20Cloud-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white"/> </a>
+
+
+
 
 <br/>
 
 ## 4. 시스템 아키텍처
 
-4.1 예시
-```plaintext
-사용자 → 프론트엔드 → Spring Boot API
-                          ↓
-                  [크롤러] + [NLP 모듈] → DB 저장
-```
+![시스템 아키텍쳐](docs/images/아키택쳐.png)
 
 <br/>
 
@@ -107,9 +141,12 @@
 ## 5. 데이터베이스 설계 (ERD)
 
 ### ERD
+[ERD CLOUD](https://www.erdcloud.com/d/jAJ6DJnaAkz2GKoJX)
+<details>
+  
+![erd](docs/images/ERD2.png)
 
-![erd](docs/images/erd.png)
-
+</details>
 <br>
 
 
@@ -129,8 +166,21 @@
 
 <br/>
 
+## 8. 테스트 결과서
 
-## 8. 기여 가이드
+## 8.1 벡엔드 테스트 결과서
+<br>
+[벡엔드 테스트 결과서](https://www.notion.so/2775605940ec801286d6f888af3e93d2?v=2775605940ec80ba931c000c1fcfe3ed)
+
+
+## 8.2 프론트엔드 테스트 결과서
+<br>
+[프론트엔드 테스트 결과서](https://www.notion.so/2775605940ec80b7aadee6394114d26c?v=2775605940ec811dafd4000ce77c5a78)
+
+
+
+
+## 10. 기여 가이드
 이슈 등록
 
 feature/이슈명 브랜치 생성
@@ -143,11 +193,25 @@ Pull Request 템플릿 기반 작성 후 리뷰 요청
 <br/>
 
 
-## 9. 향후 개선 계획
+## 11. 향후 개선 계획
 
 분석 정확도 개선을 위한 모델 업그레이드
 
+적절한 에러처리
+
+통계 및 리포트 페이지 구현
 
 B2B 고객사를 위한 SaaS 대시보드 고도화
 
 <br/>
+
+# 12. 회고록
+
+|   조원 이름	|  회고  	|
+|---	|---	|
+|   서현원   |    |
+|   최정우   |   	|
+|   조상원   |   	|
+|   이인화   |   	|
+|   김택곤 	 |   	|
+|   이원진 	 |   	|

@@ -19,3 +19,6 @@
 /poetry.toml
 
 __pycache__/
+
+../backend/src/resources/application-*.properties
+../backend/src/resources/application.properties

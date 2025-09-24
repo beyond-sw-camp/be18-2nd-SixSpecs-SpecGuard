@@ -4,6 +4,7 @@ import com.beyond.specguard.companytemplate.model.entity.CompanyTemplate;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class CompanyTemplateSpecification {
     public static Specification<CompanyTemplate> hasDepartment(String department) {
@@ -28,5 +29,10 @@ public class CompanyTemplateSpecification {
 
     public static Specification<CompanyTemplate> hasYearsOfExperience(Integer yearsOfExperience) {
         return yearsOfExperience == null ? null : (root, query, cb) -> cb.equal(root.get("yearsOfExperience"), yearsOfExperience);
+    }
+
+    public static Specification<CompanyTemplate> belongsToCompany(UUID companyId) {
+        return companyId == null ? null : (root, q, cb) ->
+                cb.equal(root.get("clientCompany").get("id"), companyId);
     }
 }

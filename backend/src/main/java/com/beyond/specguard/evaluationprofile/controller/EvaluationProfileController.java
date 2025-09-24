@@ -1,7 +1,7 @@
 package com.beyond.specguard.evaluationprofile.controller;
 
-import com.beyond.specguard.auth.model.entity.ClientUser;
-import com.beyond.specguard.auth.model.service.CustomUserDetails;
+import com.beyond.specguard.company.common.model.entity.ClientUser;
+import com.beyond.specguard.company.common.model.service.CustomUserDetails;
 import com.beyond.specguard.evaluationprofile.model.dto.command.CreateEvaluationProfileCommand;
 import com.beyond.specguard.evaluationprofile.model.dto.command.GetEvaluationProfileCommand;
 import com.beyond.specguard.evaluationprofile.model.dto.command.SearchEvaluationProfileCommand;
@@ -12,6 +12,9 @@ import com.beyond.specguard.evaluationprofile.model.dto.response.EvaluationProfi
 import com.beyond.specguard.evaluationprofile.model.service.EvaluationProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,8 +54,37 @@ public class EvaluationProfileController {
     private CustomUserDetails getUserDetails(Authentication authentication) {
         return (CustomUserDetails) authentication.getPrincipal();
     }
-
-    @Operation(summary = "평가 프로필 생성", description = "기업 유저 또는 어드민이 새로운 평가 프로필을 생성합니다.")
+    //RequestBody는 어노테이션 두가지라 여기서 풀네임으로 작성
+    @Operation(summary = "가중치 프로필과 가중치 생성", description = "기업 유저 또는 어드민이 새로운 평가 프로필을 생성합니다.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = EvaluationProfileRequestDto.class),
+                            examples = @ExampleObject(
+                                    name = "createEvaluationProfile",
+                                    value = """
+                    {
+                      "name": "string",
+                      "description": "string",
+                      "companyTemplateId": "6d6bb9f2-f696-418c-a8db-84e859bca5fb",
+                      "weights": [
+                        { "weightType": "GITHUB_REPO_COUNT",     "weightValue": 0.1 },
+                        { "weightType": "GITHUB_COMMIT_COUNT",   "weightValue": 0.1 },
+                        { "weightType": "GITHUB_KEYWORD_MATCH",  "weightValue": 0.1 },
+                        { "weightType": "GITHUB_TOPIC_MATCH",    "weightValue": 0.1 },
+                        { "weightType": "NOTION_KEYWORD_MATCH",  "weightValue": 0.1 },
+                        { "weightType": "VELOG_POST_COUNT",      "weightValue": 0.1 },
+                        { "weightType": "VELOG_RECENT_ACTIVITY", "weightValue": 0.1 },
+                        { "weightType": "VELOG_KEYWORD_MATCH",   "weightValue": 0.1 },
+                        { "weightType": "CERTIFICATE_MATCH",     "weightValue": 0.2 }
+                      ]
+                    }
+                    """
+                            )
+                    )
+            )
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "프로필 생성 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청 값"),
@@ -110,7 +142,38 @@ public class EvaluationProfileController {
         return ResponseEntity.ok(profilesResponseDto);
     }
 
-    @Operation(summary = "평가 프로필 수정", description = "프로필 이름, 설명 등 정보를 수정합니다.")
+    @Operation(
+            summary = "평가 프로필 수정",
+            description = "프로필 이름, 설명 등 정보를 수정합니다.",
+            //RequestBody 풀네임 작성
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = EvaluationProfileRequestDto.class),
+                            examples = @ExampleObject(
+                                    value = """
+                    {
+                      "name": "string",
+                      "description": "string",
+                      "companyTemplateId": "6d6bb9f2-f696-418c-a8db-84e859bca5fb",
+                      "weights": [
+                        { "weightType": "GITHUB_REPO_COUNT",     "weightValue": 0.1 },
+                        { "weightType": "GITHUB_COMMIT_COUNT",   "weightValue": 0.1 },
+                        { "weightType": "GITHUB_KEYWORD_MATCH",  "weightValue": 0.1 },
+                        { "weightType": "GITHUB_TOPIC_MATCH",    "weightValue": 0.1 },
+                        { "weightType": "NOTION_KEYWORD_MATCH",  "weightValue": 0.1 },
+                        { "weightType": "VELOG_POST_COUNT",      "weightValue": 0.1 },
+                        { "weightType": "VELOG_RECENT_ACTIVITY", "weightValue": 0.1 },
+                        { "weightType": "VELOG_KEYWORD_MATCH",   "weightValue": 0.1 },
+                        { "weightType": "CERTIFICATE_MATCH",     "weightValue": 0.2 }
+                      ]
+                    }
+                    """
+                            )
+                    )
+            )
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청 값"),
@@ -133,9 +196,9 @@ public class EvaluationProfileController {
 
     @Operation(summary = "평가 프로필 삭제", description = "평가 프로필을 삭제합니다. (하위 가중치도 함께 제거됨)")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "삭제 성공"),
             @ApiResponse(responseCode = "403", description = "접근 권한 없음"),
-            @ApiResponse(responseCode = "404", description = "프로필을 찾을 수 없음")
+            @ApiResponse(responseCode = "404", description = "프로필을 찾을 수 없음"),
+            @ApiResponse(responseCode = "204", description = "삭제 성공"),
     })
     @DeleteMapping("/{profileId}")
     public ResponseEntity<Void> deleteProfile(

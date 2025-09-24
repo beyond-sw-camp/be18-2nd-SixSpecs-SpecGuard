@@ -23,6 +23,7 @@ public class CompanyTemplateResponseDto {
     @JsonProperty("detail")
     private DetailDto detailDto;
 
+    @Builder
     public CompanyTemplateResponseDto(CompanyTemplate companyTemplate) {
         this.basicDto = BasicDto.toDto(companyTemplate);
         this.detailDto = DetailDto.toDto(companyTemplate);
@@ -69,7 +70,7 @@ public class CompanyTemplateResponseDto {
                     .templateId(template.getId())
                     .endDate(template.getEndDate())
                     .startDate(template.getStartDate())
-                    .fields(template.getFields().stream().map(TemplateFieldResponseDto::new).toList())
+                    .fields(template.getFields().stream().map(TemplateFieldResponseDto::fromEntity).toList())
                     .build();
 
         }
