@@ -591,10 +591,12 @@ public class ResumeService {
     //삭제
     @Transactional
     public int cleanupExpiredUnsubmittedResumes(int batchSize) {
+        log.info("[cleanup] called with batchSize={}", batchSize);
         int totalDeleted = 0;
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
 
         var expiredTemplateIds = companyTemplateRepository.findExpiredTemplateIds(now);
+        log.info("[cleanup] expiredTemplateIds={}", expiredTemplateIds);
         if (expiredTemplateIds.isEmpty()) return 0;
 
         Pageable limit = PageRequest.of(0, batchSize);
@@ -603,6 +605,8 @@ public class ResumeService {
             var targetIds = resumeRepository.findUnsubmittedIdsByTemplateIds(expiredTemplateIds, limit);
             if (targetIds.isEmpty()) break;
 
+            log.debug("[cleanup] targetIds to delete={}", targetIds);
+
             for (UUID resumeId : targetIds) {
                 // 자식 -> 부모 순으로 삭제 + 파일 정리
                 cascadeDeleteByResume(resumeId);
@@ -610,6 +614,7 @@ public class ResumeService {
             }
 
         }
+        log.info("[cleanup] finished. totalDeleted={}", totalDeleted);
         return totalDeleted;
     }
 
