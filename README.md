@@ -106,7 +106,7 @@
 ![Playwright](https://img.shields.io/badge/-playwright-%232EAD33?style=for-the-badge&logo=playwright&logoColor=white)
 
 #**NLP 분석**
-<br>![google-genai](https://img.shields.io/badge/google--genai-%3E%3D1.38.0%2C%3C2.0.0-green?style=for-the-badge)
+<br>![google-genai](https://img.shields.io/badge/google--genai-1.38-green?style=for-the-badge)
 
 
 
