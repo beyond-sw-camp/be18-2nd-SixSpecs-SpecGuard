@@ -27,7 +27,6 @@ public class UserController {
 
     private final UserService userService;
     private final CompanyService companyService;
-    private final ClientUserRepository clientUserRepository;
 
     @GetMapping("/company/{slug}/users/me")
     public ResponseEntity<SignupResponseDto> getMyInfo(
