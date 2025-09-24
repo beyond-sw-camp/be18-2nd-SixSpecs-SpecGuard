@@ -106,9 +106,9 @@
 ![Playwright](https://img.shields.io/badge/-playwright-%232EAD33?style=for-the-badge&logo=playwright&logoColor=white)
 
 #**NLP 분석**
-<br>
-![KoNLPy](https://img.shields.io/badge/KoNLPy-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Transformers](https://img.shields.io/badge/Transformers-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)
+<br>![google-genai](https://img.shields.io/badge/google--genai-%3E%3D1.38.0%2C%3C2.0.0-green?style=for-the-badge)
+
+
 
 #**Database**
 <br>![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=for-the-badge&logo=mariadb&logoColor=white)
@@ -133,12 +133,7 @@
 
 ## 4. 시스템 아키텍처
 
-4.1 예시
-```plaintext
-사용자 → 프론트엔드 → Spring Boot API
-                          ↓
-                  [크롤러] + [NLP 모듈] → DB 저장
-```
+![시스템 아키텍쳐](docs/images/아키택쳐.png)
 
 <br/>
 
