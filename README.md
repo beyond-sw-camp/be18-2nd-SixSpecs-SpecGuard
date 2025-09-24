@@ -1,6 +1,7 @@
 <p align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Noto+Sans+KR&weight=900&size=48&duration=2300&pause=900&color=00FF7F&background=0D1117&center=true&vCenter=true&width=1000&lines=SpecGuard;%EC%9D%B4%EB%A0%A5+%EA%B2%80%EC%A6%9D+%EC%8B%9C%EC%8A%A4%ED%85%9C" alt="SpecGuard Typing">
+  <img src="https://readme-typing-svg.demolab.com?font=Noto+Sans+KR&weight=900&size=48&duration=2300&pause=900&color=00FF7F&background=00000000&center=true&vCenter=true&width=1000&lines=SpecGuard;%EC%9D%B4%EB%A0%A5+%EA%B2%80%EC%A6%9D+%EC%8B%9C%EC%8A%A4%ED%85%9C" alt="SpecGuard Typing">
 </p>
+
 
 
 ## 👥팀원  
@@ -96,12 +97,13 @@
 ![Spring Data JPA](https://img.shields.io/badge/Spring%20Data%20JPA-59666C?style=for-the-badge&logo=hibernate&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 ![ChromeDriver](https://img.shields.io/badge/ChromeDriver-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 
 
 #**Crawler**
 <br>
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![BeautifulSoup](https://img.shields.io/badge/BeautifulSoup-4B8BBE?style=for-the-badge&logo=python&logoColor=white)
+![Playwright](https://img.shields.io/badge/-playwright-%232EAD33?style=for-the-badge&logo=playwright&logoColor=white)
 
 #**NLP 분석**
 <br>

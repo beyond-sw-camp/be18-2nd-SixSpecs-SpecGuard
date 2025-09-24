@@ -21,4 +21,6 @@ public interface CompanyTemplateResponseAnalysisRepository extends JpaRepository
            WHERE r.resume.id = :resumeId
            """)
     List<CompanyTemplateResponseAnalysis> findAllByResumeId(@Param("resumeId") UUID resumeId);
+
+
 }

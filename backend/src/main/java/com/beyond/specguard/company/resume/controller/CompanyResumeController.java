@@ -3,10 +3,10 @@ package com.beyond.specguard.company.resume.controller;
 import com.beyond.specguard.common.exception.CustomException;
 import com.beyond.specguard.company.common.model.entity.ClientUser;
 import com.beyond.specguard.company.common.model.service.CustomUserDetails;
+import com.beyond.specguard.event.dto.BaseResponse;
 import com.beyond.specguard.resume.exception.errorcode.ResumeErrorCode;
 import com.beyond.specguard.resume.model.dto.response.ResumeListResponseDto;
-import com.beyond.specguard.resume.model.dto.response.ResumeResponse;
-import com.beyond.specguard.resume.model.dto.response.ResumeWithGitResponse;
+import com.beyond.specguard.resume.model.dto.response.ResumeGitSummaryResponse;
 import com.beyond.specguard.resume.model.entity.Resume;
 import com.beyond.specguard.resume.model.service.ResumeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -57,11 +57,13 @@ public class CompanyResumeController {
             description = "특정 지원서(resume.id) 단건 조회."
     )
     @GetMapping("/{resumeId}")
-    public ResumeWithGitResponse get(
+    public BaseResponse<ResumeGitSummaryResponse> get(
             @PathVariable UUID resumeId,
             @AuthenticationPrincipal CustomUserDetails customUserDetails
     ) {
         String email = customUserDetails.getUsername();
-        return resumeService.getWithGit(resumeId, email);
+        ResumeGitSummaryResponse response = resumeService.getWithGit(resumeId, email);
+
+        return new BaseResponse<>("SUCCESS", response);
     }
 }

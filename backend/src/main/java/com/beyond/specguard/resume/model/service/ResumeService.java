@@ -20,22 +20,8 @@ import com.beyond.specguard.resume.model.dto.request.ResumeCreateRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeEducationUpsertRequest;
 import com.beyond.specguard.resume.model.dto.request.ResumeExperienceUpsertRequest;
 import com.beyond.specguard.resume.model.dto.response.*;
-import com.beyond.specguard.resume.model.entity.CompanyFormSubmission;
-import com.beyond.specguard.resume.model.entity.CompanyTemplateResponse;
-import com.beyond.specguard.resume.model.entity.Resume;
-import com.beyond.specguard.resume.model.entity.ResumeBasic;
-import com.beyond.specguard.resume.model.entity.ResumeCertificate;
-import com.beyond.specguard.resume.model.entity.ResumeEducation;
-import com.beyond.specguard.resume.model.entity.ResumeExperience;
-import com.beyond.specguard.resume.model.entity.ResumeLink;
-import com.beyond.specguard.resume.model.repository.CompanyFormSubmissionRepository;
-import com.beyond.specguard.resume.model.repository.CompanyTemplateResponseRepository;
-import com.beyond.specguard.resume.model.repository.ResumeBasicRepository;
-import com.beyond.specguard.resume.model.repository.ResumeCertificateRepository;
-import com.beyond.specguard.resume.model.repository.ResumeEducationRepository;
-import com.beyond.specguard.resume.model.repository.ResumeExperienceRepository;
-import com.beyond.specguard.resume.model.repository.ResumeLinkRepository;
-import com.beyond.specguard.resume.model.repository.ResumeRepository;
+import com.beyond.specguard.resume.model.entity.*;
+import com.beyond.specguard.resume.model.repository.*;
 import com.beyond.specguard.resume.model.spec.ResumeSpecification;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -57,14 +43,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -85,6 +64,7 @@ public class ResumeService {
     private final ApplicationEventPublisher eventPublisher;
     private final CompanyTemplateFieldRepository companyTemplateFieldRepository;
     private final GitHubMetadataService gitHubMetadataService;
+    private final CompanyTemplateResponseAnalysisRepository analysisRepository;
 
     //이력서 생성에서 create
     @Transactional
@@ -638,7 +618,7 @@ public class ResumeService {
                 .orElseThrow(() -> new CustomException(ResumeErrorCode.RESUME_NOT_FOUND)));
     }
     @Transactional(readOnly = true)
-    public ResumeWithGitResponse getWithGit(UUID resumeId, String email) {
+    public ResumeGitSummaryResponse getWithGit(UUID resumeId, String email) {
         // 기본 이력서 조회는 그대로
         ResumeResponse resume = get(resumeId, email);
 
@@ -660,9 +640,21 @@ public class ResumeService {
             // 실패는 비치명. gitMetadata는 null로 둠.
         }
 
-        return ResumeWithGitResponse.builder()
+        List<String> summaries = Collections.emptyList();
+        try {
+            summaries = analysisRepository.findAllByResumeId(resumeId).stream()
+                    .map(CompanyTemplateResponseAnalysis::getSummary)
+                    .filter(Objects::nonNull) // null 값 제거
+                    .toList();
+        } catch (Exception e) {
+            log.warn("Summary 조회 실패. resumeId={}", resumeId, e);
+            // 실패해도 summaries는 빈 리스트로 유지
+        }
+
+        return ResumeGitSummaryResponse.builder()
                 .resume(resume)
-                .gitMetadata(gitMetadata) // null 가능
+                .gitMetadata(gitMetadata)
+                .summaries(summaries)// null 가능
                 .build();
     }
 
