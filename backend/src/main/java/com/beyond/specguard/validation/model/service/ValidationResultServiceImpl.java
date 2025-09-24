@@ -53,7 +53,7 @@ public class ValidationResultServiceImpl implements ValidationResultService {
 
     // 정규화 상한
     private static final double REPO_MAX = 30.0;
-    private static final double COMMIT_MAX = 1000.0;
+    private static final double COMMIT_MAX = 10000.0;
     private static final double VELOG_POST_MAX = 100.0;
 
     // ===== match/mismatch 유틸 =====
