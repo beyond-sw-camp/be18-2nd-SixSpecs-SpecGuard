@@ -1,5 +1,7 @@
 package com.beyond.specguard.company.management.controller;
 
+import com.beyond.specguard.company.common.model.entity.ClientUser;
+import com.beyond.specguard.company.common.model.repository.ClientUserRepository;
 import com.beyond.specguard.company.common.model.service.CustomUserDetails;
 import com.beyond.specguard.company.management.model.dto.request.ChangePasswordRequestDto;
 import com.beyond.specguard.company.management.model.dto.request.UpdateCompanyRequestDto;
@@ -15,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -24,19 +27,18 @@ public class UserController {
 
     private final UserService userService;
     private final CompanyService companyService;
+    private final ClientUserRepository clientUserRepository;
 
     @GetMapping("/company/{slug}/users/me")
-    public ResponseEntity<SignupResponseDto.UserDTO> getMyInfo(@PathVariable String slug, Authentication authentication) {
-        // 인증된 유저 가져오기
+    public ResponseEntity<SignupResponseDto> getMyInfo(
+            @PathVariable String slug,
+            Authentication authentication
+    ) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-
-        //  slug 검증
-        if (!userDetails.getCompany().getSlug().equals(slug)) {
-            throw new CustomException(AuthErrorCode.ACCESS_DENIED);
-        }
-
-        return ResponseEntity.ok(SignupResponseDto.UserDTO.from(userDetails.getUser()));
+        return ResponseEntity.ok(userService.getMyInfo(slug, userDetails));
     }
+
+
 
     //회원 정보 수정(이름, 전화번호)
     @PatchMapping("/me")
@@ -79,4 +81,5 @@ public class UserController {
         companyService.deleteCompany(slug, userDetails.getUser().getId());
         return ResponseEntity.ok(Map.of("message", "회사가 성공적으로 삭제 되었습니다"));
     }
+
 }

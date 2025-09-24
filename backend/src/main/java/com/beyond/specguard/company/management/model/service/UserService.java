@@ -1,6 +1,7 @@
 package com.beyond.specguard.company.management.model.service;
 
 import com.beyond.specguard.auth.exception.errorcode.AuthErrorCode;
+import com.beyond.specguard.company.common.model.service.CustomUserDetails;
 import com.beyond.specguard.company.management.model.dto.request.ChangePasswordRequestDto;
 import com.beyond.specguard.company.management.model.dto.request.UpdateUserRequestDto;
 import com.beyond.specguard.company.common.model.dto.response.SignupResponseDto;
@@ -12,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -19,6 +21,35 @@ import java.util.UUID;
 public class UserService {
     private final ClientUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+
+    public SignupResponseDto getMyInfo(String slug, CustomUserDetails userDetails) {
+        // slug 검증
+        if (!userDetails.getCompany().getSlug().equals(slug)) {
+            throw new CustomException(AuthErrorCode.ACCESS_DENIED);
+        }
+
+        SignupResponseDto.SignupResponseDtoBuilder builder = SignupResponseDto.builder()
+                .user(SignupResponseDto.UserDTO.from(userDetails.getUser()));
+
+        // 오너일 경우 회사 + 직원 목록 추가
+        if (userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_OWNER"))) {
+
+            List<ClientUser> employees = userRepository.findAllByCompany_Slug(slug)
+                    .stream()
+                    .filter(u -> !u.getRole().equals(ClientUser.Role.OWNER))
+                    .toList();
+
+            builder.company(SignupResponseDto.CompanyDTO.from(userDetails.getCompany()))
+                    .employees(employees.stream()
+                            .map(SignupResponseDto.UserDTO::from)
+                            .toList());
+        }
+
+        return builder.build();
+    }
+
 
     @Transactional
     public SignupResponseDto.UserDTO updateMyInfo(UUID userid, UpdateUserRequestDto dto){
