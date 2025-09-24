@@ -2,6 +2,8 @@ package com.beyond.specguard.company.common.model.entity;
 
 import com.beyond.specguard.company.management.model.dto.request.UpdateCompanyRequestDto;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -59,6 +61,19 @@ public class ClientCompany {
         if (dto.getManagerPosition() != null) this.managerPosition = dto.getManagerPosition();
         if (dto.getContactEmail() != null) this.contactEmail = dto.getContactEmail();
         if (dto.getContactMobile() != null) this.contactMobile = dto.getContactMobile();
+    }
+
+
+    public void updateContactInfo(String managerPosition, String contactEmail, String contactMobile) {
+        if (managerPosition != null && !managerPosition.isBlank()) {
+            this.managerPosition = managerPosition;
+        }
+        if (contactEmail != null && !contactEmail.isBlank()) {
+            this.contactEmail = contactEmail;
+        }
+        if (contactMobile != null && !contactMobile.isBlank()) {
+            this.contactMobile = contactMobile;
+        }
     }
 
 }
