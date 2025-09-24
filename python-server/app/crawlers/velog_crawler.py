@@ -15,8 +15,11 @@ MAX_CONCURRENCY = int(os.environ.get("CRAWLER_MAX_CONCURRENCY", "4"))
 
 _HANDLE_RE = re.compile(r"/@(?P<handle>[A-Za-z0-9_]{1,30})")
 _POST_PATH_RE_TPL = (
-    r"^/@{handle}/(?!posts$|series(?:/|$)|about(?:/|$)|followers(?:/|$)|"
-    r"following(?:/|$)|likes(?:/|$)|portfolio(?:/|$)|lists(?:/|$)|tag(?:/|$)|categories(?:/|$))[^/?#]+$"
+    r"^/@{handle}/"
+    r"(?!posts$|series(?:/|$)|about(?:/|$)|followers(?:/|$)|following(?:/|$)|"
+    r"likes(?:/|$)|portfolio(?:/|$)|lists(?:/|$)|tag(?:/|$)|categories(?:/|$))"
+    r"posts\?tag=)" 
+    r"[^/?#]+$"
 )
 
 def _is_post_permalink(href: str, handle: str) -> bool:
@@ -40,9 +43,7 @@ async def collect_post_links(ctx, base_url: str, max_scrolls: int) -> list[str]:
             )
             out = []
             for h in anchors:
-                if not h:
-                    continue
-                if _is_post_permalink(h, handle):
+                if h and _is_post_permalink(h, handle):
                     full = urljoin("https://velog.io", h)
                     if full not in seen:
                         seen.add(full)
@@ -55,69 +56,17 @@ async def collect_post_links(ctx, base_url: str, max_scrolls: int) -> list[str]:
             if new_links:
                 hrefs.extend(new_links)
 
-            if len(hrefs) == last_len:
-                stagnant += 1
-            else:
-                stagnant = 0
+            stagnant = stagnant + 1 if len(hrefs) == last_len else 0
             last_len = len(hrefs)
-
             if stagnant >= CONF["list"]["stagnant_rounds"]:
                 break
 
             await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             await _sleep_with_jitter()
 
-        # 최종 중복 제거
         return list(dict.fromkeys(hrefs))
     finally:
         await page.close()
-
-
-
-
-
-async def collect_post_links(ctx, base_url: str, max_scrolls: int) -> list[str]:
-    page = await ctx.new_page()
-    try:
-        page.set_default_timeout(CONF["list"]["timeout_ms"])
-        page.set_default_navigation_timeout(CONF["list"]["timeout_ms"])
-        await _safe_goto(page, base_url)
-
-        handle = _extract_handle_from_url(base_url) or ""
-        seen, hrefs = set(), []
-
-        async def collect() -> list[str]:
-            anchors = await page.eval_on_selector_all(
-                f'a[href^="/@{handle}/"]',
-                "els => els.map(e => e.getAttribute('href') || '')"
-            )
-            out = []
-            for h in anchors:
-                if h and _is_post_permalink(h, handle):
-                    full = urljoin("https://velog.io", h)
-                    if full not in seen:
-                        seen.add(full)
-                        out.append(full)
-            return out
-
-        last_count, stagnant = -1, 0
-        for _ in range(max_scrolls):
-            new_links = await collect()
-            if new_links:
-                hrefs.extend(new_links)
-
-            stagnant = stagnant + 1 if len(hrefs) == last_count else 0
-            last_count = len(hrefs)
-            if stagnant >= CONF["list"]["stagnant_rounds"]:
-                break
-
-            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await _sleep_with_jitter()
-
-        return list(dict.fromkeys(hrefs)) 
-    finally:
-        await page.close()
-
 
 
 
@@ -288,24 +237,49 @@ async def fetch_post(ctx, url: str) -> Tuple[str, str, List[str], List[str], Opt
 
         # 날짜
         published = None
+        # try:
+        #     texts = await page.locator("time, span, div").all_inner_texts()
+        #     for s in texts:
+        #         s2 = s.strip()
+        #         if re.search(r"\d{4}[.\-]\s*\d{1,2}[.\-]\s*\d{1,2}", s2) or \
+        #            ("시간 전" in s2) or ("분 전" in s2) or ("일 전" in s2):
+        #             published = s2; break
+        # except Exception:
+        #     pass
+        # 1) ISO 우선
         try:
-            texts = await page.locator("time, span, div").all_inner_texts()
-            for s in texts:
-                s2 = s.strip()
-                if re.search(r"\d{4}[.\-]\s*\d{1,2}[.\-]\s*\d{1,2}", s2) or \
-                   ("시간 전" in s2) or ("분 전" in s2) or ("일 전" in s2):
-                    published = s2; break
+            if await page.locator("time[datetime]").count() > 0:
+                iso = await page.locator("time[datetime]").first.get_attribute("datetime")
+                if iso:
+                    published = iso.strip()
         except Exception:
             pass
 
+        # 2) 한국어 날짜 텍스트/상대시간 fallback
+        if not published:
+            try:
+                texts = await page.locator("time, span, div").all_inner_texts()
+                for s in texts:
+                    s2 = s.strip()
+                    if re.search(r"\d{4}\s*년\s*\d{1,2}\s*월\s*\d{1,2}\s*일", s2) or \
+                    re.search(r"\d{4}[.-]\s*\d{1,2}[.-]\s*\d{1,2}", s2) or \
+                    ("시간 전" in s2) or ("분 전" in s2) or ("일 전" in s2):
+                        published = s2
+                        break
+            except Exception:
+                pass
 
-        if text:
-            import re as _re
-            text = _re.sub(r"(로그인|팔로우|목록 보기)\s*", " ", text)
-            text = _re.sub(r"\s{2,}", " ", text).strip()
-            text = mask_pii(text)
 
-        return title or "", text or "", [], tags, published
+        
+
+
+        # if text:
+        #     import re as _re
+        #     text = _re.sub(r"(로그인|팔로우|목록 보기)\s*", " ", text)
+        #     text = _re.sub(r"\s{2,}", " ", text).strip()
+        #     text = mask_pii(text)
+
+        return title or "", text or "", [], tags, (published or "")
     finally:
         await page.close()
 
