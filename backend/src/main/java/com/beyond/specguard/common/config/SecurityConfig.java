@@ -24,6 +24,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -40,6 +41,7 @@ import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
 
     // Login Handlers
@@ -88,11 +90,13 @@ public class SecurityConfig {
             // SpringDocs OpenApi Swagger API
             "/swagger-ui/**", "/v3/api-docs/**",
             "/admins/auth/login",
-            "/admins/auth/token/refresh"
+            "/admins/auth/token/refresh",
+            "/api/v1/plans/**"
     };
 
     private static final String[] APPLICANT_AUTH_WHITE_LIST = {
             "/api/v1/resumes/login",
+
             "/api/v1/verify/**",
             "/api/v1/resumes/companies/*/templates"
     };
@@ -175,6 +179,7 @@ public class SecurityConfig {
         http.securityMatcher("/api/**", "/oauth2/**", "/login/oauth2/**")
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(AUTH_WHITE_LIST).permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/plans/**").permitAll()
                 .requestMatchers("/api/v1/invite/**").hasRole("OWNER")
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/company/**").hasRole("OWNER")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/company/**").hasRole("OWNER")
